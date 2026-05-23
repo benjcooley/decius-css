@@ -48,6 +48,8 @@ for (const { pkg, family, weights } of FAMILIES) {
         `}\n`;
     }
   }
+  // ship each family's OFL license alongside the served fonts
+  copyFileSync(resolve(fontsDir, pkg, 'OFL.txt'), resolve(outFonts, `${pkg}-OFL.txt`));
 }
 
 writeFileSync(resolve(outCss, 'decius-fonts.css'), css);

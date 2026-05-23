@@ -50,13 +50,14 @@
     "./icons/manifest": "./icons/icons.json"
   },
   "files": [
-    "dist",
+    "dist/css",
+    "dist/js",
+    "dist/fonts",
     "scss",
-    "icons/svg",
     "icons/icons.json",
-    "fonts",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "clean": "node scripts/clean.mjs",
