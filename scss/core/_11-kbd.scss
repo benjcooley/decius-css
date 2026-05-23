@@ -1,0 +1,13 @@
+/* ------------------------------------------------------------
+   11 · KBD
+   ------------------------------------------------------------ */
+.dcs-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  font-family: var(--dcs-font-mono); font-size: var(--dcs-fs-xs);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-bottom-width: 2px;
+  border-radius: var(--dcs-r-1);
+  color: var(--dcs-text-dim);
+}

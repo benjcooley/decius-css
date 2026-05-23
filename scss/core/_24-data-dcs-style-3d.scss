@@ -1,0 +1,119 @@
+/* ============================================================
+   24 · [data-dcs-style="3d"] — Vital/synth-style bevels & gradients
+   Apply to any subtree you want rendered with depth instead of flat.
+   ============================================================ */
+[data-dcs-style="3d"] .dcs-btn {
+  background: linear-gradient(180deg, var(--dcs-surface-2), var(--dcs-surface-1));
+  box-shadow: var(--dcs-bevel-up);
+  transition: background var(--dcs-t-fast), border-color var(--dcs-t-fast), transform var(--dcs-t-fast);
+}
+[data-dcs-style="3d"] .dcs-btn:hover { background: linear-gradient(180deg, var(--dcs-surface-3), var(--dcs-surface-2)); }
+[data-dcs-style="3d"] .dcs-btn:active { background: var(--dcs-well); box-shadow: var(--dcs-bevel-down); transform: translateY(.5px); }
+[data-dcs-style="3d"] .dcs-btn:focus-visible { box-shadow: var(--dcs-ring), var(--dcs-bevel-up); }
+
+[data-dcs-style="3d"] .dcs-btn--primary {
+  background: linear-gradient(180deg, var(--dcs-accent-hi), var(--dcs-accent));
+  text-shadow: 0 1px 0 rgba(255,255,255,.12);
+}
+[data-dcs-style="3d"] .dcs-btn--primary:hover { background: linear-gradient(180deg, #88c0ff, var(--dcs-accent-hi)); }
+[data-dcs-style="3d"] .dcs-btn--ghost { box-shadow: none; }
+[data-dcs-style="3d"] .dcs-btn--danger { background: linear-gradient(180deg, #ff8585, #ef6b6b); }
+[data-dcs-style="3d"] .dcs-btn[aria-pressed="true"] { box-shadow: var(--dcs-bevel-down); }
+
+[data-dcs-style="3d"] .dcs-btn-group .dcs-btn { box-shadow: none; background: transparent; }
+[data-dcs-style="3d"] .dcs-btn-group .dcs-btn[aria-pressed="true"] { box-shadow: var(--dcs-shadow-1); }
+
+[data-dcs-style="3d"] .dcs-input,
+[data-dcs-style="3d"] .dcs-select,
+[data-dcs-style="3d"] .dcs-textarea {
+  box-shadow: var(--dcs-bevel-down);
+}
+[data-dcs-style="3d"] .dcs-input:focus,
+[data-dcs-style="3d"] .dcs-select:focus,
+[data-dcs-style="3d"] .dcs-textarea:focus {
+  box-shadow: var(--dcs-bevel-down), 0 0 0 2px var(--dcs-accent-haze);
+}
+
+/* Combo — beveled inset display in 3D mode (no fill bar, no chevrons) */
+[data-dcs-style="3d"] .dcs-combo {
+  box-shadow: var(--dcs-bevel-down);
+  background: var(--dcs-well);
+}
+[data-dcs-style="3d"] .dcs-combo__fill {
+  display: none;
+}
+[data-dcs-style="3d"] .dcs-combo__btn {
+  display: none;
+}
+[data-dcs-style="3d"] .dcs-combo__label {
+  color: var(--dcs-text-mute);
+  flex: 0 0 auto;
+  padding-right: var(--dcs-s-2);
+}
+[data-dcs-style="3d"] .dcs-combo__value {
+  color: var(--dcs-accent);
+  font-weight: 500;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+/* Slider & fader — beveled thumbs */
+[data-dcs-style="3d"] .dcs-slider__track { box-shadow: var(--dcs-bevel-down); }
+[data-dcs-style="3d"] .dcs-slider__thumb {
+  width: 14px; height: 14px;
+  background: linear-gradient(180deg, var(--dcs-surface-3), var(--dcs-surface-1));
+  border-color: var(--dcs-line);
+  box-shadow: var(--dcs-shadow-1), var(--dcs-bevel-up);
+}
+[data-dcs-style="3d"] .dcs-slider:focus-within .dcs-slider__thumb,
+[data-dcs-style="3d"] .dcs-slider--active .dcs-slider__thumb {
+  border-color: var(--dcs-accent);
+  box-shadow: 0 0 0 3px var(--dcs-accent-haze);
+}
+
+[data-dcs-style="3d"] .dcs-fader { box-shadow: var(--dcs-bevel-down); }
+[data-dcs-style="3d"] .dcs-fader__track { background: var(--dcs-line); }
+[data-dcs-style="3d"] .dcs-fader__thumb {
+  width: 22px; height: 12px;
+  background: linear-gradient(180deg, var(--dcs-surface-3), var(--dcs-surface-1));
+  border-color: var(--dcs-line);
+  box-shadow: var(--dcs-bevel-up), 0 2px 4px rgba(0,0,0,.4);
+}
+
+/* Knob — radial gradient cap, glowing indicator */
+[data-dcs-style="3d"] .dcs-knob__cap {
+  background:
+    radial-gradient(circle at 30% 25%, var(--dcs-surface-3), var(--dcs-surface-1) 55%, var(--dcs-well) 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.08),
+    inset 0 -2px 4px rgba(0,0,0,.4),
+    0 2px 6px rgba(0,0,0,.4);
+}
+[data-dcs-style="3d"] .dcs-knob__indicator {
+  box-shadow: 0 0 6px var(--dcs-accent-haze);
+}
+
+/* Check / switch */
+[data-dcs-style="3d"] .dcs-check__box { box-shadow: var(--dcs-bevel-down); border-color: var(--dcs-line); }
+[data-dcs-style="3d"] .dcs-switch { box-shadow: var(--dcs-bevel-down); border-color: var(--dcs-line); }
+[data-dcs-style="3d"] .dcs-switch::after {
+  background: linear-gradient(180deg, var(--dcs-surface-3), var(--dcs-surface-1));
+  box-shadow: var(--dcs-shadow-1), var(--dcs-bevel-up);
+}
+[data-dcs-style="3d"] .dcs-switch[aria-checked="true"]::after { background: linear-gradient(180deg, #fff, #d8dade); }
+
+/* Panel header glossy in 3D mode */
+[data-dcs-style="3d"] .dcs-panel {
+  border: 1px solid var(--dcs-line);
+  box-shadow: var(--dcs-shadow-2);
+}
+[data-dcs-style="3d"] .dcs-panel__header {
+  background: linear-gradient(180deg, var(--dcs-surface-2), var(--dcs-surface-1));
+}
+[data-dcs-style="3d"] .dcs-toolbar {
+  background: linear-gradient(180deg, var(--dcs-surface-1), var(--dcs-bg));
+}
+[data-dcs-style="3d"] .dcs-swatch { box-shadow: var(--dcs-bevel-down); }
+[data-dcs-style="3d"] .dcs-color-square,
+[data-dcs-style="3d"] .dcs-hue-bar,
+[data-dcs-style="3d"] .dcs-graph { box-shadow: var(--dcs-bevel-down); }

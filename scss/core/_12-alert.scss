@@ -1,0 +1,33 @@
+/* ------------------------------------------------------------
+   12 · ALERT
+   ------------------------------------------------------------ */
+.dcs-alert {
+  display: flex; gap: var(--dcs-s-4);
+  padding: var(--dcs-s-4) var(--dcs-s-5);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-left: 3px solid var(--dcs-accent);
+  border-radius: var(--dcs-r-2);
+  font-size: var(--dcs-fs-sm);
+  align-items: flex-start;
+}
+.dcs-alert--ok     { border-left-color: var(--dcs-ok); }
+.dcs-alert--warn   { border-left-color: var(--dcs-warn); }
+.dcs-alert--danger { border-left-color: var(--dcs-danger); }
+.dcs-alert__icon { color: var(--dcs-accent); flex: 0 0 auto; }
+.dcs-alert--ok .dcs-alert__icon { color: var(--dcs-ok); }
+.dcs-alert--warn .dcs-alert__icon { color: var(--dcs-warn); }
+.dcs-alert--danger .dcs-alert__icon { color: var(--dcs-danger); }
+.dcs-alert__body { flex: 1; }
+.dcs-alert__title { color: var(--dcs-text); font-weight: 500; margin-bottom: 2px; }
+.dcs-alert code,
+.dcs-alert__msg code {
+  font-family: var(--dcs-font-mono);
+  font-size: .92em;
+  padding: 1px 6px;
+  background: var(--dcs-well);
+  border-radius: var(--dcs-r-1);
+  color: var(--dcs-warn);
+  border: none;
+}
+.dcs-alert__msg { color: var(--dcs-text-dim); }

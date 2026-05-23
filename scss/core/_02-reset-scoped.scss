@@ -1,0 +1,16 @@
+/* ------------------------------------------------------------
+   2 · RESET (scoped)
+   ------------------------------------------------------------ */
+.dcs, .dcs * { box-sizing: border-box; }
+.dcs {
+  font-family: var(--dcs-font);
+  font-size: var(--dcs-fs);
+  line-height: var(--dcs-lh);
+  color: var(--dcs-text);
+  background: var(--dcs-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+.dcs button, .dcs input, .dcs select, .dcs textarea {
+  font: inherit; color: inherit;
+}

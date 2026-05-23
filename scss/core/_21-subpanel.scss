@@ -1,0 +1,54 @@
+/* ============================================================
+   21 · SUBPANEL — collapsible, with close affordance
+   ============================================================ */
+@keyframes dcs-blink {
+  50% { opacity: 0; }
+}
+.dcs-subpanel {
+  background: var(--dcs-bg);
+  border-bottom: 1px solid var(--dcs-line);
+  display: flex; flex-direction: column;
+}
+.dcs-subpanel:last-child { border-bottom: none; }
+.dcs-subpanel__header {
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  height: 22px;
+  padding: 0 var(--dcs-s-3);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line-soft);
+  font-size: var(--dcs-fs-xs);
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dcs-text-mute);
+  cursor: default;
+  user-select: none;
+}
+.dcs-subpanel__header:hover { color: var(--dcs-text-dim); background: var(--dcs-surface-2); }
+.dcs-subpanel__chevron {
+  width: 12px; height: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform var(--dcs-t-fast);
+  cursor: pointer;
+  flex: 0 0 auto;
+  color: var(--dcs-text-mute);
+}
+.dcs-subpanel__chevron--open { transform: rotate(90deg); }
+.dcs-subpanel__title { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--dcs-s-2); }
+.dcs-subpanel__close {
+  width: 14px; height: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--dcs-text-mute);
+  border-radius: var(--dcs-r-1);
+  cursor: pointer;
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity var(--dcs-t-fast), color var(--dcs-t-fast), background var(--dcs-t-fast);
+}
+.dcs-subpanel__header:hover .dcs-subpanel__close { opacity: .7; }
+.dcs-subpanel__close:hover { opacity: 1; color: var(--dcs-danger); background: rgba(239,107,107,.15); }
+.dcs-subpanel__body {
+  padding: var(--dcs-s-3) var(--dcs-s-4);
+}
+.dcs-subpanel--collapsed .dcs-subpanel__body { display: none; }
+.dcs-subpanel--collapsed .dcs-subpanel__header { border-bottom: none; }

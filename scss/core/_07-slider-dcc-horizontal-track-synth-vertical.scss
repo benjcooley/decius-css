@@ -1,0 +1,88 @@
+/* ------------------------------------------------------------
+   7 · SLIDER (DCC horizontal track + synth vertical)
+   ------------------------------------------------------------ */
+.dcs-slider {
+  position: relative;
+  display: flex; align-items: center;
+  height: var(--dcs-h);
+  width: 100%;
+  min-width: 80px;
+  user-select: none;
+  cursor: pointer;
+}
+.dcs-slider__track {
+  position: relative;
+  height: 4px; width: 100%;
+  background: var(--dcs-well);
+  border: 1px solid var(--dcs-line);
+  border-radius: 999px;
+}
+.dcs-slider__fill {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: var(--fill, 50%);
+  background: linear-gradient(90deg, var(--dcs-accent-lo), var(--dcs-accent));
+  border-radius: 999px;
+}
+.dcs-slider__thumb {
+  position: absolute;
+  top: 50%; transform: translate(-50%, -50%);
+  left: var(--fill, 50%);
+  width: 12px; height: 12px;
+  background: var(--dcs-surface-3);
+  border: 1px solid var(--dcs-accent);
+  border-radius: 50%;
+  transition: transform var(--dcs-t-fast), background var(--dcs-t-fast);
+}
+.dcs-slider:hover .dcs-slider__thumb { transform: translate(-50%, -50%) scale(1.1); }
+.dcs-slider--active .dcs-slider__thumb,
+.dcs-slider:focus-within .dcs-slider__thumb {
+  border-color: var(--dcs-accent);
+  box-shadow: 0 0 0 3px var(--dcs-accent-haze);
+}
+.dcs-slider__tick {
+  position: absolute; top: -3px; width: 1px; height: 10px;
+  background: var(--dcs-text-mute); opacity: .4;
+}
+
+/* Vertical synth-style fader — flat by default */
+.dcs-fader {
+  position: relative;
+  width: 28px; height: 140px;
+  background: var(--dcs-well);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+  display: flex; flex-direction: column; align-items: center;
+  cursor: ns-resize;
+}
+.dcs-fader__track {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: 8px; bottom: 8px; width: 2px;
+  background: var(--dcs-line-soft);
+}
+.dcs-fader__tick {
+  position: absolute; left: 4px; right: 4px; height: 1px;
+  background: var(--dcs-line-soft);
+}
+.dcs-fader__thumb {
+  position: absolute; left: 50%; transform: translate(-50%, -50%);
+  top: var(--pos, 50%);
+  width: 22px; height: 8px;
+  background: var(--dcs-surface-3);
+  border: 1px solid var(--dcs-accent);
+  border-radius: var(--dcs-r-1);
+}
+.dcs-fader__thumb::after {
+  content: ""; position: absolute; left: 3px; right: 3px; top: 50%;
+  height: 1px; background: var(--dcs-accent);
+  transform: translateY(-.5px);
+}
+
+/* Range slider (with center detent) */
+.dcs-slider--bipolar .dcs-slider__fill {
+  left: 50%; transform: translateX(0);
+  width: calc(var(--fill, 0%));
+  background: linear-gradient(90deg, var(--dcs-accent-lo), var(--dcs-accent));
+}
+.dcs-slider--bipolar .dcs-slider__fill[data-neg] {
+  left: auto; right: 50%;
+}

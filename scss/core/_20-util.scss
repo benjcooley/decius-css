@@ -1,0 +1,29 @@
+/* ------------------------------------------------------------
+   20 · UTIL
+   ------------------------------------------------------------ */
+.dcs-divider { height: 1px; background: var(--dcs-line); margin: var(--dcs-s-4) 0; }
+.dcs-divider--v { width: 1px; height: auto; margin: 0 var(--dcs-s-4); align-self: stretch; }
+.dcs-spacer { flex: 1; }
+.dcs-row { display: flex; align-items: center; gap: var(--dcs-s-3); }
+.dcs-col { display: flex; flex-direction: column; gap: var(--dcs-s-3); }
+/* Mono helper — only for monospaced contexts like code/paths */
+.dcs-mono { font-family: var(--dcs-font-mono); font-variant-numeric: tabular-nums; }
+.dcs-num  { font-family: var(--dcs-font-num);  font-variant-numeric: tabular-nums lining-nums; }
+.dcs-dim  { color: var(--dcs-text-dim); }
+.dcs-mute { color: var(--dcs-text-mute); }
+.dcs-accent-text { color: var(--dcs-accent); }
+.dcs-no-select { user-select: none; }
+
+/* Scrollbars */
+.dcs *::-webkit-scrollbar { width: 10px; height: 10px; }
+.dcs *::-webkit-scrollbar-track { background: var(--dcs-well); }
+.dcs *::-webkit-scrollbar-thumb {
+  background: var(--dcs-surface-3);
+  border: 2px solid var(--dcs-well);
+  border-radius: 999px;
+}
+.dcs *::-webkit-scrollbar-thumb:hover { background: var(--dcs-surface-4); }
+
+/* Focus reset */
+.dcs *:focus { outline: none; }
+.dcs *:focus-visible { outline: 1px solid var(--dcs-accent); outline-offset: 1px; }

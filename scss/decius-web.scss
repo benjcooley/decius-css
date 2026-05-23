@@ -1,0 +1,11 @@
+// ============================================================
+//  decius-web.css — light web/docs theme extensions
+//  Conventional light page chrome (--dw-* tokens) used by the
+//  documentation site and any light, content-style pages built
+//  around embedded .dcs DCC panels.
+//  Compiled by Dart Sass to dist/css/decius-web.css.
+// ============================================================
+
+@use 'web/00-base' as *;
+@use 'web/01-layout' as *;
+@use 'web/02-cards' as *;

@@ -1,0 +1,90 @@
+/* ------------------------------------------------------------
+   5 · BUTTONS  — flat by default
+   ------------------------------------------------------------ */
+.dcs-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--dcs-s-2);
+  height: var(--dcs-h);
+  padding: 0 var(--dcs-s-5);
+  font-size: var(--dcs-fs-sm);
+  font-weight: 500;
+  letter-spacing: .01em;
+  color: var(--dcs-text);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background var(--dcs-t-fast), border-color var(--dcs-t-fast), color var(--dcs-t-fast);
+}
+.dcs-btn:hover { background: var(--dcs-surface-2); border-color: var(--dcs-line-strong); }
+.dcs-btn:active { background: var(--dcs-well); color: var(--dcs-text-dim); }
+.dcs-btn:focus-visible { outline: none; box-shadow: var(--dcs-ring); }
+.dcs-btn[disabled], .dcs-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+
+.dcs-btn--primary {
+  background: var(--dcs-accent);
+  border-color: var(--dcs-accent-lo);
+  color: #0a1220;
+}
+.dcs-btn--primary:hover { background: var(--dcs-accent-hi); }
+.dcs-btn--primary:active { background: var(--dcs-accent-lo); color: rgba(10,18,32,.85); }
+
+.dcs-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--dcs-text-dim);
+}
+.dcs-btn--ghost:hover { background: var(--dcs-surface-2); color: var(--dcs-text); border-color: transparent; }
+.dcs-btn--ghost:active { background: var(--dcs-surface-3); }
+
+.dcs-btn--danger { background: var(--dcs-danger); border-color: #c44; color: #2a0808; }
+.dcs-btn--danger:hover { background: #ff7a7a; }
+
+.dcs-btn--sm { height: var(--dcs-h-sm); padding: 0 var(--dcs-s-3); font-size: var(--dcs-fs-xs); }
+.dcs-btn--lg { height: var(--dcs-h-lg); padding: 0 var(--dcs-s-6); font-size: var(--dcs-fs-md); }
+
+.dcs-btn--icon { padding: 0; width: var(--dcs-h); }
+.dcs-btn--icon.dcs-btn--sm { width: var(--dcs-h-sm); }
+.dcs-btn--icon.dcs-btn--sm .dcs-icon { width: 12px; height: 12px; }
+.dcs-btn--icon.dcs-btn--lg { width: var(--dcs-h-lg); }
+.dcs-btn--icon.dcs-btn--lg .dcs-icon { width: 18px; height: 18px; }
+
+/* Toolbar — slightly tighter icon size + better spacing */
+.dcs-toolbar .dcs-btn--icon { width: var(--dcs-h-sm); padding: 0; }
+.dcs-toolbar .dcs-btn--icon .dcs-icon { width: 13px; height: 13px; }
+.dcs-toolbar .dcs-btn-group .dcs-btn--icon { width: var(--dcs-h-sm); }
+.dcs-toolbar .dcs-btn-group .dcs-btn--icon .dcs-icon { width: 13px; height: 13px; }
+
+.dcs-btn[aria-pressed="true"] {
+  background: var(--dcs-accent-dim);
+  border-color: var(--dcs-accent-lo);
+  color: var(--dcs-accent);
+}
+
+/* Button group (segmented) — visible chassis so the grouping reads */
+.dcs-btn-group {
+  display: inline-flex;
+  border-radius: var(--dcs-r-2);
+  background: var(--dcs-well);
+  padding: 2px;
+  gap: 1px;
+  border: 1px solid var(--dcs-line);
+  align-items: center;
+}
+.dcs-btn-group .dcs-btn {
+  border: none; border-radius: var(--dcs-r-1);
+  background: transparent;
+  height: calc(var(--dcs-h) - 6px);
+  color: var(--dcs-text-dim);
+  padding: 0 var(--dcs-s-3);
+  min-width: calc(var(--dcs-h) - 6px);
+}
+.dcs-btn-group .dcs-btn:hover { background: var(--dcs-surface-2); color: var(--dcs-text); }
+.dcs-btn-group .dcs-btn[aria-pressed="true"] {
+  background: var(--dcs-accent);
+  color: #0a1220;
+  font-weight: 500;
+}
+.dcs-btn-group .dcs-btn[aria-pressed="true"]:hover { background: var(--dcs-accent-hi); }

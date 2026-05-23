@@ -1,0 +1,36 @@
+/* ------------------------------------------------------------
+   13 · MODAL
+   ------------------------------------------------------------ */
+.dcs-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.6);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.dcs-modal {
+  background: var(--dcs-bg);
+  border: 1px solid var(--dcs-line-soft);
+  border-radius: var(--dcs-r-3);
+  box-shadow: var(--dcs-shadow-pop);
+  min-width: 360px;
+  max-width: 80vw;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.dcs-modal__header {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  height: var(--dcs-h-lg);
+  padding: 0 var(--dcs-s-5);
+  background: linear-gradient(180deg, var(--dcs-surface-2), var(--dcs-surface-1));
+  border-bottom: 1px solid var(--dcs-line);
+  font-size: var(--dcs-fs-md);
+  font-weight: 500;
+}
+.dcs-modal__body { padding: var(--dcs-s-6); font-size: var(--dcs-fs-sm); }
+.dcs-modal__footer {
+  display: flex; justify-content: flex-end; gap: var(--dcs-s-3);
+  padding: var(--dcs-s-4) var(--dcs-s-5);
+  background: var(--dcs-surface-1);
+  border-top: 1px solid var(--dcs-line);
+}

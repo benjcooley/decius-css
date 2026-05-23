@@ -1,0 +1,153 @@
+/* ------------------------------------------------------------
+   6 · INPUT — flat by default
+   ------------------------------------------------------------ */
+.dcs-input, .dcs-select, .dcs-textarea {
+  display: inline-flex; align-items: center;
+  height: var(--dcs-h-in);
+  padding: 0 var(--dcs-s-3);
+  font-size: var(--dcs-fs-sm);
+  color: var(--dcs-text);
+  background: var(--dcs-well);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+  outline: none;
+  transition: border-color var(--dcs-t-fast), box-shadow var(--dcs-t-fast);
+  font-family: var(--dcs-font);
+}
+.dcs-textarea { height: auto; padding: var(--dcs-s-3); line-height: var(--dcs-lh); resize: vertical; }
+.dcs-input::placeholder { color: var(--dcs-text-mute); }
+.dcs-input:hover, .dcs-select:hover, .dcs-textarea:hover { border-color: var(--dcs-line-strong); }
+.dcs-input:focus, .dcs-select:focus, .dcs-textarea:focus {
+  border-color: var(--dcs-accent);
+  box-shadow: 0 0 0 2px var(--dcs-accent-haze);
+}
+.dcs-input--num { font-family: var(--dcs-font-num); font-variant-numeric: tabular-nums lining-nums; text-align: right; }
+
+.dcs-field {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  min-height: var(--dcs-h);
+}
+.dcs-field__label {
+  flex: 0 0 96px;
+  font-size: var(--dcs-fs-sm);
+  color: var(--dcs-text-dim);
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dcs-field--row > * { flex: 1; }
+
+/* Property rows: a stack with even vertical rhythm. Every row is
+   exactly --dcs-h tall so a switch, slider, swatch, combo and text
+   field all align baselines and stack with consistent spacing. */
+.dcs-props {
+  display: flex; flex-direction: column;
+  gap: var(--dcs-s-3);
+}
+.dcs-props > .dcs-field {
+  height: var(--dcs-h-in);
+  min-height: var(--dcs-h-in);
+  justify-content: space-between;
+}
+.dcs-props > .dcs-field > .dcs-slider,
+.dcs-props > .dcs-field > .dcs-input,
+.dcs-props > .dcs-field > .dcs-select,
+.dcs-props > .dcs-field > .dcs-combo,
+.dcs-props > .dcs-field > .dcs-swatch,
+.dcs-props > .dcs-field > .dcs-btn-group {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ZBrush-style combo number/slider — flat by default */
+.dcs-combo {
+  position: relative;
+  display: inline-flex; align-items: stretch;
+  height: var(--dcs-h-in);
+  background: var(--dcs-well);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+  overflow: hidden;
+  user-select: none;
+  min-width: 96px;
+  cursor: ew-resize;
+}
+.dcs-combo--sm {
+  height: var(--dcs-h-sm);
+  min-width: 56px;
+}
+.dcs-combo--sm .dcs-combo__label,
+.dcs-combo--sm .dcs-combo__value {
+  font-size: var(--dcs-fs-xs);
+  padding: 0 var(--dcs-s-2);
+}
+.dcs-combo--lg {
+  height: calc(var(--dcs-h-lg) - 2px);
+  min-width: 120px;
+}
+.dcs-combo--lg .dcs-combo__label,
+.dcs-combo--lg .dcs-combo__value {
+  font-size: var(--dcs-fs-md);
+  padding: 0 var(--dcs-s-4);
+}
+.dcs-combo__fill {
+  position: absolute; left: 0; bottom: 0;
+  height: 2px;
+  width: var(--fill, 50%);
+  background: var(--dcs-accent);
+  pointer-events: none;
+  opacity: .7;
+}
+.dcs-combo__label, .dcs-combo__value {
+  position: relative; z-index: 1;
+  display: flex; align-items: center;
+  padding: 0 var(--dcs-s-3);
+  font-size: var(--dcs-fs-sm);
+  font-family: var(--dcs-font-num);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.dcs-combo__label {
+  color: var(--dcs-text-mute);
+  flex: 0 0 auto;
+  min-width: 0;
+  padding-right: var(--dcs-s-2);
+}
+.dcs-combo__value {
+  color: var(--dcs-text);
+  flex: 1; min-width: 0;
+  justify-content: flex-end;
+  padding-right: var(--dcs-s-3);
+}
+/* Combo chevrons — hidden in flat mode (no fly-out animation), always-visible in 3D */
+.dcs-combo__btn {
+  display: none;
+  width: 14px;
+  align-items: center; justify-content: center;
+  color: var(--dcs-text-mute);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+}
+.dcs-combo__btn:hover { color: var(--dcs-text); background: rgba(255,255,255,.04); }
+.dcs-combo:hover {
+  border-color: var(--dcs-line-strong);
+  background: var(--dcs-bg);
+}
+.dcs-combo:focus-within {
+  border-color: var(--dcs-accent);
+  box-shadow: 0 0 0 2px var(--dcs-accent-haze);
+}
+.dcs-combo--editing { cursor: text; }
+.dcs-combo--editing .dcs-combo__fill { opacity: 0; }
+.dcs-combo__edit {
+  position: absolute; inset: 0; z-index: 2;
+  background: var(--dcs-well);
+  border: none; outline: none;
+  padding: 0 var(--dcs-s-3);
+  font-family: var(--dcs-font-mono);
+  font-size: var(--dcs-fs-sm);
+  color: var(--dcs-text);
+  text-align: right;
+}

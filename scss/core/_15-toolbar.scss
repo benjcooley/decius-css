@@ -1,0 +1,24 @@
+/* ------------------------------------------------------------
+   15 · TOOLBAR
+   ------------------------------------------------------------ */
+.dcs-toolbar {
+  display: flex; align-items: center; gap: 2px;
+  height: var(--dcs-h);
+  padding: 0 var(--dcs-s-3);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+}
+.dcs-toolbar__sep {
+  width: 1px; height: 60%;
+  background: var(--dcs-line);
+  margin: 0 var(--dcs-s-3);
+  flex: 0 0 1px;
+}
+.dcs-toolbar--v {
+  flex-direction: column;
+  height: auto;
+  width: var(--dcs-h);
+  padding: var(--dcs-s-2) 0;
+}
+.dcs-toolbar--v .dcs-toolbar__sep { width: 60%; height: 1px; margin: var(--dcs-s-2) 0; }

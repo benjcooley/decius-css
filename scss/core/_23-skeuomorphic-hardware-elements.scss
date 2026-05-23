@@ -1,0 +1,595 @@
+/* ============================================================
+   29 · SKEUOMORPHIC HARDWARE ELEMENTS
+   Patch jacks, backlit buttons, 7-seg LED, LED bargraph meters.
+   For modular/synth-style hardware emulation UIs.
+   ============================================================ */
+
+/* Hardware finish — red enamel */
+.dcs-hw--red {
+  background:
+    radial-gradient(ellipse 100% 80% at 50% -10%,
+      rgba(255,255,255,.35) 0%,
+      rgba(255,255,255,.18) 4%,
+      rgba(255,255,255,.08) 14%,
+      rgba(255,255,255,.04) 38%,
+      rgba(255,255,255,.015) 70%,
+      transparent 100%),
+    linear-gradient(180deg, #d62034 0%, #b41a2c 60%, #931523 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.30),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 6px 22px rgba(0,0,0,.5);
+}
+.dcs-hw--red .dcs-hw__label {
+  color: rgba(255,255,255,.95);
+  text-shadow: 0 -1px 0 rgba(0,0,0,.4);
+}
+
+/* ─────────── Patch jack — TS/TRS audio socket with hex nut ─────────── */
+.dcs-jack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+.dcs-jack__socket {
+  position: relative;
+  width: 32px; height: 32px;
+}
+.dcs-jack__socket svg {
+  width: 100%; height: 100%;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.5));
+}
+.dcs-jack__label {
+  font-family: var(--dcs-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: inherit;
+  text-shadow:
+    0 -1px 0 rgba(0,0,0,.4),
+    0 1px 0 rgba(255,255,255,.06);
+  opacity: .9;
+}
+
+/* ─────────── Backlit plastic button ─────────── */
+.dcs-litbtn {
+  position: relative;
+  width: 36px; height: 36px;
+  margin: 3px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #d8dade 0%, #b5b8bf 50%, #8a8d94 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 -1px 0 rgba(0,0,0,.3),
+    /* small recess: dark ring hugging the button outline */
+    0 0 0 1.5px rgba(0,0,0,.55),
+    0 0 0 2px rgba(255,255,255,.06),
+    /* lift shadow */
+    0 2px 0 rgba(0,0,0,.4),
+    0 3px 6px rgba(0,0,0,.5);
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2a2d33;
+  font-family: var(--dcs-font);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transition: transform 60ms ease, box-shadow 60ms ease;
+}
+.dcs-litbtn:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    inset 0 -1px 0 rgba(0,0,0,.3),
+    0 1px 0 rgba(0,0,0,.4),
+    0 1px 3px rgba(0,0,0,.4);
+}
+.dcs-litbtn--lit {
+  background:
+    radial-gradient(circle at 50% 50%,
+      var(--lit-hi, #ff8585) 0%,
+      var(--lit-lo, #d62034) 70%);
+  color: rgba(0,0,0,.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.4),
+    inset 0 -1px 0 rgba(0,0,0,.2),
+    0 0 0 1.5px rgba(0,0,0,.55),
+    0 0 0 2px rgba(255,255,255,.06),
+    0 0 12px var(--lit-glow, rgba(255,80,80,.6)),
+    0 2px 0 rgba(0,0,0,.4),
+    0 3px 6px rgba(0,0,0,.5);
+}
+.dcs-litbtn--cyan { --lit-hi: #b8f5ff; --lit-lo: #4dd0e1; --lit-glow: rgba(77,208,225,.6); }
+.dcs-litbtn--amber { --lit-hi: #ffe28a; --lit-lo: #f2b14a; --lit-glow: rgba(242,177,74,.5); }
+.dcs-litbtn--green { --lit-hi: #b8ff8a; --lit-lo: #4ed18a; --lit-glow: rgba(78,209,138,.5); }
+.dcs-litbtn--sm { width: 26px; height: 26px; font-size: 9px; border-radius: 3px; }
+
+/* ─────────── 7-segment LED display ─────────── */
+.dcs-lcd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  background: linear-gradient(180deg, #1a0405 0%, #2a0608 100%);
+  border-radius: 3px;
+  border: 1px solid #0a0203;
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,.8),
+    inset 0 -1px 0 rgba(255,255,255,.05);
+  --lcd-on: #ff2030;
+  --lcd-off: rgba(255,32,48,.10);
+  --lcd-glow: 0 0 4px rgba(255,32,48,.85), 0 0 8px rgba(255,32,48,.4);
+  color: var(--lcd-on);
+}
+.dcs-lcd--amber { background: linear-gradient(180deg, #1f1605 0%, #2a1f08 100%); border-color: #0a0703;
+  --lcd-on: #ffae3a; --lcd-off: rgba(255,174,58,.10); --lcd-glow: 0 0 4px rgba(255,174,58,.85), 0 0 8px rgba(255,174,58,.4); }
+.dcs-lcd--green { background: linear-gradient(180deg, #051f0d 0%, #082a13 100%); border-color: #030a05;
+  --lcd-on: #3dff7a; --lcd-off: rgba(61,255,122,.10); --lcd-glow: 0 0 4px rgba(61,255,122,.85), 0 0 8px rgba(61,255,122,.4); }
+.dcs-lcd--blue  { background: linear-gradient(180deg, #050d1f 0%, #08132a 100%); border-color: #03050a;
+  --lcd-on: #6fb8ff; --lcd-off: rgba(111,184,255,.10); --lcd-glow: 0 0 4px rgba(111,184,255,.85), 0 0 8px rgba(111,184,255,.4); }
+
+.dcs-lcd__digit {
+  position: relative;
+  width: 16px;
+  height: 26px;
+}
+.dcs-lcd--sm .dcs-lcd__digit { width: 10px; height: 17px; }
+.dcs-lcd--md .dcs-lcd__digit { width: 16px; height: 26px; }
+.dcs-lcd--lg .dcs-lcd__digit { width: 24px; height: 40px; }
+.dcs-lcd__digit svg {
+  width: 100%; height: 100%;
+  display: block;
+}
+.dcs-lcd__seg-on  { fill: var(--lcd-on);  filter: drop-shadow(var(--lcd-glow)); }
+.dcs-lcd__seg-off { fill: var(--lcd-off); }
+.dcs-lcd__dot {
+  display: inline-block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--lcd-off);
+  align-self: flex-end;
+  margin: 0 1px 4px;
+}
+.dcs-lcd__dot--on { background: var(--lcd-on); box-shadow: var(--lcd-glow); }
+
+/* ─────────── LED bargraph meter ─────────── */
+.dcs-meter {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  background: linear-gradient(180deg, #0a0c11 0%, #14161c 100%);
+  border-radius: 3px;
+  border: 1px solid #050608;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.8);
+  align-items: stretch;
+}
+.dcs-meter--v {
+  flex-direction: column-reverse;
+}
+.dcs-meter__seg {
+  flex: 1;
+  background: rgba(255,255,255,.04);
+  border-radius: 1px;
+  min-width: 3px;
+  min-height: 4px;
+}
+.dcs-meter__seg--ok   { background: #1b6e38; }
+.dcs-meter__seg--warn { background: #6e5a18; }
+.dcs-meter__seg--peak { background: #6e1818; }
+.dcs-meter__seg--lit-ok   { background: #4ed18a; box-shadow: 0 0 4px rgba(78,209,138,.7), inset 0 0 1px rgba(255,255,255,.3); }
+.dcs-meter__seg--lit-warn { background: #f2b14a; box-shadow: 0 0 4px rgba(242,177,74,.7), inset 0 0 1px rgba(255,255,255,.3); }
+.dcs-meter__seg--lit-peak { background: #ef4040; box-shadow: 0 0 6px rgba(239,64,64,.8), inset 0 0 1px rgba(255,255,255,.3); }
+
+/* ─────────── Step buttons — small chunky plastic ─────────── */
+.dcs-step {
+  display: inline-flex;
+  flex-direction: column;
+  width: 22px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,.6);
+  box-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+.dcs-step__btn {
+  flex: 1;
+  height: 14px;
+  background: linear-gradient(180deg, #d8dade 0%, #a5a8af 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #2a2d33;
+  border-bottom: 1px solid rgba(0,0,0,.4);
+}
+.dcs-step__btn:last-child { border-bottom: none; }
+.dcs-step__btn:hover { background: linear-gradient(180deg, #e8eaee 0%, #b5b8bf 100%); }
+.dcs-step__btn:active { background: linear-gradient(180deg, #95989f 0%, #c8cbd0 100%); }
+.dcs-step__btn svg { width: 8px; height: 8px; }
+
+/* ─────────── Hardware chassis ───────────
+   Pair with data-dcs-style="3d" for the full "real gear" look.
+   ───────────────────────────────────────── */
+.dcs-hw {
+  position: relative;
+  border: 1px solid #0a0c11;
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse 110% 90% at 50% -10%,
+      rgba(255,255,255,.28) 0%,
+      rgba(255,255,255,.14) 4%,
+      rgba(255,255,255,.06) 14%,
+      rgba(255,255,255,.03) 40%,
+      rgba(255,255,255,.01) 70%,
+      transparent 100%),
+    linear-gradient(180deg, #2e3340 0%, #272b36 60%, #1f222c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 4px 14px rgba(0,0,0,.45);
+  color-scheme: dark;
+}
+.dcs-hw--brushed {
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.02) 0 1px,
+      rgba(0,0,0,.015) 1px 2px),
+    radial-gradient(ellipse 110% 90% at 50% -10%,
+      rgba(255,255,255,.30) 0%,
+      rgba(255,255,255,.15) 4%,
+      rgba(255,255,255,.07) 14%,
+      rgba(255,255,255,.03) 40%,
+      rgba(255,255,255,.01) 70%,
+      transparent 100%),
+    linear-gradient(180deg, #333845 0%, #2c3140 60%, #242834 100%);
+}
+.dcs-hw--lacquer {
+  background:
+    radial-gradient(ellipse 100% 80% at 50% -10%,
+      rgba(255,255,255,.42) 0%,
+      rgba(255,255,255,.22) 4%,
+      rgba(255,255,255,.09) 14%,
+      rgba(255,255,255,.04) 38%,
+      rgba(255,255,255,.015) 70%,
+      transparent 100%),
+    linear-gradient(180deg, #262b38 0%, #1e222c 60%, #161922 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.6),
+    0 6px 22px rgba(0,0,0,.5);
+}
+.dcs-hw--cream {
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(255,255,255,.5), transparent 60%),
+    linear-gradient(180deg, #e8e2cf, #c8c0a4 70%, #a89e7c);
+  color: #2a2418;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -1px 0 rgba(0,0,0,.25),
+    0 4px 12px rgba(0,0,0,.4);
+}
+.dcs-hw--cream .dcs-knob__cap { background: radial-gradient(circle at 30% 25%, #d8d1bd, #8c8266); }
+.dcs-hw--cream .dcs-knob__label { color: #4a4030; }
+
+/* Screw heads in the corners */
+.dcs-hw__screw {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #b5b8bf, #6a6d75 55%, #2a2d34 100%);
+  box-shadow:
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.15),
+    0 1px 2px rgba(0,0,0,.6);
+  pointer-events: none;
+}
+.dcs-hw__screw::after {
+  content: "";
+  position: absolute;
+  inset: 35%;
+  background: rgba(0,0,0,.6);
+  transform: rotate(var(--screw-rot, 28deg));
+  border-radius: 1px;
+}
+.dcs-hw__screw--tl { top: 6px; left: 6px; }
+.dcs-hw__screw--tr { top: 6px; right: 6px; --screw-rot: -42deg; }
+.dcs-hw__screw--bl { bottom: 6px; left: 6px; --screw-rot: 12deg; }
+.dcs-hw__screw--br { bottom: 6px; right: 6px; --screw-rot: -8deg; }
+
+/* Hardware label — etched/engraved appearance */
+.dcs-hw__label {
+  font-family: var(--dcs-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  text-shadow:
+    0 -1px 0 rgba(0,0,0,.7),
+    0 1px 0 rgba(255,255,255,.06);
+}
+.dcs-hw--cream .dcs-hw__label {
+  color: rgba(60,50,30,.7);
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+
+/* ─────────── Skeuomorphic card ───────────
+   ───────────────────────────────────────── */
+.dcs-card {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-3);
+  overflow: hidden;
+  transition: background var(--dcs-t-fast), border-color var(--dcs-t-fast);
+}
+.dcs-card--clickable { cursor: pointer; }
+.dcs-card--clickable:hover { background: var(--dcs-surface-2); border-color: var(--dcs-line-strong); }
+.dcs-card[aria-selected="true"] {
+  border-color: var(--dcs-accent);
+  background: var(--dcs-accent-dim);
+}
+.dcs-card__media {
+  flex: 0 0 auto;
+  position: relative;
+  background: var(--dcs-well);
+}
+.dcs-card__media img,
+.dcs-card__media .dcs-card__media-bg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dcs-card__body {
+  padding: var(--dcs-s-4);
+  display: flex; flex-direction: column;
+  gap: var(--dcs-s-1);
+  min-width: 0;
+}
+.dcs-card__title {
+  font-size: var(--dcs-fs-md);
+  font-weight: 500;
+  color: var(--dcs-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dcs-card__meta {
+  font-family: var(--dcs-font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--dcs-fs-xs);
+  color: var(--dcs-text-mute);
+  letter-spacing: .03em;
+}
+.dcs-card__desc {
+  font-size: var(--dcs-fs-sm);
+  color: var(--dcs-text-dim);
+  line-height: 1.4;
+}
+.dcs-card__footer {
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  padding: var(--dcs-s-3) var(--dcs-s-4);
+  background: var(--dcs-bg);
+  border-top: 1px solid var(--dcs-line);
+  font-size: var(--dcs-fs-xs);
+  color: var(--dcs-text-mute);
+}
+.dcs-card__close {
+  position: absolute;
+  top: var(--dcs-s-2); right: var(--dcs-s-2);
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--dcs-text-mute);
+  background: rgba(20, 22, 28, .65);
+  border-radius: var(--dcs-r-1);
+  cursor: pointer;
+  opacity: 0;
+  z-index: 2;
+  transition: opacity var(--dcs-t-fast), color var(--dcs-t-fast), background var(--dcs-t-fast);
+  backdrop-filter: blur(6px);
+}
+.dcs-card:hover .dcs-card__close { opacity: .8; }
+.dcs-card__close:hover { opacity: 1; color: var(--dcs-danger); background: rgba(239,107,107,.25); }
+.dcs-card__close svg { width: 12px; height: 12px; }
+.dcs-card__badges {
+  position: absolute;
+  top: var(--dcs-s-2); left: var(--dcs-s-2);
+  display: flex; gap: var(--dcs-s-1);
+  z-index: 1;
+}
+.dcs-card__tools {
+  position: absolute;
+  bottom: var(--dcs-s-2); right: var(--dcs-s-2);
+  display: flex; gap: 2px;
+  opacity: 0;
+  z-index: 2;
+  transition: opacity var(--dcs-t-fast);
+}
+.dcs-card:hover .dcs-card__tools { opacity: 1; }
+.dcs-card--horizontal {
+  flex-direction: row;
+  align-items: stretch;
+}
+.dcs-card--horizontal .dcs-card__media {
+  width: 80px; flex: 0 0 80px;
+}
+.dcs-card--horizontal .dcs-card__body { flex: 1; min-width: 0; }
+
+/* Card grid / list helpers */
+.dcs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--dcs-s-4);
+}
+.dcs-card-list {
+  display: flex; flex-direction: column;
+  gap: var(--dcs-s-2);
+}
+
+
+/* ============================================================
+   23a · DOCK PANE — tabbed dockable view (Unity/Unreal style)
+   ============================================================ */
+.dcs-dockpane {
+  display: flex; flex-direction: column;
+  min-height: 0; min-width: 0;
+  background: var(--dcs-bg);
+  flex: 1;
+}
+.dcs-dockpane__tabs {
+  display: flex; align-items: stretch;
+  height: var(--dcs-h);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  flex-shrink: 0;
+}
+.dcs-dockpane__tab {
+  display: inline-flex; align-items: center; gap: var(--dcs-s-2);
+  padding: 0 var(--dcs-s-4);
+  border: none;
+  border-right: 1px solid var(--dcs-line);
+  background: transparent;
+  color: var(--dcs-text-mute);
+  font-size: var(--dcs-fs-sm);
+  font-family: var(--dcs-font);
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  transition: background var(--dcs-t-fast), color var(--dcs-t-fast);
+}
+.dcs-dockpane__tab:hover { color: var(--dcs-text-dim); background: var(--dcs-surface-2); }
+.dcs-dockpane__tab[aria-selected="true"] {
+  background: var(--dcs-bg);
+  color: var(--dcs-text);
+  font-weight: 500;
+}
+.dcs-dockpane__tab[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 1px; background: var(--dcs-bg);
+}
+.dcs-dockpane__tab[aria-selected="true"]::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0;
+  height: 1px; background: var(--dcs-accent);
+}
+.dcs-dockpane__tab-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  border-radius: var(--dcs-r-1);
+  color: var(--dcs-text-mute);
+  opacity: 0;
+  margin-left: var(--dcs-s-1);
+  transition: opacity var(--dcs-t-fast), background var(--dcs-t-fast), color var(--dcs-t-fast);
+  cursor: pointer;
+}
+.dcs-dockpane__tab:hover .dcs-dockpane__tab-close,
+.dcs-dockpane__tab[aria-selected="true"] .dcs-dockpane__tab-close { opacity: .65; }
+.dcs-dockpane__tab-close:hover {
+  opacity: 1; color: var(--dcs-danger);
+  background: rgba(239,107,107,.18);
+}
+.dcs-dockpane__tab-close svg { width: 10px; height: 10px; }
+.dcs-dockpane__tools {
+  display: flex; align-items: center;
+  margin-left: auto;
+  padding: 0 var(--dcs-s-2);
+  gap: 1px;
+}
+.dcs-dockpane__body {
+  flex: 1; min-height: 0;
+  overflow: auto;
+}
+
+/* ============================================================
+   23b · MENU BAR — top-of-window menu strip
+   ============================================================ */
+.dcs-menubar {
+  display: flex; align-items: stretch;
+  height: var(--dcs-h-sm);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  padding: 0 var(--dcs-s-3);
+  font-size: var(--dcs-fs-sm);
+  user-select: none;
+  flex-shrink: 0;
+}
+.dcs-menubar__brand {
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  padding-right: var(--dcs-s-4);
+  margin-right: var(--dcs-s-3);
+  border-right: 1px solid var(--dcs-line);
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--dcs-text);
+}
+.dcs-menubar__brand svg { color: var(--dcs-accent); }
+.dcs-menubar__item {
+  display: inline-flex; align-items: center;
+  padding: 0 var(--dcs-s-4);
+  background: none;
+  border: none;
+  color: var(--dcs-text-dim);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--dcs-t-fast), color var(--dcs-t-fast);
+}
+.dcs-menubar__item:hover { background: var(--dcs-surface-2); color: var(--dcs-text); }
+.dcs-menubar__spacer { flex: 1; }
+.dcs-menubar__meta {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  color: var(--dcs-text-mute);
+  font-family: var(--dcs-font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--dcs-fs-xs);
+  padding: 0 var(--dcs-s-3);
+}
+
+/* ============================================================
+   23c · VIEWPORT OVERLAY — floating toolbar on a 3D viewport
+   ============================================================ */
+.dcs-viewport {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 38%, #3a4054, #161922 80%);
+  min-height: 0;
+  height: 100%;
+}
+.dcs-viewport__overlay {
+  position: absolute;
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  padding: var(--dcs-s-3);
+  z-index: 2;
+}
+.dcs-viewport__overlay--tl { top: 0; left: 0; }
+.dcs-viewport__overlay--tr { top: 0; right: 0; }
+.dcs-viewport__overlay--bl { bottom: 0; left: 0; }
+.dcs-viewport__overlay--br { bottom: 0; right: 0; }
+.dcs-viewport__floater {
+  background: rgba(20, 22, 28, .82);
+  border: 1px solid rgba(255, 255, 255, .06);
+  border-radius: var(--dcs-r-2);
+  padding: 2px;
+  display: flex; align-items: center; gap: 1px;
+  backdrop-filter: blur(8px);
+}
+.dcs-viewport__floater--v { flex-direction: column; }
+.dcs-viewport__floater .dcs-btn {
+  background: transparent;
+  border-color: transparent;
+}
+.dcs-viewport__floater .dcs-btn:hover { background: rgba(255,255,255,.08); border-color: transparent; }
+.dcs-viewport__floater .dcs-btn[aria-pressed="true"] {
+  background: var(--dcs-accent);
+  color: #0a1220;
+  border-color: transparent;
+}

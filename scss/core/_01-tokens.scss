@@ -1,0 +1,182 @@
+/* ------------------------------------------------------------
+   1 · TOKENS
+   ------------------------------------------------------------ */
+:root {
+  /* Base canvas — "cooler mid" not over-dark */
+  --dcs-bg-app:      #1f222a;
+  --dcs-bg:          #2a2e38;   /* default panel surface */
+  --dcs-surface-1:   #323744;   /* raised */
+  --dcs-surface-2:   #3c424f;   /* raised x2 / hover */
+  --dcs-surface-3:   #474e5d;   /* hot / pressed */
+  --dcs-surface-4:   #555d6e;
+  --dcs-well:        #20232b;   /* sunken inputs */
+  --dcs-rail:        #181a21;   /* deepest separator */
+
+  /* Borders */
+  --dcs-line:        #14161c;   /* hard, dark separator */
+  --dcs-line-soft:   #3a3f4c;
+  --dcs-line-strong: #5d6577;
+
+  /* Text */
+  --dcs-text:        #e7e9ee;
+  --dcs-text-dim:    #aab0bd;
+  --dcs-text-mute:   #767c8a;
+  --dcs-text-inv:    #14161c;
+  --dcs-text-link:   var(--dcs-accent);
+
+  /* Accent — DCC blue */
+  --dcs-accent:        #4d9fff;
+  --dcs-accent-hi:     #6fb3ff;
+  --dcs-accent-lo:     #2f86ee;
+  --dcs-accent-dim:    rgba(77, 159, 255, .18);
+  --dcs-accent-haze:   rgba(77, 159, 255, .35);
+
+  /* Semantic */
+  --dcs-ok:      #4ed18a;
+  --dcs-warn:    #f2b14a;
+  --dcs-danger:  #ef6b6b;
+  --dcs-info:    var(--dcs-accent);
+  --dcs-purple:  #b48cff;
+  --dcs-pink:    #ff7ab8;
+  --dcs-teal:    #4ad5d5;
+
+  /* Spacing scale — direct values per density */
+  --dcs-u:    4px;
+  --dcs-s-1:  2px;
+  --dcs-s-2:  4px;
+  --dcs-s-3:  6px;
+  --dcs-s-4:  8px;
+  --dcs-s-5:  12px;
+  --dcs-s-6:  16px;
+  --dcs-s-7:  20px;
+  --dcs-s-8:  28px;
+
+  /* Control sizes */
+  --dcs-h-sm:  18px;
+  --dcs-h:     24px;
+  --dcs-h-lg:  30px;
+  --dcs-h-xl:  40px;
+  --dcs-h-in:  22px;   /* text/number fields — slightly thinner */
+
+  /* Radius */
+  --dcs-r-1: 2px;
+  --dcs-r-2: 3px;
+  --dcs-r-3: 5px;
+  --dcs-r-4: 8px;
+
+  /* Type */
+  --dcs-font: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --dcs-font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --dcs-font-display: 'IBM Plex Sans', sans-serif;
+  --dcs-font-num: 'IBM Plex Sans', ui-sans-serif, sans-serif;  /* sans tabular by default — mono is for code */
+
+  --dcs-fs-xs: 10px;
+  --dcs-fs-sm: 11px;
+  --dcs-fs:    12px;
+  --dcs-fs-md: 13px;
+  --dcs-fs-lg: 15px;
+  --dcs-fs-xl: 18px;
+  --dcs-fs-2xl: 24px;
+  --dcs-fs-3xl: 32px;
+
+  --dcs-lh: 1.45;
+  --dcs-lh-tight: 1.2;
+
+  /* Shadows / FX */
+  --dcs-shadow-1: 0 1px 0 rgba(0,0,0,.4);
+  --dcs-shadow-2: 0 2px 6px rgba(0,0,0,.35);
+  --dcs-shadow-3: 0 8px 24px rgba(0,0,0,.45);
+  --dcs-shadow-pop: 0 12px 36px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4);
+  --dcs-bevel-up:   inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.25);
+  --dcs-bevel-down: inset 0 1px 2px rgba(0,0,0,.5),       inset 0 -1px 0 rgba(255,255,255,.04);
+  --dcs-ring:       0 0 0 1px var(--dcs-accent), 0 0 0 3px var(--dcs-accent-haze);
+
+  /* Transitions */
+  --dcs-t-fast: 80ms ease-out;
+  --dcs-t:      140ms ease-out;
+  --dcs-t-slow: 240ms cubic-bezier(.2,.7,.2,1);
+
+  color-scheme: dark;
+}
+
+/* Density modes */
+/* Density modes — override the spacing + size tokens directly so the
+   attribute applied to any container reshapes everything inside. The
+   "comfortable" rule resets back to defaults so a demo wrapper can
+   opt out of a global Tweaks density. */
+[data-dcs-density="comfortable"] {
+  --dcs-u:    4px;
+  --dcs-s-1:  2px;
+  --dcs-s-2:  4px;
+  --dcs-s-3:  6px;
+  --dcs-s-4:  8px;
+  --dcs-s-5:  12px;
+  --dcs-s-6:  16px;
+  --dcs-s-7:  20px;
+  --dcs-s-8:  28px;
+  --dcs-h-sm: 18px;
+  --dcs-h:    24px;
+  --dcs-h-lg: 30px;
+  --dcs-h-xl: 40px;
+  --dcs-h-in: 22px;
+}
+[data-dcs-density="compact"] {
+  --dcs-u:    3px;
+  --dcs-s-1:  1px;
+  --dcs-s-2:  2px;
+  --dcs-s-3:  4px;
+  --dcs-s-4:  6px;
+  --dcs-s-5:  9px;
+  --dcs-s-6:  12px;
+  --dcs-s-7:  16px;
+  --dcs-s-8:  22px;
+  --dcs-h-sm: 16px;
+  --dcs-h:    20px;
+  --dcs-h-lg: 26px;
+  --dcs-h-xl: 34px;
+  --dcs-h-in: 20px;
+}
+[data-dcs-density="spacious"] {
+  --dcs-u:    5px;
+  --dcs-s-1:  4px;
+  --dcs-s-2:  8px;
+  --dcs-s-3:  12px;
+  --dcs-s-4:  16px;
+  --dcs-s-5:  20px;
+  --dcs-s-6:  26px;
+  --dcs-s-7:  32px;
+  --dcs-s-8:  44px;
+  --dcs-h-sm: 22px;
+  --dcs-h:    28px;
+  --dcs-h-lg: 36px;
+  --dcs-h-xl: 46px;
+  --dcs-h-in: 24px;
+}
+
+/* Radius modes */
+[data-dcs-radius="sharp"] { --dcs-r-1: 0; --dcs-r-2: 0; --dcs-r-3: 0; --dcs-r-4: 0; }
+[data-dcs-radius="round"] { --dcs-r-1: 4px; --dcs-r-2: 6px; --dcs-r-3: 10px; --dcs-r-4: 14px; }
+
+/* Accent recipes (set by Tweaks panel) */
+[data-dcs-accent="cyan"]    { --dcs-accent: #00b8d4; --dcs-accent-hi:#22d4ee; --dcs-accent-lo:#0098b0; --dcs-accent-dim: rgba(0,184,212,.18); --dcs-accent-haze: rgba(0,184,212,.35); }
+[data-dcs-accent="orange"]  { --dcs-accent: #ff8a3a; --dcs-accent-hi:#ffa566; --dcs-accent-lo:#e07024; --dcs-accent-dim: rgba(255,138,58,.18); --dcs-accent-haze: rgba(255,138,58,.35); }
+[data-dcs-accent="violet"]  { --dcs-accent: #8b6dff; --dcs-accent-hi:#a48cff; --dcs-accent-lo:#6f4eea; --dcs-accent-dim: rgba(139,109,255,.18); --dcs-accent-haze: rgba(139,109,255,.35); }
+[data-dcs-accent="green"]   { --dcs-accent: #3dd68a; --dcs-accent-hi:#5be8a0; --dcs-accent-lo:#2bb872; --dcs-accent-dim: rgba(61,214,138,.18); --dcs-accent-haze: rgba(61,214,138,.35); }
+
+/* Darkness modes */
+[data-dcs-dark="darker"] {
+  --dcs-bg-app: #14161c;
+  --dcs-bg: #1d2028;
+  --dcs-surface-1: #252934;
+  --dcs-surface-2: #2e323e;
+  --dcs-surface-3: #383d4a;
+  --dcs-well: #14161c;
+}
+[data-dcs-dark="lighter"] {
+  --dcs-bg-app: #2c303a;
+  --dcs-bg: #363b47;
+  --dcs-surface-1: #404654;
+  --dcs-surface-2: #4a5161;
+  --dcs-surface-3: #555d6e;
+  --dcs-well: #2a2e38;
+}

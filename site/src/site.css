@@ -1,0 +1,141 @@
+/* Docs-only page styles: palettes, type spec rows, the icon catalog grid,
+   embedded-demo containers. The framework itself lives in dist/css. */
+
+/* ───────────── Palette grid ───────────── */
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 20px 0 12px;
+}
+.palette-swatch {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--dw-line);
+  border-radius: var(--dw-radius);
+  background: var(--dw-bg);
+  transition: border-color 120ms;
+}
+.palette-swatch:hover { border-color: #c8cdd6; }
+.palette-swatch__chip {
+  width: 44px; height: 44px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+  flex: 0 0 auto;
+}
+.palette-swatch--light .palette-swatch__chip {
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.2);
+}
+.palette-swatch__meta {
+  min-width: 0;
+  display: flex; flex-direction: column;
+}
+.palette-swatch__hex {
+  font-family: var(--dw-font-mono);
+  font-size: 13px;
+  color: var(--dw-text);
+  letter-spacing: .02em;
+}
+.palette-swatch__name {
+  font-family: var(--dw-font-mono);
+  font-size: 11px;
+  color: var(--dw-accent-lo);
+}
+.palette-swatch__note {
+  font-size: 12px;
+  color: var(--dw-text-mute);
+  margin-top: 2px;
+}
+
+/* ───────────── Type spec ───────────── */
+.type-spec { display: flex; flex-direction: column; gap: 14px; }
+.type-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 24px;
+  align-items: baseline;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--dcs-line-soft);
+}
+.type-row:last-child { border-bottom: none; }
+.type-row__label {
+  color: var(--dcs-text-mute);
+  font-size: 11px;
+  letter-spacing: .04em;
+}
+
+/* ───────────── Icon catalog ───────────── */
+.icon-catalog {
+  display: flex; flex-direction: column;
+  gap: 24px;
+  margin-top: 16px;
+}
+.icon-catalog__group {
+  background: var(--dw-bg);
+  border: 1px solid var(--dw-line);
+  border-radius: var(--dw-radius);
+  overflow: hidden;
+}
+.icon-catalog__group-name {
+  padding: 10px 14px;
+  background: var(--dw-bg-soft);
+  border-bottom: 1px solid var(--dw-line);
+  font-family: var(--dw-font-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--dw-text-mute);
+}
+.icon-catalog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 1px;
+  background: var(--dw-line);
+  border-top: 1px solid var(--dw-line);
+  margin-top: -1px;
+}
+.icon-cell {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  padding: 16px 8px 10px;
+  background: var(--dw-bg);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.icon-cell:hover { background: var(--dw-accent-dim); }
+.icon-cell__icon {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--dw-text);
+}
+.icon-cell__name {
+  font-family: var(--dw-font-mono);
+  font-size: 10px;
+  color: var(--dw-text-mute);
+  text-align: center;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.icon-cell:hover .icon-cell__name { color: var(--dw-accent-lo); }
+
+/* ───────────── Embedded DCC panels — slight glow so they pop from page ───────────── */
+.dw-demo .dcs {
+  color-scheme: dark;
+  background: transparent;
+}
+
+/* Loading state placeholder */
+#root:empty::before {
+  content: 'decius.css';
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--dw-font, 'IBM Plex Sans', sans-serif);
+  font-size: 20px; font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--dw-text-mute);
+}

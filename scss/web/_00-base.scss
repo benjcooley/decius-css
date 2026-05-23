@@ -1,0 +1,97 @@
+/* ============================================================
+   decius-web.css — web extensions for the decius docs site
+   Light page chrome, conventional typography, with seams that
+   make the DCC panels feel embedded.
+   ============================================================ */
+
+:root {
+  --dw-bg:        #ffffff;
+  --dw-bg-soft:   #f7f8fa;
+  --dw-bg-band:   #f1f3f7;
+  --dw-line:      #e3e6ec;
+  --dw-line-soft: #eef0f4;
+  --dw-text:      #1a1f2c;
+  --dw-text-dim:  #525a6b;
+  --dw-text-mute: #8c93a3;
+  --dw-accent:    #4d9fff;
+  --dw-accent-lo: #2f86ee;
+  --dw-accent-dim: rgba(77,159,255,.10);
+  --dw-code-bg:   #f4f6f9;
+
+  --dw-font: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --dw-font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --dw-font-display: 'IBM Plex Sans', sans-serif;
+
+  --dw-fs: 15px;
+  --dw-lh: 1.6;
+
+  --dw-radius: 8px;
+
+  --dw-shadow-card: 0 1px 2px rgba(20,30,50,.04), 0 4px 16px rgba(20,30,50,.06);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--dw-bg);
+  color: var(--dw-text);
+  font-family: var(--dw-font);
+  font-size: var(--dw-fs);
+  line-height: var(--dw-lh);
+  -webkit-font-smoothing: antialiased;
+}
+body { overflow-x: hidden; }
+
+a {
+  color: var(--dw-accent-lo);
+  text-decoration: none;
+  text-underline-offset: 3px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms;
+}
+a:hover { border-bottom-color: var(--dw-accent); }
+
+h1, h2, h3, h4 {
+  font-family: var(--dw-font-display);
+  letter-spacing: -.012em;
+  margin: 0;
+  line-height: 1.15;
+  color: var(--dw-text);
+}
+h1 { font-size: clamp(36px, 5vw, 56px); font-weight: 600; letter-spacing: -.02em; }
+h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 600; letter-spacing: -.015em; }
+h3 { font-size: 19px; font-weight: 600; }
+h4 { font-size: 15px; font-weight: 600; }
+
+p { margin: 0 0 1em; color: var(--dw-text-dim); }
+p:last-child { margin-bottom: 0; }
+
+code, pre, kbd { font-family: var(--dw-font-mono); }
+:not(pre) > code {
+  font-size: .88em;
+  padding: 1px 6px;
+  background: var(--dw-code-bg);
+  border-radius: 4px;
+  color: #2840a4;
+  border: 1px solid var(--dw-line-soft);
+}
+pre {
+  background: #0f1218;
+  color: #d8dade;
+  border-radius: var(--dw-radius);
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  border: 1px solid #1c2230;
+}
+pre .tk-c { color: #6b7280; }            /* comment */
+pre .tk-k { color: #ff7ab8; }            /* keyword/property */
+pre .tk-s { color: #4ed18a; }            /* string */
+pre .tk-n { color: #f2b14a; }            /* number */
+pre .tk-v { color: #4d9fff; }            /* variable */
+pre .tk-t { color: #8b6dff; }            /* type/selector */
+pre .tk-p { color: #aab0bd; }            /* punctuation */
+
+hr { border: none; height: 1px; background: var(--dw-line); margin: 48px 0; }

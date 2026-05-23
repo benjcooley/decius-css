@@ -1,0 +1,6 @@
+# Targets for autoprefixer / cssnano. decius runs in affineui and in modern
+# evergreen browsers; no legacy IE support.
+defaults
+last 2 versions
+not dead
+> 0.5%

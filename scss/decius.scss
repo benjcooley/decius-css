@@ -1,0 +1,38 @@
+// ============================================================
+//  decius.css — DCC interface framework
+//  Main entry. Compiled by Dart Sass to dist/css/decius.css.
+//
+//  The framework is theme-able at RUNTIME through the --dcs-*
+//  CSS custom properties defined in core/_01-tokens.scss and the
+//  data-dcs-* attribute recipes alongside them — Sass here is only
+//  for source organisation, not for build-time theming.
+//
+//  Partials are @use'd in cascade order; `as *` is used because the
+//  partials carry no Sass members (only CSS rules + custom props).
+// ============================================================
+
+@use 'core/00-banner' as *;
+@use 'core/01-tokens' as *;
+@use 'core/02-reset-scoped' as *;
+@use 'core/03-panels' as *;
+@use 'core/04-dock-split' as *;
+@use 'core/05-buttons' as *;
+@use 'core/06-input' as *;
+@use 'core/07-slider-dcc-horizontal-track-synth-vertical' as *;
+@use 'core/08-knob-synth' as *;
+@use 'core/09-checkbox-radio-switch' as *;
+@use 'core/10-badge-tag-chip' as *;
+@use 'core/11-kbd' as *;
+@use 'core/12-alert' as *;
+@use 'core/13-modal' as *;
+@use 'core/14-tree-table-list' as *;
+@use 'core/15-toolbar' as *;
+@use 'core/16-tooltip-css-hover' as *;
+@use 'core/17-color-swatch-picker' as *;
+@use 'core/18-curve-graph-editor-backgrounds' as *;
+@use 'core/19-icons' as *;
+@use 'core/20-util' as *;
+@use 'core/21-subpanel' as *;
+@use 'core/22-foldout' as *;
+@use 'core/23-skeuomorphic-hardware-elements' as *;
+@use 'core/24-data-dcs-style-3d' as *;

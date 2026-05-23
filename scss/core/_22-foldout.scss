@@ -1,0 +1,50 @@
+/* ============================================================
+   23 · FOLDOUT — Blender-style soft section
+   For property inspectors: rounded, slightly lighter card with
+   breathing room. Stacked inside a scrollable panel body.
+   ============================================================ */
+.dcs-foldouts {
+  display: flex; flex-direction: column;
+  gap: var(--dcs-s-3);
+  padding: var(--dcs-s-3);
+}
+.dcs-foldout {
+  background: var(--dcs-surface-1);
+  border-radius: var(--dcs-r-3);
+  overflow: hidden;
+}
+.dcs-foldout__header {
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  padding: var(--dcs-s-2) var(--dcs-s-4) var(--dcs-s-2) var(--dcs-s-2);
+  font-size: var(--dcs-fs-sm);
+  font-weight: 500;
+  color: var(--dcs-text);
+  cursor: pointer;
+  user-select: none;
+  min-height: var(--dcs-h);
+}
+.dcs-foldout__header:hover { background: var(--dcs-surface-2); }
+.dcs-foldout__chevron {
+  width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--dcs-text-mute);
+  transition: transform var(--dcs-t-fast);
+}
+.dcs-foldout__chevron--open { transform: rotate(90deg); }
+.dcs-foldout__icon { color: var(--dcs-text-mute); flex: 0 0 auto; }
+.dcs-foldout__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dcs-foldout__meta {
+  font-family: var(--dcs-font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--dcs-fs-xs);
+  color: var(--dcs-text-mute);
+}
+.dcs-foldout__tools {
+  display: flex; align-items: center; gap: 2px;
+  opacity: 0;
+  transition: opacity var(--dcs-t-fast);
+}
+.dcs-foldout__header:hover .dcs-foldout__tools { opacity: 1; }
+.dcs-foldout__body {
+  padding: var(--dcs-s-1) var(--dcs-s-5) var(--dcs-s-5) var(--dcs-s-5);
+}

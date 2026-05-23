@@ -1,0 +1,24 @@
+/* ------------------------------------------------------------
+   16 · TOOLTIP (CSS hover)
+   ------------------------------------------------------------ */
+.dcs-tooltip {
+  position: relative;
+}
+.dcs-tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 4px); left: 50%;
+  transform: translateX(-50%);
+  background: #0c0d12;
+  color: var(--dcs-text);
+  font-size: var(--dcs-fs-xs);
+  padding: 3px 6px;
+  border-radius: var(--dcs-r-1);
+  border: 1px solid var(--dcs-line-soft);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dcs-t-fast) 200ms;
+  z-index: 50;
+}
+.dcs-tooltip:hover::after { opacity: 1; }

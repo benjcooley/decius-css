@@ -1,0 +1,68 @@
+/* ------------------------------------------------------------
+   17 · COLOR SWATCH / PICKER
+   ------------------------------------------------------------ */
+.dcs-swatch {
+  display: inline-flex; align-items: center; gap: var(--dcs-s-2);
+  height: var(--dcs-h);
+  padding: 2px; padding-right: var(--dcs-s-3);
+  background: var(--dcs-well);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+  cursor: pointer;
+  font-family: var(--dcs-font-mono);
+  font-size: var(--dcs-fs-xs);
+  color: var(--dcs-text-dim);
+}
+.dcs-swatch__chip {
+  width: calc(var(--dcs-h) - 8px);
+  height: calc(var(--dcs-h) - 8px);
+  border-radius: var(--dcs-r-1);
+  background: var(--c, #888);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.4);
+}
+.dcs-swatch:hover { border-color: var(--dcs-line-strong); }
+
+.dcs-color-square {
+  width: 100%; aspect-ratio: 1;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, var(--hue, #f00));
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+  position: relative;
+  cursor: crosshair;
+}
+.dcs-color-square__cursor {
+  position: absolute;
+  width: 12px; height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.6);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.dcs-hue-bar {
+  height: 12px; width: 100%;
+  background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-1);
+  position: relative;
+  cursor: ew-resize;
+}
+.dcs-hue-bar__cursor {
+  position: absolute; top: -2px; bottom: -2px;
+  width: 6px;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+.dcs-alpha-bar {
+  height: 12px; width: 100%;
+  background:
+    linear-gradient(90deg, transparent, var(--c, #f00)),
+    repeating-conic-gradient(#666 0 90deg, #999 90deg 180deg) 0 0 / 8px 8px;
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-1);
+  position: relative;
+}

@@ -1,0 +1,25 @@
+/* ------------------------------------------------------------
+   10 · BADGE / TAG / CHIP — solid only
+   ------------------------------------------------------------ */
+.dcs-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 18px; padding: 0 7px;
+  font-size: var(--dcs-fs-xs); font-weight: 600;
+  font-family: var(--dcs-font);
+  font-variant-numeric: tabular-nums lining-nums;
+  background: var(--dcs-surface-2);
+  border-radius: var(--dcs-r-1);
+  color: var(--dcs-text-dim);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.dcs-badge--accent { background: var(--dcs-accent); color: #0a1220; }
+.dcs-badge--ok     { background: var(--dcs-ok);     color: #06321d; }
+.dcs-badge--warn   { background: var(--dcs-warn);   color: #3a230a; }
+.dcs-badge--danger { background: var(--dcs-danger); color: #380e0e; }
+.dcs-badge--soft   { background: var(--dcs-bg); color: var(--dcs-text-dim); }
+.dcs-badge--dot::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  opacity: .85;
+}

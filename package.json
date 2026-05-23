@@ -1,0 +1,91 @@
+{
+  "name": "decius-css",
+  "version": "0.4.0",
+  "description": "A CSS framework for digital content creation (DCC) tools, synths, and pro desktop interfaces. Built for affineui; runs in any browser.",
+  "keywords": [
+    "css",
+    "scss",
+    "framework",
+    "dcc",
+    "ui",
+    "design-system",
+    "desktop",
+    "tools",
+    "synth",
+    "affineui",
+    "dark-theme",
+    "icons"
+  ],
+  "homepage": "https://benjcooley.github.io/decius-css/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benjcooley/decius-css.git"
+  },
+  "bugs": {
+    "url": "https://github.com/benjcooley/decius-css/issues"
+  },
+  "license": "MIT",
+  "author": "Ben Cooley",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "dist/css/decius.css",
+  "style": "dist/css/decius.css",
+  "sass": "scss/decius.scss",
+  "exports": {
+    ".": {
+      "sass": "./scss/decius.scss",
+      "style": "./dist/css/decius.css",
+      "default": "./dist/css/decius.css"
+    },
+    "./css/*": "./dist/css/*",
+    "./scss/*": "./scss/*",
+    "./icons/font/*": "./dist/fonts/*",
+    "./icons/manifest": "./icons/icons.json"
+  },
+  "files": [
+    "dist",
+    "scss",
+    "icons/svg",
+    "icons/icons.json",
+    "fonts",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "gen:icons": "node scripts/dev/split-sprite.mjs",
+    "build:css": "node scripts/build-css.mjs",
+    "build:icons": "node scripts/build-icon-font.mjs",
+    "build:fonts": "node scripts/build-fonts.mjs",
+    "build:bundle": "node scripts/build-bundle.mjs",
+    "build": "npm run clean && npm run build:fonts && npm run build:icons && npm run build:css && npm run build:bundle",
+    "build:site": "npm run build && vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "lint": "stylelint \"scss/**/*.scss\"",
+    "test": "node scripts/build-css.mjs && node test/smoke.test.mjs",
+    "check": "npm run lint && npm run test"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-sans": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@vitejs/plugin-react": "^6.0.2",
+    "autoprefixer": "^10.5.0",
+    "cssnano": "^8.0.1",
+    "opentype.js": "^2.0.0",
+    "postcss": "^8.5.15",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "sass": "^1.100.0",
+    "sharp": "^0.34.5",
+    "stylelint": "^17.12.0",
+    "stylelint-config-standard-scss": "^17.0.0",
+    "svg2ttf": "^6.1.0",
+    "svgicons2svgfont": "^16.0.0",
+    "ttf2woff": "^3.0.0",
+    "ttf2woff2": "^8.0.1",
+    "vite": "^8.0.14"
+  }
+}

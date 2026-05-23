@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# docs site build output
+_site/
+
+# generated docs entry (concatenated app, produced by vite.config)
+site/src/app.gen.jsx
+
+# dev/build scratch
+.cache/
+
+# extracted design deliverable (regenerable: unzip design/*.zip here)
+design/_extracted/
+
+# logs / os
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
