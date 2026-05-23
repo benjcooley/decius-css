@@ -133,75 +133,74 @@ const ZONE_BOX = {
   bottom: { left: 0, right: 0, bottom: 0, height: '50%' },
 };
 
+// Top-level so re-renders (e.g. 24fps animation) don't remount the subtree.
+function DockGroup({ node, ctx }) {
+  const ref = useRef(null);
+  return (
+    <div className="dcs-dockpane" ref={ref}
+      style={{ position: 'relative', flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+      onDragOver={(e) => { if (!ctx.drag.current) return; e.preventDefault(); ctx.setHover({ gid: node.id, zone: dockZone(e, ref.current.getBoundingClientRect()) }); }}
+      onDrop={(e) => { e.preventDefault(); ctx.onDrop(node.id); }}>
+      <div className="dcs-dockpane__tabs">
+        {node.tabs.map(tab => (
+          <div key={tab} className="dcs-dockpane__tab" aria-selected={node.active === tab}
+            draggable
+            onDragStart={(e) => { ctx.drag.current = { tab, fromId: node.id, count: node.tabs.length }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', tab); }}
+            onDragEnd={() => { ctx.drag.current = null; ctx.setHover(null); }}
+            onClick={() => ctx.activate(node.id, tab)}>
+            {ctx.tabMeta(tab).icon && <Icon name={ctx.tabMeta(tab).icon} size="sm" />}
+            <span>{ctx.tabMeta(tab).label}</span>
+            <div className="dcs-dockpane__tab-close" onClick={(e) => { e.stopPropagation(); ctx.closeTab(tab); }}><Icon name="close" size="sm" /></div>
+          </div>
+        ))}
+      </div>
+      <div className="dcs-dockpane__body" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+        {ctx.renderContent(node.active)}
+      </div>
+      {ctx.hover && ctx.hover.gid === node.id && (
+        <div style={{ position: 'absolute', background: 'var(--dcs-accent-haze)', border: '1px solid var(--dcs-accent)', borderRadius: 3, pointerEvents: 'none', zIndex: 6, ...ZONE_BOX[ctx.hover.zone] }} />
+      )}
+    </div>
+  );
+}
+function DockNode({ node, ctx }) {
+  const ref = useRef(null);
+  if (node.type === 'tabs') return <DockGroup node={node} ctx={ctx} />;
+  return (
+    <div ref={ref} style={{ display: 'flex', flexDirection: node.dir === 'row' ? 'row' : 'column', flex: 1, minWidth: 0, minHeight: 0 }}>
+      {node.children.map((c, i) => (
+        <React.Fragment key={c.id}>
+          <div style={{ flex: `${node.sizes[i]} 1 0`, display: 'flex', minWidth: 0, minHeight: 0 }}><DockNode node={c} ctx={ctx} /></div>
+          {i < node.children.length - 1 && (
+            <Splitter horizontal={node.dir === 'col'} onDelta={(d) => {
+              const el = ref.current;
+              ctx.resize(node.id, i, d, node.dir === 'row' ? el.clientWidth : el.clientHeight);
+            }} />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
 function DockLayout({ initial, tabMeta, renderContent }) {
   const [root, setRoot] = useState(() => normLayout(initial));
   const [hover, setHover] = useState(null); // { gid, zone }
   const drag = useRef(null);
-
-  const activate = (gid, tab) => setRoot(r => setActiveInTree(r, gid, tab));
-  const closeTab = (tab) => setRoot(r => removeTabFromTree(r, tab) || r);
-  const onDrop = (gid) => {
-    const d = drag.current, h = hover;
-    drag.current = null; setHover(null);
-    if (!d || !h || h.gid !== gid) return;
-    if (d.fromId === gid && (h.zone === 'center' || d.count <= 1)) return;
-    let t = removeTabFromTree(root, d.tab);
-    if (t) setRoot(addTabToTree(t, gid, d.tab, h.zone));
+  const ctx = {
+    drag, hover, setHover, tabMeta, renderContent,
+    activate: (gid, tab) => setRoot(r => setActiveInTree(r, gid, tab)),
+    closeTab: (tab) => setRoot(r => removeTabFromTree(r, tab) || r),
+    resize: (id, i, d, total) => setRoot(r => resizeSplit(r, id, i, d, total)),
+    onDrop: (gid) => {
+      const d = drag.current, h = hover;
+      drag.current = null; setHover(null);
+      if (!d || !h || h.gid !== gid) return;
+      if (d.fromId === gid && (h.zone === 'center' || d.count <= 1)) return;
+      const t = removeTabFromTree(root, d.tab);
+      if (t) setRoot(addTabToTree(t, gid, d.tab, h.zone));
+    },
   };
-
-  function Group({ node }) {
-    const ref = useRef(null);
-    const meta = tabMeta;
-    return (
-      <div className="dcs-dockpane" ref={ref}
-        style={{ position: 'relative', flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}
-        onDragOver={(e) => { if (!drag.current) return; e.preventDefault(); setHover({ gid: node.id, zone: dockZone(e, ref.current.getBoundingClientRect()) }); }}
-        onDrop={(e) => { e.preventDefault(); onDrop(node.id); }}>
-        <div className="dcs-dockpane__tabs">
-          {node.tabs.map(tab => (
-            <div key={tab} className="dcs-dockpane__tab" aria-selected={node.active === tab}
-              draggable
-              onDragStart={(e) => { drag.current = { tab, fromId: node.id, count: node.tabs.length }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', tab); }}
-              onDragEnd={() => { drag.current = null; setHover(null); }}
-              onClick={() => activate(node.id, tab)}>
-              {meta(tab).icon && <Icon name={meta(tab).icon} size="sm" />}
-              <span>{meta(tab).label}</span>
-              <div className="dcs-dockpane__tab-close" onClick={(e) => { e.stopPropagation(); closeTab(tab); }}><Icon name="close" size="sm" /></div>
-            </div>
-          ))}
-        </div>
-        <div className="dcs-dockpane__body" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          {renderContent(node.active)}
-        </div>
-        {hover && hover.gid === node.id && (
-          <div style={{ position: 'absolute', background: 'var(--dcs-accent-haze)', border: '1px solid var(--dcs-accent)', borderRadius: 3, pointerEvents: 'none', zIndex: 6, ...ZONE_BOX[hover.zone] }} />
-        )}
-      </div>
-    );
-  }
-
-  function Node({ node }) {
-    if (node.type === 'tabs') return <Group node={node} />;
-    const ref = useRef(null);
-    return (
-      <div ref={ref} style={{ display: 'flex', flexDirection: node.dir === 'row' ? 'row' : 'column', flex: 1, minWidth: 0, minHeight: 0 }}>
-        {node.children.map((c, i) => (
-          <React.Fragment key={c.id}>
-            <div style={{ flex: `${node.sizes[i]} 1 0`, display: 'flex', minWidth: 0, minHeight: 0 }}><Node node={c} /></div>
-            {i < node.children.length - 1 && (
-              <Splitter horizontal={node.dir === 'col'} onDelta={(d) => {
-                const el = ref.current;
-                resize(node.id, i, d, node.dir === 'row' ? el.clientWidth : el.clientHeight);
-              }} />
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  }
-  const resize = (splitId, i, dpx, total) => setRoot(r => resizeSplit(r, splitId, i, dpx, total));
-
-  return <div className="dcs-dock" style={{ flex: 1, minWidth: 0, minHeight: 0 }}><Node node={root} /></div>;
+  return <div className="dcs-dock" style={{ flex: 1, minWidth: 0, minHeight: 0 }}><DockNode node={root} ctx={ctx} /></div>;
 }
 
 /* ─────────── Panel ─────────── */

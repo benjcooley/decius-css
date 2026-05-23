@@ -13,8 +13,15 @@
  *   [data-dcs-menu="#id"]       (right-click context menu on this element)
  *   [data-dcs-dismiss="modal|menu|popover|toast|alert|panel|subpanel|card"]
  *   [data-dcs-slider] / [data-dcs-fader] / [data-dcs-knob] / [data-dcs-combo]
+ *   [data-dcs-splitter]   (resize previous/next flex siblings)
  *   .dcs-subpanel__header / .dcs-foldout__header   (collapse, zero-config)
  *   .dcs-check / .dcs-radio / .dcs-switch          (toggle, zero-config)
+ *
+ * Scope note: this runtime covers per-component behavior (menus, modals,
+ * popovers, tabs, toasts, collapse, the drag controls, and splitter resize).
+ * A full drag-to-DOCK layout manager (rearranging panes by dragging tabs) is
+ * application-level and is provided as a React reference component in the docs
+ * (and natively by affineui) — it is intentionally NOT part of this script.
  */
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -330,6 +337,36 @@ function initSlider(root) {
   });
 }
 
+/* ============================================================ splitter */
+// A .dcs-splitter[data-dcs-splitter] resizes its previous/next flex siblings.
+// (The full drag-to-dock layout manager is a React reference component — this
+// covers the common "resizable panes" case for vanilla apps.)
+function initSplitter(root) {
+  $$('[data-dcs-splitter]', root).forEach((sp) => {
+    if (sp[WIRED]) return; sp[WIRED] = true;
+    const horiz = sp.classList.contains('dcs-splitter--h') || sp.getAttribute('data-dcs-splitter') === 'h';
+    sp.addEventListener('pointerdown', (e) => {
+      const prev = sp.previousElementSibling, next = sp.nextElementSibling;
+      if (!prev || !next) return;
+      e.preventDefault();
+      sp.classList.add('dcs-splitter--active');
+      const axis = horiz ? 'clientY' : 'clientX';
+      const dim = horiz ? 'offsetHeight' : 'offsetWidth';
+      let last = e[axis];
+      const totalPx = prev[dim] + next[dim];
+      let pg = parseFloat(getComputedStyle(prev).flexGrow) || 1;
+      let ng = parseFloat(getComputedStyle(next).flexGrow) || 1;
+      const totalW = pg + ng, minW = totalW * 0.07;
+      drag(e, (ev) => {
+        const d = ev[axis] - last; last = ev[axis];
+        pg = clamp(pg + d * (totalW / Math.max(1, totalPx)), minW, totalW - minW);
+        ng = totalW - pg;
+        prev.style.flexGrow = pg; next.style.flexGrow = ng;
+      }, () => sp.classList.remove('dcs-splitter--active'));
+    });
+  });
+}
+
 /* ============================================================ knob */
 function initKnob(root) {
   $$('[data-dcs-knob]', root).forEach((k) => {
@@ -467,7 +504,7 @@ function toast(opts = {}) {
 function init(root = document) {
   initCollapse(root); initDismiss(root); initModal(root); initMenu(root);
   initPopover(root); initTabs(root); initToggles(root);
-  initSlider(root); initKnob(root); initCombo(root);
+  initSlider(root); initKnob(root); initCombo(root); initSplitter(root);
   return decius;
 }
 

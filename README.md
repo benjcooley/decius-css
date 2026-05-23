@@ -69,9 +69,15 @@ Or [download the `.zip`](https://benjcooley.github.io/decius-css/) (css + js + f
 
 ## JavaScript
 
-Stateful components (modals, menus, popovers, tabs, toasts, and the drag controls — sliders,
-faders, knobs, combo fields) are driven by **`decius.js`**, a zero-dependency vanilla script with a
-Bootstrap-style data API. It auto-initializes on `DOMContentLoaded`.
+Stateful components (modals, menus, popovers, tabs, toasts, splitter resize, and the drag controls
+— sliders, faders, knobs, combo fields) are driven by **`decius.js`**, a zero-dependency vanilla
+script with a Bootstrap-style data API. It auto-initializes on `DOMContentLoaded`.
+
+> **Scope:** `decius.js` covers per-component behavior. A full **drag-to-dock layout manager**
+> (rearranging panes by dragging tabs into center/edge drop-zones) is application-level — it ships as
+> a **React reference component** in the docs site, and on [affineui](https://github.com/benjcooley/affineui)
+> the host provides docking natively. The framework gives you the CSS (`.dcs-dock`, `.dcs-dockpane`,
+> `.dcs-splitter`, `.dcs-menubar`) and the menu/tab/splitter behaviors out of the box.
 
 ```html
 <!-- data API -->

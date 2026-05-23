@@ -24,353 +24,220 @@ function SampleDCC() {
   const [playing, setPlaying] = useStateA(false);
   const [expanded, setExpanded] = useStateA(new Set(['scene', 'env', 'chars', 'jane']));
   const [sel, setSel] = useStateA('cube');
-  const [outTab, setOutTab] = useStateA('hier');
-  const [inspTab, setInspTab] = useStateA('inspector');
-  const [bottomTab, setBottomTab] = useStateA('console');
+  const [last, setLast] = useStateA('—');
 
   useEffectA(() => {
     if (!playing) return;
     const id = setInterval(() => setFrame(f => (f >= 240 ? 1 : f + 1)), 1000 / 24);
     return () => clearInterval(id);
   }, [playing]);
-
   const toggle = (id) => setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const DCC_MENUS = {
+    File: [{ label: 'New Scene', icon: 'file', shortcut: '⌘N' }, { label: 'Open…', icon: 'folder-open', shortcut: '⌘O' }, { sep: true }, { label: 'Save', icon: 'save', shortcut: '⌘S' }, { label: 'Import', icon: 'import', sub: [{ label: 'OBJ' }, { label: 'FBX' }, { label: 'USD' }] }, { label: 'Export', icon: 'export', sub: [{ label: 'glTF' }, { label: 'Alembic' }] }, { sep: true }, { label: 'Quit', icon: 'close', danger: true }],
+    Edit: [{ label: 'Undo', icon: 'undo', shortcut: '⌘Z' }, { label: 'Redo', icon: 'redo', shortcut: '⇧⌘Z' }, { sep: true }, { label: 'Cut', icon: 'cut' }, { label: 'Copy', icon: 'copy' }, { label: 'Paste', icon: 'paste' }, { label: 'Duplicate', icon: 'duplicate', shortcut: '⌘D' }],
+    View: [{ label: 'Wireframe', check: wire }, { label: 'Smooth shading', check: smooth }, { label: 'Show grid', check: true }, { sep: true }, { label: 'Frame selected', icon: 'fit', shortcut: 'F' }, { label: 'Fullscreen', icon: 'fullscreen' }],
+    Mesh: [{ label: 'Extrude', icon: 'extrude' }, { label: 'Subdivide', icon: 'subdivide' }, { label: 'Mirror', icon: 'mirror' }, { label: 'Array', icon: 'array' }, { label: 'Decimate', icon: 'decimate' }],
+    Animation: [{ label: 'Insert keyframe', icon: 'key', shortcut: 'I' }, { label: 'Play', icon: 'play', shortcut: 'Space' }, { label: 'Bake action', icon: 'bolt' }],
+    Render: [{ label: 'Render image', icon: 'render', shortcut: 'F12' }, { label: 'Render animation', icon: 'play' }, { sep: true }, { label: 'Render settings', icon: 'cog' }],
+    Window: [{ label: 'Reset layout', icon: 'array' }, { label: 'Save layout', icon: 'save' }],
+    Help: [{ label: 'Documentation', icon: 'help' }, { label: 'About modeler', icon: 'info' }],
+  };
+  const TAB_META = {
+    hier: { label: 'Hierarchy', icon: 'layers' }, proj: { label: 'Project', icon: 'folder' },
+    scene: { label: 'Scene', icon: 'cube' }, game: { label: 'Game', icon: 'play' }, uv: { label: 'UV Editor', icon: 'uv' },
+    timeline: { label: 'Timeline', icon: 'timeline' }, console: { label: 'Console', icon: 'cpu' },
+    inspector: { label: 'Inspector', icon: 'cog' }, lighting: { label: 'Lighting', icon: 'light' },
+  };
+
+  const Outliner = () => (
+    <Tree expanded={expanded} onExpand={toggle} selected={sel} onSelect={setSel} nodes={[{
+      id: 'scene', label: 'Scene_Intro_v014', icon: 'globe', meta: '37', children: [
+        { id: 'env', label: 'Environment', icon: 'folder-open', children: [
+          { id: 'hdri', label: 'Sky_4k.hdr', icon: 'image' }, { id: 'sun', label: 'Sun.001', icon: 'light' }, { id: 'grnd', label: 'Ground', icon: 'plane' }] },
+        { id: 'chars', label: 'Characters', icon: 'folder-open', children: [
+          { id: 'jane', label: 'Jane', icon: 'folder-open', children: [
+            { id: 'cube', label: 'jane_body', icon: 'mesh', meta: '64k' }, { id: 'rig', label: 'jane_rig', icon: 'bone' }, { id: 'mat', label: 'jane_skin', icon: 'palette' }] },
+          { id: 'eric', label: 'Eric', icon: 'folder' }] },
+        { id: 'cams', label: 'Cameras', icon: 'folder', meta: '3' }, { id: 'fx', label: 'FX', icon: 'folder', meta: '7' },
+      ]
+    }]} />
+  );
+  const Project = () => (
+    <div className="dcs-tree" style={{ padding: '4px 0' }}>
+      {[['Assets', 'folder-open'], ['Materials', 'palette'], ['Textures', 'texture'], ['Models', 'mesh'], ['Sounds', 'volume'], ['Scripts', 'cpu']].map(([n, ic], i) => (
+        <div key={n} className="dcs-tree__row" aria-selected={i === 1}><span style={{ width: 14 }} /><Icon name={ic} className="dcs-tree__icon" /><span className="dcs-tree__label">{n}</span></div>
+      ))}
+    </div>
+  );
+  const Viewport = () => (
+    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 38%, #3a4054, #161922 80%)', overflow: 'hidden' }}>
+      <svg viewBox="-200 -120 400 240" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <defs><pattern id="dcc2-grid" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="scale(1.5, 0.5)"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth=".3" /></pattern></defs>
+        <rect x="-200" y="0" width="400" height="120" fill="url(#dcc2-grid)" />
+        <line x1="-200" y1="0" x2="200" y2="0" stroke="rgba(255,255,255,.15)" strokeWidth=".5" />
+        <g transform={`translate(${pos.x * 12} ${-(pos.y * 12)}) rotate(${rot.y + (frame / 240) * 120})`} style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,.5))' }}>
+          {wire ? (
+            <path d="M-22-22 L22-22 L28-14 L28 18 L-16 22 L-22 12 Z M-22-22 L0 0 L22-22 M-22 12 L0 0 L28 18" fill="none" stroke="#4d9fff" strokeWidth=".4" />
+          ) : (<>
+            <path d="M-22-22 L22-22 L28-14 L28 18 L-16 22 L-22 12 Z" fill="rgba(77,159,255,.22)" stroke="#4d9fff" strokeWidth=".4" />
+            <path d="M-22-22 L28-14 L28 18 L-22 12 Z" fill="rgba(77,159,255,.10)" stroke="rgba(77,159,255,.35)" strokeWidth=".3" />
+          </>)}
+          <line x1="0" y1="0" x2="30" y2="0" stroke="#ef6b6b" strokeWidth=".5" />
+          <line x1="0" y1="0" x2="0" y2="-26" stroke="#4ed18a" strokeWidth=".5" />
+          <circle cx="0" cy="0" r="1.5" fill="#fff" />
+        </g>
+      </svg>
+      <div className="dcs-viewport__overlay dcs-viewport__overlay--tl">
+        <div className="dcs-viewport__floater">
+          <Button sm icon iconLeft="select" pressed={tool === 'select'} onClick={() => setTool('select')} />
+          <Button sm icon iconLeft="move" pressed={tool === 'move'} onClick={() => setTool('move')} />
+          <Button sm icon iconLeft="rotate" pressed={tool === 'rotate'} onClick={() => setTool('rotate')} />
+          <Button sm icon iconLeft="scale-corners" pressed={tool === 'scale'} onClick={() => setTool('scale')} />
+        </div>
+      </div>
+      <div className="dcs-viewport__overlay dcs-viewport__overlay--tr">
+        <span className="dcs-badge dcs-badge--accent">PERSPECTIVE</span>
+        <span className="dcs-badge">F {String(frame).padStart(3, '0')}</span>
+        <span className="dcs-badge dcs-badge--ok dcs-badge--dot">SOLVED</span>
+      </div>
+      <div className="dcs-viewport__overlay dcs-viewport__overlay--br">
+        <div style={{ fontFamily: 'var(--dcs-font-mono)', fontSize: 10, color: 'rgba(255,255,255,.6)', textAlign: 'right', lineHeight: 1.5 }}>
+          <div>jane_body · 64,201 tri</div><div style={{ color: 'var(--dcs-accent)' }}>60 fps · 4.1 ms</div>
+        </div>
+      </div>
+    </div>
+  );
+  const Timeline = () => (
+    <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 6, height: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Button ghost sm icon iconLeft="skip-back" onClick={() => setFrame(1)} />
+        <Button ghost sm icon iconLeft="rewind" onClick={() => setFrame(f => Math.max(1, f - 24))} />
+        <Button ghost sm icon iconLeft={playing ? 'pause' : 'play'} pressed={playing} onClick={() => setPlaying(p => !p)} />
+        <Button ghost sm icon iconLeft="fast-forward" onClick={() => setFrame(f => Math.min(240, f + 24))} />
+        <Button ghost sm icon iconLeft="skip-fwd" onClick={() => setFrame(240)} />
+        <Combo value={frame} onChange={setFrame} min={1} max={240} step={1} format={v => `F ${String(v).padStart(3, '0')}`} width={104} />
+        <span style={{ flex: 1 }} />
+        <Button ghost sm icon iconLeft="record" /><Button ghost sm icon iconLeft="key" />
+      </div>
+      <div style={{ flex: 1, minHeight: 40, position: 'relative', background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3, overflow: 'hidden' }}>
+        {Array.from({ length: 25 }).map((_, i) => (<div key={i} style={{ position: 'absolute', left: `${(i / 24) * 100}%`, top: 0, bottom: 0, width: 1, background: i % 4 === 0 ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)' }} />))}
+        {[12, 24, 48, 64, 96, 128, 160, 192, 224].map(f => (<div key={f} style={{ position: 'absolute', left: `${(f / 240) * 100}%`, top: '50%', width: 8, height: 8, marginLeft: -4, marginTop: -4, background: 'var(--dcs-accent)', transform: 'rotate(45deg)', boxShadow: '0 0 6px rgba(77,159,255,.5)' }} />))}
+        <div style={{ position: 'absolute', left: `${(frame / 240) * 100}%`, top: -4, bottom: -4, width: 2, background: 'var(--dcs-accent-hi)', boxShadow: '0 0 6px rgba(111,179,255,.6)' }} />
+        <div style={{ position: 'absolute', left: `${(frame / 240) * 100}%`, top: 0, marginLeft: -8, fontSize: 9, fontFamily: 'var(--dcs-font-mono)', color: 'var(--dcs-accent)', background: 'var(--dcs-bg)', padding: '0 4px' }}>{String(frame).padStart(3, '0')}</div>
+      </div>
+    </div>
+  );
+  const ConsoleView = () => (
+    <div style={{ padding: 'var(--dcs-s-3) var(--dcs-s-5)', fontFamily: 'var(--dcs-font-mono)', fontSize: 11, lineHeight: 1.7 }}>
+      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-ok)' }}>[ok]</span> Scene cached · 312 MB</div>
+      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-accent)' }}>[info]</span> playhead → frame {frame}</div>
+      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-warn)' }}>[warn]</span> jane_body has 12 n-gons</div>
+    </div>
+  );
+  const Inspector = () => (
+    <Foldouts>
+      <Foldout title="Transform" icon="move" tools={<Button ghost sm icon iconLeft="key" />}>
+        <div className="dcs-props">
+          {[['X', '#ef6b6b', pos.x, 'x'], ['Y', '#4ed18a', pos.y, 'y'], ['Z', '#4d9fff', pos.z, 'z']].map(([k, c, v, key]) => (
+            <div key={k} className="dcs-field"><span className="dcs-field__label" style={{ flex: '0 0 14px', color: c, fontSize: 11 }}>{k}</span><Combo value={v} onChange={nv => setPos(p => ({ ...p, [key]: nv }))} min={-10} max={10} step={0.001} format={n => n.toFixed(3)} /></div>
+          ))}
+        </div>
+      </Foldout>
+      <Foldout title="Rotation" icon="rotate">
+        <div className="dcs-props">
+          {[['X', '#ef6b6b', rot.x, 'x'], ['Y', '#4ed18a', rot.y, 'y'], ['Z', '#4d9fff', rot.z, 'z']].map(([k, c, v, key]) => (
+            <div key={k} className="dcs-field"><span className="dcs-field__label" style={{ flex: '0 0 14px', color: c, fontSize: 11 }}>{k}</span><Combo value={v} onChange={nv => setRot(r => ({ ...r, [key]: nv }))} min={-180} max={180} step={1} format={n => `${n.toFixed(0)}°`} /></div>
+          ))}
+        </div>
+      </Foldout>
+      <Foldout title="Material" icon="palette" meta="Lambert.001">
+        <div className="dcs-props">
+          <div className="dcs-field"><span className="dcs-field__label">Albedo</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#4d9fff' }} /><span>#4D9FFF</span></div></div>
+          <div className="dcs-field"><span className="dcs-field__label">Rough</span><Slider value={rough} onChange={setRough} /></div>
+          <div className="dcs-field"><span className="dcs-field__label">Metal</span><Slider value={metallic} onChange={setMetallic} /></div>
+        </div>
+      </Foldout>
+      <Foldout title="Display" icon="eye">
+        <div className="dcs-props">
+          <div className="dcs-field"><span className="dcs-field__label">Wireframe</span><Switch checked={wire} onChange={setWire} /></div>
+          <div className="dcs-field"><span className="dcs-field__label">Smooth shade</span><Switch checked={smooth} onChange={setSmooth} /></div>
+          <div className="dcs-field"><span className="dcs-field__label">Cast shadow</span><Switch checked={shadow} onChange={setShadow} /></div>
+          <div className="dcs-field"><span className="dcs-field__label">In viewport</span><Switch checked={inView} onChange={setInView} /></div>
+        </div>
+      </Foldout>
+      <Foldout title="Subdivision" icon="subdivide" defaultOpen={false} meta={`L${Math.round(scale * 6)}`}>
+        <div className="dcs-props"><div className="dcs-field"><span className="dcs-field__label">Level</span><Slider value={scale} onChange={setScale} /></div></div>
+      </Foldout>
+      <Foldout title="Modifiers" icon="bolt" defaultOpen={false} meta="3" />
+    </Foldouts>
+  );
+  const Lighting = () => (
+    <Foldouts>
+      <Foldout title="Ambient" icon="globe"><div className="dcs-props"><div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#7c8492' }} /><span>#7C8492</span></div></div><div className="dcs-field"><span className="dcs-field__label">Intensity</span><Slider value={0.4} /></div></div></Foldout>
+      <Foldout title="Sun" icon="light"><div className="dcs-props"><div className="dcs-field"><span className="dcs-field__label">Exposure</span><Slider value={0.6} /></div><div className="dcs-field"><span className="dcs-field__label">Soft shadows</span><Switch checked /></div></div></Foldout>
+    </Foldouts>
+  );
+  const Placeholder = (label, icon) => (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--dcs-text-mute)' }}><Icon name={icon} size="xl" /><span style={{ fontSize: 12 }}>{label}</span></div>
+  );
+  const renderContent = (id) => {
+    switch (id) {
+      case 'hier': return Outliner();
+      case 'proj': return Project();
+      case 'scene': return <div style={{ position: 'relative', height: '100%', minHeight: 220 }}>{Viewport()}</div>;
+      case 'game': return Placeholder('Game view', 'play');
+      case 'uv': return Placeholder('UV editor', 'uv');
+      case 'timeline': return Timeline();
+      case 'console': return ConsoleView();
+      case 'inspector': return Inspector();
+      case 'lighting': return Lighting();
+      default: return null;
+    }
+  };
+  const layout = {
+    type: 'split', dir: 'row', sizes: [1, 2.8, 1.15], children: [
+      { type: 'tabs', tabs: ['hier', 'proj'] },
+      { type: 'split', dir: 'col', sizes: [2.7, 1.1], children: [
+        { type: 'tabs', tabs: ['scene', 'game', 'uv'] },
+        { type: 'tabs', tabs: ['timeline', 'console'] },
+      ] },
+      { type: 'tabs', tabs: ['inspector', 'lighting'] },
+    ],
+  };
 
   return (
     <div className="dcs" data-dcs-density="compact" style={{ background: 'var(--dcs-bg-app)', height: 660, display: 'flex', flexDirection: 'column' }}>
-      {/* Top menu bar */}
-      <div style={{
-        height: 28, display: 'flex', alignItems: 'center', gap: 0,
-        background: 'linear-gradient(180deg, #3c424f, #2a2e38)',
-        borderBottom: '1px solid var(--dcs-line)',
-        padding: '0 8px',
-        fontSize: 11,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingRight: 12, marginRight: 8, borderRight: '1px solid var(--dcs-line)' }}>
-          <Icon name="decius" style={{ color: 'var(--dcs-accent)' }} />
-          <span style={{ fontWeight: 600, letterSpacing: '.02em' }}>modeler</span>
-        </div>
-        {['File', 'Edit', 'View', 'Mesh', 'Animation', 'Render', 'Window', 'Help'].map(m => (
-          <button key={m} style={{
-            background: 'none', border: 'none', color: 'var(--dcs-text-dim)',
-            padding: '4px 10px', cursor: 'pointer', fontSize: 11, height: '100%',
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = 'var(--dcs-surface-2)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-            {m}
-          </button>
-        ))}
-        <div style={{ flex: 1 }} />
-        <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-text-mute)' }}>Scene_Intro_v014.dcs</span>
-        <span className="dcs-badge dcs-badge--accent" style={{ marginLeft: 10 }}>modified</span>
-      </div>
-
-      {/* Tool ribbon */}
+      <MenuBar
+        brand={{ icon: 'decius', label: 'modeler' }}
+        items={['File', 'Edit', 'View', 'Mesh', 'Animation', 'Render', 'Window', 'Help']}
+        menus={DCC_MENUS}
+        onPick={(m, v) => setLast(`${m} › ${v}`)}
+        meta={<><span>Scene_Intro_v014.dcs</span><span className="dcs-badge dcs-badge--accent">MODIFIED</span></>}
+      />
       <Toolbar>
-        <ButtonGroup value={tool} onChange={setTool} options={[
-          { value: 'select', icon: 'select' },
-          { value: 'move',   icon: 'move' },
-          { value: 'rotate', icon: 'rotate' },
-          { value: 'scale',  icon: 'scale-corners' },
-        ]} />
+        <ButtonGroup value={tool} onChange={setTool} options={[{ value: 'select', icon: 'select' }, { value: 'move', icon: 'move' }, { value: 'rotate', icon: 'rotate' }, { value: 'scale', icon: 'scale-corners' }]} />
         <ToolbarSep />
-        <Button ghost sm icon iconLeft="cube" />
-        <Button ghost sm icon iconLeft="sphere" />
-        <Button ghost sm icon iconLeft="cylinder" />
-        <Button ghost sm icon iconLeft="plane" />
-        <Button ghost sm icon iconLeft="light" />
-        <Button ghost sm icon iconLeft="camera" />
+        <Button ghost sm icon iconLeft="cube" /><Button ghost sm icon iconLeft="sphere" /><Button ghost sm icon iconLeft="cylinder" /><Button ghost sm icon iconLeft="light" /><Button ghost sm icon iconLeft="camera" />
         <ToolbarSep />
-        <Button ghost sm icon iconLeft="extrude" />
-        <Button ghost sm icon iconLeft="subdivide" />
-        <Button ghost sm icon iconLeft="mirror" />
-        <Button ghost sm icon iconLeft="array" />
+        <Button ghost sm icon iconLeft="extrude" /><Button ghost sm icon iconLeft="subdivide" /><Button ghost sm icon iconLeft="mirror" />
         <ToolbarSep />
-        <Button ghost sm icon iconLeft="snap-grid" pressed={snap} onClick={() => setSnap(!snap)} />
-        <Button ghost sm icon iconLeft="magnet" />
-        <Button ghost sm icon iconLeft="pivot" />
+        <Button ghost sm icon iconLeft="snap-grid" pressed={snap} onClick={() => setSnap(!snap)} /><Button ghost sm icon iconLeft="magnet" />
         <ToolbarSep />
-        <ButtonGroup value={shading} onChange={setShading} options={[
-          { value: 'wire',    icon: 'view-wire' },
-          { value: 'shaded',  icon: 'view-solid' },
-          { value: 'tex',     icon: 'view-tex' },
-          { value: 'render',  icon: 'view-render' },
-        ]} />
+        <ButtonGroup value={shading} onChange={(v) => { setShading(v); setWire(v === 'wire'); }} options={[{ value: 'wire', icon: 'view-wire' }, { value: 'shaded', icon: 'view-solid' }, { value: 'tex', icon: 'view-tex' }, { value: 'render', icon: 'view-render' }]} />
         <div style={{ flex: 1 }} />
-        <Button ghost sm icon iconLeft="undo" />
-        <Button ghost sm icon iconLeft="redo" />
+        <Button ghost sm icon iconLeft="undo" /><Button ghost sm icon iconLeft="redo" />
         <ToolbarSep />
         <Button primary sm iconLeft="render">Render</Button>
       </Toolbar>
-
-      {/* Main split */}
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        {/* Outliner — tabbed dock pane */}
-        <div style={{ width: 220, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <DockPane
-            tabs={[{ value: 'hier', label: 'Hierarchy', icon: 'layers' }, { value: 'proj', label: 'Project', icon: 'folder' }]}
-            value={outTab} onChange={setOutTab}
-            tools={<Button ghost sm icon iconLeft="search" />}
-          >
-            {outTab === 'hier' ? (
-              <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-                <Tree
-                  expanded={expanded} onExpand={toggle} selected={sel} onSelect={setSel}
-                  nodes={[{
-                    id: 'scene', label: 'Scene_Intro_v014', icon: 'globe', meta: '37',
-                    children: [
-                      { id: 'env', label: 'Environment', icon: 'folder-open', children: [
-                        { id: 'hdri', label: 'Sky_4k.hdr', icon: 'image' },
-                        { id: 'sun',  label: 'Sun.001',   icon: 'light' },
-                        { id: 'grnd', label: 'Ground',    icon: 'plane' },
-                      ]},
-                      { id: 'chars', label: 'Characters', icon: 'folder-open', children: [
-                        { id: 'jane', label: 'Jane', icon: 'folder-open', children: [
-                          { id: 'cube', label: 'jane_body', icon: 'mesh', meta: '64k' },
-                          { id: 'rig',  label: 'jane_rig',  icon: 'bone' },
-                          { id: 'mat',  label: 'jane_skin', icon: 'palette' },
-                        ]},
-                        { id: 'eric', label: 'Eric',     icon: 'folder' },
-                      ]},
-                      { id: 'cams', label: 'Cameras', icon: 'folder', meta: '3' },
-                      { id: 'fx',   label: 'FX',      icon: 'folder', meta: '7' },
-                    ]
-                  }]}
-                />
-              </div>
-            ) : (
-              <div className="dcs-tree" style={{ padding: '4px 0' }}>
-                {[['Assets', 'folder-open'], ['Materials', 'palette'], ['Textures', 'texture'], ['Models', 'mesh'], ['Rigs', 'bone'], ['Scripts', 'cpu']].map(([n, ic], i) => (
-                  <div key={n} className="dcs-tree__row" aria-selected={i === 1}>
-                    <span style={{ width: 14 }} /><Icon name={ic} className="dcs-tree__icon" /><span className="dcs-tree__label">{n}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </DockPane>
-        </div>
-        <div className="dcs-splitter" />
-
-        {/* Viewport */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <div style={{
-            flex: 1, minHeight: 0, position: 'relative',
-            background: 'radial-gradient(ellipse at 50% 38%, #3a4054, #161922 80%)',
-            overflow: 'hidden',
-          }}>
-            {/* Grid floor */}
-            <svg viewBox="-200 -120 400 240" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-              <defs>
-                <pattern id="dcc-grid" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="skewX(0) scale(1.5, 0.5)">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth=".3" />
-                </pattern>
-              </defs>
-              <rect x="-200" y="0" width="400" height="120" fill="url(#dcc-grid)" />
-              <line x1="-200" y1="0" x2="200" y2="0" stroke="rgba(255,255,255,.15)" strokeWidth=".5" />
-              {/* Object: a faceted form */}
-              <g transform={`translate(${pos.x * 12} ${-(pos.y * 12)}) rotate(${rot.y})`}>
-                <g style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,.5))' }}>
-                  <path d="M-22-22 L22-22 L28-14 L28 18 L-16 22 L-22 12 Z" fill="rgba(77,159,255,.22)" stroke="#4d9fff" strokeWidth=".4" />
-                  <path d="M-22-22 L28-14 L28 18 L-22 12 Z" fill="rgba(77,159,255,.10)" stroke="rgba(77,159,255,.35)" strokeWidth=".3" />
-                  <path d="M-22-22 L22-22 L28-14" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.25)" strokeWidth=".25" />
-                  {/* Gizmo */}
-                  <line x1="0" y1="0" x2="30" y2="0" stroke="#ef6b6b" strokeWidth=".5" />
-                  <line x1="0" y1="0" x2="0" y2="-26" stroke="#4ed18a" strokeWidth=".5" />
-                  <line x1="0" y1="0" x2="-12" y2="6" stroke="#4d9fff" strokeWidth=".5" />
-                  <circle cx="0" cy="0" r="1.5" fill="#fff" />
-                </g>
-              </g>
-              {/* Light helper */}
-              <g transform="translate(-100,-60)" stroke="rgba(255,184,77,.5)" strokeWidth=".3" fill="none">
-                <circle cx="0" cy="0" r="6" />
-                <line x1="-10" y1="0" x2="10" y2="0" />
-                <line x1="0" y1="-10" x2="0" y2="10" />
-                <line x1="-7" y1="-7" x2="7" y2="7" />
-                <line x1="-7" y1="7" x2="7" y2="-7" />
-              </g>
-            </svg>
-
-            {/* Overlay HUD */}
-            <div style={{ position: 'absolute', top: 8, left: 12, display: 'flex', gap: 4 }}>
-              <span className="dcs-badge dcs-badge--accent">PERSPECTIVE</span>
-              <span className="dcs-badge">FRAME {String(frame).padStart(3, '0')}</span>
-              <span className="dcs-badge dcs-badge--ok dcs-badge--dot">SOLVED</span>
-            </div>
-            <div style={{ position: 'absolute', top: 8, right: 12, display: 'flex', gap: 4 }}>
-              <Button ghost sm icon iconLeft="zoom-in" />
-              <Button ghost sm icon iconLeft="zoom-out" />
-              <Button ghost sm icon iconLeft="fit" />
-              <Button ghost sm icon iconLeft="fullscreen" />
-            </div>
-            <div style={{
-              position: 'absolute', bottom: 8, right: 12,
-              fontFamily: 'var(--dcs-font-mono)', fontSize: 10, color: 'var(--dcs-text-mute)',
-              textAlign: 'right', lineHeight: 1.5
-            }}>
-              <div>{sel === 'cube' ? 'jane_body · 64,201 tri · 32,108 verts' : sel}</div>
-              <div style={{ color: 'var(--dcs-accent)' }}>60 fps · 4.1 ms · 312 MB</div>
-            </div>
-            {/* Axis gizmo — top-right of viewport */}
-            <svg viewBox="-36 -36 72 72" style={{ position: 'absolute', bottom: 12, left: 12, width: 72, height: 72, opacity: .95 }}>
-              <defs>
-                <marker id="dcc-arr-x" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-                  <path d="M0 0 L10 5 L0 10 Z" fill="#ef6b6b" />
-                </marker>
-                <marker id="dcc-arr-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-                  <path d="M0 0 L10 5 L0 10 Z" fill="#4ed18a" />
-                </marker>
-                <marker id="dcc-arr-z" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-                  <path d="M0 0 L10 5 L0 10 Z" fill="#4d9fff" />
-                </marker>
-              </defs>
-              <circle cx="0" cy="0" r="32" fill="rgba(0,0,0,.3)" stroke="rgba(255,255,255,.06)" strokeWidth=".5" />
-              <line x1="0" y1="0" x2="24" y2="0" stroke="#ef6b6b" strokeWidth="2" markerEnd="url(#dcc-arr-x)" />
-              <line x1="0" y1="0" x2="0" y2="-24" stroke="#4ed18a" strokeWidth="2" markerEnd="url(#dcc-arr-y)" />
-              <line x1="0" y1="0" x2="-17" y2="14" stroke="#4d9fff" strokeWidth="2" markerEnd="url(#dcc-arr-z)" />
-              <text x="30" y="3" fill="#ef6b6b" fontSize="11" fontFamily="JetBrains Mono" fontWeight="600">X</text>
-              <text x="-3" y="-28" fill="#4ed18a" fontSize="11" fontFamily="JetBrains Mono" fontWeight="600">Y</text>
-              <text x="-28" y="22" fill="#4d9fff" fontSize="11" fontFamily="JetBrains Mono" fontWeight="600">Z</text>
-              <circle cx="0" cy="0" r="2.5" fill="#fff" />
-            </svg>
-          </div>
-
-          {/* Timeline */}
-          <div style={{
-            height: 80, borderTop: '1px solid var(--dcs-line)', background: 'var(--dcs-bg)',
-            padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 6,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Button ghost sm icon iconLeft="skip-back" onClick={() => setFrame(1)} />
-              <Button ghost sm icon iconLeft="rewind" onClick={() => setFrame(f => Math.max(1, f - 24))} />
-              <Button ghost sm icon={playing ? 'pause' : 'play'} iconLeft={playing ? 'pause' : 'play'} pressed={playing} onClick={() => setPlaying(p => !p)} />
-              <Button ghost sm icon iconLeft="fast-forward" onClick={() => setFrame(f => Math.min(240, f + 24))} />
-              <Button ghost sm icon iconLeft="skip-fwd" onClick={() => setFrame(240)} />
-              <Combo value={frame} onChange={setFrame} min={1} max={240} step={1} format={v => `F ${String(v).padStart(3,'0')}`} width={100} />
-              <span style={{ flex: 1 }} />
-              <Button ghost sm icon iconLeft="record" />
-              <Button ghost sm icon iconLeft="key" />
-            </div>
-            <div style={{ flex: 1, position: 'relative', background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3, overflow: 'hidden' }}>
-              {/* Frame ticks */}
-              {Array.from({ length: 25 }).map((_, i) => (
-                <div key={i} style={{
-                  position: 'absolute', left: `${(i / 24) * 100}%`, top: 0, bottom: 0, width: 1,
-                  background: i % 4 === 0 ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)',
-                }} />
-              ))}
-              {/* Keyframes */}
-              {[12, 24, 48, 64, 96, 128, 160, 192, 224].map(f => (
-                <div key={f} style={{
-                  position: 'absolute', left: `${(f / 240) * 100}%`, top: '50%',
-                  width: 8, height: 8, marginLeft: -4, marginTop: -4,
-                  background: 'var(--dcs-accent)', transform: 'rotate(45deg)',
-                  boxShadow: '0 0 6px rgba(77,159,255,.5)',
-                }} />
-              ))}
-              {/* Playhead */}
-              <div style={{
-                position: 'absolute', left: `${(frame / 240) * 100}%`, top: -4, bottom: -4,
-                width: 2, background: 'var(--dcs-accent-hi)',
-                boxShadow: '0 0 6px rgba(111,179,255,.6)',
-              }} />
-              <div style={{
-                position: 'absolute', left: `${(frame / 240) * 100}%`, top: 0,
-                marginLeft: -8, fontSize: 9, fontFamily: 'var(--dcs-font-mono)',
-                color: 'var(--dcs-accent)', background: 'var(--dcs-bg)', padding: '0 4px',
-              }}>{String(frame).padStart(3, '0')}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Inspector — tabbed dock pane */}
-        <div className="dcs-splitter" />
-        <div style={{ width: 250, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <DockPane
-            tabs={[{ value: 'inspector', label: 'Inspector', icon: 'cog' }, { value: 'lighting', label: 'Lighting', icon: 'light' }]}
-            value={inspTab} onChange={setInspTab}
-            tools={<><Button ghost sm icon iconLeft="pin" /><Button ghost sm icon iconLeft="more-h" /></>}
-          >
-          <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-            {inspTab === 'lighting' ? (
-              <Foldouts>
-                <Foldout title="Ambient" icon="globe">
-                  <div className="dcs-props">
-                    <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#7c8492' }} /><span>#7C8492</span></div></div>
-                    <div className="dcs-field"><span className="dcs-field__label">Intensity</span><Slider value={0.4} /></div>
-                  </div>
-                </Foldout>
-                <Foldout title="Sun" icon="light">
-                  <div className="dcs-props">
-                    <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#fff1d5' }} /><span>#FFF1D5</span></div></div>
-                    <div className="dcs-field"><span className="dcs-field__label">Exposure</span><Slider value={0.6} /></div>
-                    <div className="dcs-field"><span className="dcs-field__label">Soft shadows</span><Switch checked /></div>
-                  </div>
-                </Foldout>
-                <Foldout title="Bloom" icon="bolt" defaultOpen={false} meta="on" />
-              </Foldouts>
-            ) : (
-            <Foldouts>
-              <Foldout title="Transform" icon="move" tools={<Button ghost sm icon iconLeft="key" />}>
-                <div className="dcs-props">
-                  {[['X', '#ef6b6b', pos.x, 'x'], ['Y', '#4ed18a', pos.y, 'y'], ['Z', '#4d9fff', pos.z, 'z']].map(([k, c, v, key]) => (
-                    <div key={k} className="dcs-field">
-                      <span className="dcs-field__label" style={{ flex: '0 0 14px', color: c, fontFamily: 'var(--dcs-font-num)', fontVariantNumeric: 'tabular-nums', fontSize: 11 }}>{k}</span>
-                      <Combo value={v} onChange={nv => setPos(p => ({ ...p, [key]: nv }))} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} />
-                    </div>
-                  ))}
-                </div>
-              </Foldout>
-              <Foldout title="Rotation" icon="rotate">
-                <div className="dcs-props">
-                  {[['X', '#ef6b6b', rot.x, 'x'], ['Y', '#4ed18a', rot.y, 'y'], ['Z', '#4d9fff', rot.z, 'z']].map(([k, c, v, key]) => (
-                    <div key={k} className="dcs-field">
-                      <span className="dcs-field__label" style={{ flex: '0 0 14px', color: c, fontFamily: 'var(--dcs-font-num)', fontVariantNumeric: 'tabular-nums', fontSize: 11 }}>{k}</span>
-                      <Combo value={v} onChange={nv => setRot(r => ({ ...r, [key]: nv }))} min={-180} max={180} step={1} format={v => `${v.toFixed(0)}°`} />
-                    </div>
-                  ))}
-                </div>
-              </Foldout>
-              <Foldout title="Display" icon="eye">
-                <div className="dcs-props">
-                  <div className="dcs-field"><span className="dcs-field__label">Wireframe</span><Switch checked={wire} onChange={setWire} /></div>
-                  <div className="dcs-field"><span className="dcs-field__label">Smooth shade</span><Switch checked={smooth} onChange={setSmooth} /></div>
-                  <div className="dcs-field"><span className="dcs-field__label">Cast shadow</span><Switch checked={shadow} onChange={setShadow} /></div>
-                  <div className="dcs-field"><span className="dcs-field__label">In viewport</span><Switch checked={inView} onChange={setInView} /></div>
-                </div>
-              </Foldout>
-              <Foldout title="Material" icon="palette" meta="Lambert.001">
-                <div className="dcs-props">
-                  <div className="dcs-field">
-                    <span className="dcs-field__label">Albedo</span>
-                    <div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#4d9fff' }} /><span>#4D9FFF</span></div>
-                  </div>
-                  <div className="dcs-field"><span className="dcs-field__label">Rough</span><Slider value={rough} onChange={setRough} /></div>
-                  <div className="dcs-field"><span className="dcs-field__label">Metal</span><Slider value={metallic} onChange={setMetallic} /></div>
-                </div>
-              </Foldout>
-              <Foldout title="Subdivision" icon="subdivide" defaultOpen={false} meta={`L${Math.round(scale * 6)}`}>
-                <div className="dcs-props">
-                  <div className="dcs-field"><span className="dcs-field__label">Level</span><Slider value={scale} onChange={setScale} /></div>
-                  <div className="dcs-field"><span className="dcs-field__label">Triangles</span>
-                    <span className="dcs-num" style={{ color: 'var(--dcs-accent)', fontSize: 11 }}>{Math.round(64201 * Math.pow(4, scale * 2)).toLocaleString()}</span>
-                  </div>
-                </div>
-              </Foldout>
-              <Foldout title="Modifiers" icon="bolt" defaultOpen={false} meta="3" />
-              <Foldout title="Constraints" icon="link" defaultOpen={false} />
-            </Foldouts>
-            )}
-          </div>
-          </DockPane>
-        </div>
-      </div>
-
-      {/* Status bar */}
+      <DockLayout initial={layout} tabMeta={(id) => TAB_META[id]} renderContent={renderContent} />
       <div className="dcs-statusbar">
         <span className="dcs-badge dcs-badge--ok dcs-badge--dot" style={{ fontSize: 9, height: 14 }}>READY</span>
-        <span className="dcs-statusbar__item">vertices 32,108 · faces 64,201 · selected 1</span>
+        <span className="dcs-statusbar__item">menu: {last}</span>
         <span className="dcs-statusbar__spacer" />
-        <span className="dcs-statusbar__item">GPU · RTX 4090 · 312 / 24576 MB</span>
+        <span className="dcs-statusbar__item">vertices 32,108 · faces 64,201</span>
+        <span className="dcs-statusbar__sep" />
+        <span className="dcs-statusbar__item">frame {frame} / 240</span>
         <span className="dcs-statusbar__sep" />
         <span className="dcs-statusbar__item dcs-statusbar__item--accent">60.0 fps</span>
       </div>
