@@ -24,6 +24,9 @@ function SampleDCC() {
   const [playing, setPlaying] = useStateA(false);
   const [expanded, setExpanded] = useStateA(new Set(['scene', 'env', 'chars', 'jane']));
   const [sel, setSel] = useStateA('cube');
+  const [outTab, setOutTab] = useStateA('hier');
+  const [inspTab, setInspTab] = useStateA('inspector');
+  const [bottomTab, setBottomTab] = useStateA('console');
 
   useEffectA(() => {
     if (!playing) return;
@@ -102,40 +105,51 @@ function SampleDCC() {
 
       {/* Main split */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        {/* Outliner */}
-        <div style={{ width: 220, borderRight: '1px solid var(--dcs-line)', background: 'var(--dcs-bg)', display: 'flex', flexDirection: 'column' }}>
-          <div className="dcs-panel__header"><div className="dcs-panel__title"><Icon name="layers" /><span>Outliner</span></div>
-            <div className="dcs-panel__tools"><Button ghost sm icon iconLeft="search" /><Button ghost sm icon iconLeft="more-h" /></div>
-          </div>
-          <div style={{ flex: 1, overflow: 'auto' }}>
-            <Tree
-              expanded={expanded}
-              onExpand={toggle}
-              selected={sel}
-              onSelect={setSel}
-              nodes={[{
-                id: 'scene', label: 'Scene_Intro_v014', icon: 'globe', meta: '37',
-                children: [
-                  { id: 'env', label: 'Environment', icon: 'folder-open', children: [
-                    { id: 'hdri', label: 'Sky_4k.hdr', icon: 'image' },
-                    { id: 'sun',  label: 'Sun.001',   icon: 'light' },
-                    { id: 'grnd', label: 'Ground',    icon: 'plane' },
-                  ]},
-                  { id: 'chars', label: 'Characters', icon: 'folder-open', children: [
-                    { id: 'jane', label: 'Jane', icon: 'folder-open', children: [
-                      { id: 'cube', label: 'jane_body', icon: 'mesh', meta: '64k' },
-                      { id: 'rig',  label: 'jane_rig',  icon: 'bone' },
-                      { id: 'mat',  label: 'jane_skin', icon: 'palette' },
-                    ]},
-                    { id: 'eric', label: 'Eric',     icon: 'folder' },
-                  ]},
-                  { id: 'cams', label: 'Cameras', icon: 'folder', meta: '3' },
-                  { id: 'fx',   label: 'FX',      icon: 'folder', meta: '7' },
-                ]
-              }]}
-            />
-          </div>
+        {/* Outliner — tabbed dock pane */}
+        <div style={{ width: 220, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <DockPane
+            tabs={[{ value: 'hier', label: 'Hierarchy', icon: 'layers' }, { value: 'proj', label: 'Project', icon: 'folder' }]}
+            value={outTab} onChange={setOutTab}
+            tools={<Button ghost sm icon iconLeft="search" />}
+          >
+            {outTab === 'hier' ? (
+              <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+                <Tree
+                  expanded={expanded} onExpand={toggle} selected={sel} onSelect={setSel}
+                  nodes={[{
+                    id: 'scene', label: 'Scene_Intro_v014', icon: 'globe', meta: '37',
+                    children: [
+                      { id: 'env', label: 'Environment', icon: 'folder-open', children: [
+                        { id: 'hdri', label: 'Sky_4k.hdr', icon: 'image' },
+                        { id: 'sun',  label: 'Sun.001',   icon: 'light' },
+                        { id: 'grnd', label: 'Ground',    icon: 'plane' },
+                      ]},
+                      { id: 'chars', label: 'Characters', icon: 'folder-open', children: [
+                        { id: 'jane', label: 'Jane', icon: 'folder-open', children: [
+                          { id: 'cube', label: 'jane_body', icon: 'mesh', meta: '64k' },
+                          { id: 'rig',  label: 'jane_rig',  icon: 'bone' },
+                          { id: 'mat',  label: 'jane_skin', icon: 'palette' },
+                        ]},
+                        { id: 'eric', label: 'Eric',     icon: 'folder' },
+                      ]},
+                      { id: 'cams', label: 'Cameras', icon: 'folder', meta: '3' },
+                      { id: 'fx',   label: 'FX',      icon: 'folder', meta: '7' },
+                    ]
+                  }]}
+                />
+              </div>
+            ) : (
+              <div className="dcs-tree" style={{ padding: '4px 0' }}>
+                {[['Assets', 'folder-open'], ['Materials', 'palette'], ['Textures', 'texture'], ['Models', 'mesh'], ['Rigs', 'bone'], ['Scripts', 'cpu']].map(([n, ic], i) => (
+                  <div key={n} className="dcs-tree__row" aria-selected={i === 1}>
+                    <span style={{ width: 14 }} /><Icon name={ic} className="dcs-tree__icon" /><span className="dcs-tree__label">{n}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DockPane>
         </div>
+        <div className="dcs-splitter" />
 
         {/* Viewport */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -268,22 +282,33 @@ function SampleDCC() {
           </div>
         </div>
 
-        {/* Inspector */}
-        <div style={{ width: 240, borderLeft: '1px solid var(--dcs-line)', background: 'var(--dcs-bg)', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            height: 24, padding: '0 10px',
-            background: 'var(--dcs-surface-1)',
-            borderBottom: '1px solid var(--dcs-line)',
-            fontSize: 11, fontWeight: 500, color: 'var(--dcs-text-dim)',
-          }}>
-            <Icon name="cog" size="sm" />
-            <span style={{ flex: 1 }}>Inspector</span>
-            <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-accent)' }}>jane_body</span>
-            <Button ghost sm icon iconLeft="pin" />
-            <Button ghost sm icon iconLeft="more-h" />
-          </div>
-          <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* Inspector — tabbed dock pane */}
+        <div className="dcs-splitter" />
+        <div style={{ width: 250, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <DockPane
+            tabs={[{ value: 'inspector', label: 'Inspector', icon: 'cog' }, { value: 'lighting', label: 'Lighting', icon: 'light' }]}
+            value={inspTab} onChange={setInspTab}
+            tools={<><Button ghost sm icon iconLeft="pin" /><Button ghost sm icon iconLeft="more-h" /></>}
+          >
+          <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+            {inspTab === 'lighting' ? (
+              <Foldouts>
+                <Foldout title="Ambient" icon="globe">
+                  <div className="dcs-props">
+                    <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#7c8492' }} /><span>#7C8492</span></div></div>
+                    <div className="dcs-field"><span className="dcs-field__label">Intensity</span><Slider value={0.4} /></div>
+                  </div>
+                </Foldout>
+                <Foldout title="Sun" icon="light">
+                  <div className="dcs-props">
+                    <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#fff1d5' }} /><span>#FFF1D5</span></div></div>
+                    <div className="dcs-field"><span className="dcs-field__label">Exposure</span><Slider value={0.6} /></div>
+                    <div className="dcs-field"><span className="dcs-field__label">Soft shadows</span><Switch checked /></div>
+                  </div>
+                </Foldout>
+                <Foldout title="Bloom" icon="bolt" defaultOpen={false} meta="on" />
+              </Foldouts>
+            ) : (
             <Foldouts>
               <Foldout title="Transform" icon="move" tools={<Button ghost sm icon iconLeft="key" />}>
                 <div className="dcs-props">
@@ -334,23 +359,20 @@ function SampleDCC() {
               <Foldout title="Modifiers" icon="bolt" defaultOpen={false} meta="3" />
               <Foldout title="Constraints" icon="link" defaultOpen={false} />
             </Foldouts>
+            )}
           </div>
+          </DockPane>
         </div>
       </div>
 
       {/* Status bar */}
-      <div style={{
-        height: 22, display: 'flex', alignItems: 'center', gap: 12,
-        background: 'var(--dcs-surface-1)',
-        borderTop: '1px solid var(--dcs-line)',
-        padding: '0 12px', fontSize: 10, fontFamily: 'var(--dcs-font-mono)',
-        color: 'var(--dcs-text-mute)',
-      }}>
+      <div className="dcs-statusbar">
         <span className="dcs-badge dcs-badge--ok dcs-badge--dot" style={{ fontSize: 9, height: 14 }}>READY</span>
-        <span>vertices 32,108 · faces 64,201 · selected 1</span>
-        <span style={{ flex: 1 }} />
-        <span>GPU · RTX 4090 · 312 / 24576 MB</span>
-        <span style={{ color: 'var(--dcs-accent)' }}>60.0 fps</span>
+        <span className="dcs-statusbar__item">vertices 32,108 · faces 64,201 · selected 1</span>
+        <span className="dcs-statusbar__spacer" />
+        <span className="dcs-statusbar__item">GPU · RTX 4090 · 312 / 24576 MB</span>
+        <span className="dcs-statusbar__sep" />
+        <span className="dcs-statusbar__item dcs-statusbar__item--accent">60.0 fps</span>
       </div>
     </div>
   );
@@ -383,39 +405,32 @@ function SampleSynth() {
     return () => clearInterval(id);
   }, []);
 
-  const Section = ({ title, icon, color, children, span, hw }) => (
-    <div className={hw ? `dcs-hw dcs-hw--${hw}` : ''} style={{
-      background: hw ? undefined : 'var(--dcs-bg)',
-      border: hw ? undefined : '1px solid var(--dcs-line)',
-      borderRadius: hw ? undefined : 'var(--dcs-r-2)',
-      boxShadow: hw ? undefined : 'var(--dcs-shadow-2)',
+  // Plain synth panel — the 3d bevel comes from data-dcs-style="3d" on the root,
+  // no skeuomorphic hardware chrome.
+  const Section = ({ title, icon, color, children, span }) => (
+    <div style={{
+      background: 'var(--dcs-surface-1)',
+      border: '1px solid var(--dcs-line)',
+      borderRadius: 'var(--dcs-r-3)',
+      boxShadow: 'var(--dcs-bevel-up), var(--dcs-shadow-2)',
       gridColumn: span ? `span ${span}` : undefined,
       display: 'flex', flexDirection: 'column',
       position: 'relative',
     }}>
-      {hw && <>
-        <span className="dcs-hw__screw dcs-hw__screw--tl" />
-        <span className="dcs-hw__screw dcs-hw__screw--tr" />
-        <span className="dcs-hw__screw dcs-hw__screw--bl" />
-        <span className="dcs-hw__screw dcs-hw__screw--br" />
-      </>}
       {title && (
-        <div className={hw ? 'dcs-hw__label' : ''} style={{
-          position: 'absolute', top: hw ? 10 : 8, left: hw ? 22 : 12,
+        <div style={{
+          position: 'absolute', top: 8, left: 12,
           display: 'flex', alignItems: 'center', gap: 6,
-          color: hw ? undefined : (color || 'var(--dcs-accent)'),
-          fontSize: hw ? undefined : 9,
-          fontWeight: hw ? undefined : 600,
-          textTransform: 'uppercase',
-          letterSpacing: hw ? undefined : '.12em',
-          opacity: hw ? undefined : .7,
+          color: color || 'var(--dcs-accent)',
+          fontSize: 9, fontWeight: 600,
+          textTransform: 'uppercase', letterSpacing: '.12em', opacity: .8,
           pointerEvents: 'none',
         }}>
-          {icon && !hw && <Icon name={icon} size="sm" />}
+          {icon && <Icon name={icon} size="sm" />}
           <span>{title}</span>
         </div>
       )}
-      <div style={{ flex: 1, padding: hw ? '26px 18px 18px' : '22px 14px 14px', display: 'flex', flexDirection: 'column' }}>{children}</div>
+      <div style={{ flex: 1, padding: '22px 14px 14px', display: 'flex', flexDirection: 'column' }}>{children}</div>
     </div>
   );
 
@@ -474,7 +489,7 @@ function SampleSynth() {
               { name: 'OSC 1', wave: osc1Wave, setWave: setOsc1Wave, level: k.osc1, levelKey: 'osc1' },
               { name: 'OSC 2', wave: osc2Wave, setWave: setOsc2Wave, level: k.osc2, levelKey: 'osc2' },
             ].map(o => (
-              <div key={o.name} style={{ padding: 10, background: 'transparent', borderRadius: 6, border: '1px solid rgba(255,255,255,.45)' }}>
+              <div key={o.name} style={{ padding: 10, background: 'transparent', borderRadius: 6, border: '1px solid var(--dcs-line-soft)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-accent)', letterSpacing: '.08em' }}>{o.name}</span>
                   <ButtonGroup value={o.wave} onChange={o.setWave} options={[
@@ -584,7 +599,7 @@ function SampleSynth() {
               { name: 'DELAY', v: k.delay, key: 'delay', color: '#4ad5d5' },
               { name: 'REVERB', v: k.reverb, key: 'reverb', color: '#4ed18a' },
             ].map(fx => (
-              <div key={fx.name} style={{ padding: 10, background: 'transparent', borderRadius: 6, border: '1px solid rgba(255,255,255,.45)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div key={fx.name} style={{ padding: 10, background: 'transparent', borderRadius: 6, border: '1px solid var(--dcs-line-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Switch checked={fx.v > 0.01} />
                   <span className="dcs-mono" style={{ fontSize: 10, color: fx.color, letterSpacing: '.08em' }}>{fx.name}</span>
