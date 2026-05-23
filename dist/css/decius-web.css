@@ -36,6 +36,7 @@ html, body {
   padding: 0;
   background: var(--dw-bg);
   color: var(--dw-text);
+  color-scheme: light; /* light page chrome incl. native scrollbars */
   font-family: var(--dw-font);
   font-size: var(--dw-fs);
   line-height: var(--dw-lh);

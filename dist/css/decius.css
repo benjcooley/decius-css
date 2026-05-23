@@ -91,7 +91,6 @@
   --dcs-t-fast: 80ms ease-out;
   --dcs-t: 140ms ease-out;
   --dcs-t-slow: 240ms cubic-bezier(.2,.7,.2,1);
-  color-scheme: dark;
 }
 
 /* Density modes */
@@ -230,6 +229,9 @@
   line-height: var(--dcs-lh);
   color: var(--dcs-text);
   background: var(--dcs-bg);
+  /* Scoped here (not on :root) so the dark scheme — and dark native
+     scrollbars/controls — never leak into a light host page. */
+  color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
