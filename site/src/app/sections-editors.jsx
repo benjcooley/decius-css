@@ -22,6 +22,24 @@ function rgbHex([r,g,b]) {
   const f = n => Math.round(n*255).toString(16).padStart(2, '0');
   return `#${f(r)}${f(g)}${f(b)}`;
 }
+function hexToRgb(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex).trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+}
+function rgbToHsv([r, g, b]) {
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return { h, s: max ? d / max : 0, v: max };
+}
+const hexToHsv = (hex) => { const rgb = hexToRgb(hex); return rgb && rgbToHsv(rgb); };
 
 /* ─────────── Color wheel + triangle (HSV) ─────────── */
 function ColorWheel({ size = 220 }) {
@@ -327,35 +345,15 @@ function ColorPicker({ value, onChange, compact }) {
 
 /* Channel-editor color field: a mini swatch at input height that opens a
    small dropdown picker. */
-function ColorField({ initial = '#4d9fff' }) {
-  const [open, setOpen] = useStateE(false);
-  const ref = useRefE(null);
-  useDismiss(ref, open, () => setOpen(false));
-  return (
-    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
-      <div className="dcs-colorfield" onClick={() => setOpen(o => !o)}>
-        <span className="dcs-colorfield__chip" style={{ background: initial }} />
-        <span className="dcs-colorfield__hex">{initial.toUpperCase()}</span>
-        <Icon name="caret-up-down" size="sm" />
-      </div>
-      {open && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30 }}>
-          <Panel raised pad="sm" style={{ boxShadow: 'var(--dcs-shadow-pop)' }}><ColorPicker compact /></Panel>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* Scrub-color widget: drag ←→ hue, ↕ value, Ctrl+←→ saturation. */
-function ColorDrag() {
-  const [hsv, setHsv] = useStateE({ h: 210, s: 0.7, v: 0.85 });
+// A reusable color CHIP that scrubs HSV on drag: ←→ hue, ↕ value, Ctrl+←→ sat.
+// Same behavior wherever a chip appears (channel widget, color-only, etc.).
+function ColorChip({ hsv, setHsv, size }) {
   const onDown = (e) => {
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     const sx = e.clientX, sy = e.clientY, s0 = { ...hsv };
+    const clamp = (n) => Math.max(0, Math.min(1, n));
     const move = (ev) => {
       const dx = ev.clientX - sx, dy = sy - ev.clientY;
-      const clamp = (n) => Math.max(0, Math.min(1, n));
       let h = s0.h, s = s0.s;
       const v = clamp(s0.v + dy / 200);
       if (ev.ctrlKey || ev.metaKey) s = clamp(s0.s + dx / 200);
@@ -365,15 +363,37 @@ function ColorDrag() {
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   };
-  const hex = rgbHex(hsvToRgb(hsv.h, hsv.s, hsv.v));
   return (
-    <div onPointerDown={onDown} title="drag: ←→ hue · ↕ value · Ctrl+←→ saturation"
-         style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'ew-resize', userSelect: 'none', touchAction: 'none' }}>
-      <span style={{ width: 28, height: 28, borderRadius: 4, background: hex, border: '1px solid var(--dcs-line)', boxShadow: 'var(--dcs-bevel-down)' }} />
-      <span className="dcs-mono" style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>
-        {hex.toUpperCase()}<br />
-        <span style={{ fontSize: 9, color: 'var(--dcs-text-mute)' }}>{Math.round(hsv.h)}° {Math.round(hsv.s * 100)} {Math.round(hsv.v * 100)}</span>
-      </span>
+    <span className="dcs-colorfield__chip" onPointerDown={onDown}
+      title="drag: ←→ hue · ↕ value · Ctrl saturation"
+      style={{ background: rgbHex(hsvToRgb(hsv.h, hsv.s, hsv.v)), ...(size ? { width: size, height: size } : null) }} />
+  );
+}
+
+// Channel color widget: chip (drag-scrub) + editable/copy-paste hex + dropdown
+// picker. `colorOnly` drops the hex for a compact swatch. Row height matches
+// the other channel widgets (var(--dcs-h-in)) so inspector rows align.
+function ColorField({ value = '#4d9fff', onChange, colorOnly }) {
+  const [hsv, setHsv] = useStateE(() => hexToHsv(value) || { h: 210, s: 0.7, v: 0.85 });
+  const [open, setOpen] = useStateE(false);
+  const ref = useRefE(null);
+  useDismiss(ref, open, () => setOpen(false));
+  const set = (h) => { setHsv(h); if (onChange) onChange(rgbHex(hsvToRgb(h.h, h.s, h.v))); };
+  const hex = rgbHex(hsvToRgb(hsv.h, hsv.s, hsv.v));
+  const onHex = (e) => { const h = hexToHsv(e.target.value); if (h) set(h); };
+  return (
+    <div ref={ref} className={`dcs-colorfield${colorOnly ? ' dcs-colorfield--swatch' : ''}`} style={{ position: 'relative' }}>
+      <ColorChip hsv={hsv} setHsv={set} />
+      {!colorOnly && (
+        <input className="dcs-colorfield__hex" value={hex.toUpperCase()} spellCheck={false}
+          onChange={onHex} onPointerDown={(e) => e.stopPropagation()} />
+      )}
+      <span className="dcs-colorfield__caret" onClick={() => setOpen(o => !o)}><Icon name="chevron-down" size="sm" /></span>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30 }}>
+          <Panel raised pad="sm" style={{ boxShadow: 'var(--dcs-shadow-pop)' }}><ColorPicker compact /></Panel>
+        </div>
+      )}
     </div>
   );
 }
@@ -459,20 +479,40 @@ function SectionColorPicker() {
         </div>
       </Demo>
 
-      <Demo frame="app" caption="Channel-editor widgets — inline color field (dropdown) and a scrub-color chip">
-        <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap', paddingBottom: 200 }}>
-          <div className="dcs-col" style={{ gap: 8, minWidth: 200 }}>
-            <div className="dcs-field"><label className="dcs-field__label">Base</label><ColorField initial="#4d9fff" /></div>
-            <div className="dcs-field"><label className="dcs-field__label">Rim</label><ColorField initial="#ff7ab8" /></div>
-            <div className="dcs-field"><label className="dcs-field__label">Subsurf</label><ColorField initial="#ef6b6b" /></div>
-            <div style={{ fontSize: 11, color: 'var(--dcs-text-mute)' }}>Click a field for a dropdown picker.</div>
-          </div>
-          <div className="dcs-col" style={{ gap: 10 }}>
-            <ColorDrag />
-            <div style={{ fontSize: 11, color: 'var(--dcs-text-mute)', maxWidth: 200, lineHeight: 1.5 }}>
-              Drag the chip: <strong style={{ color: 'var(--dcs-text-dim)' }}>←→</strong> hue,
-              <strong style={{ color: 'var(--dcs-text-dim)' }}> ↕</strong> value,
-              <strong style={{ color: 'var(--dcs-text-dim)' }}> Ctrl+←→</strong> saturation.
+      <Demo frame="app" caption="Channel widgets — every inspector control shares one row height, so a textbox, value editor, color chip, dropdown, toggle/checkbox and a multiple-choice group all stack with even prompt → widget metrics.">
+        <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap', paddingBottom: 260 }}>
+          {/* Stacked in an inspector — every row is the same height (var(--dcs-h-in)):
+              prompt on the left, widget on the right. They "just stack" uniformly. */}
+          <Panel title="Material" icon="palette" pad="sm" style={{ minWidth: 264 }}>
+            <div className="dcs-props">
+              <div className="dcs-field"><span className="dcs-field__label">Name</span><input className="dcs-input" defaultValue="jane_skin" /></div>
+              <div className="dcs-field"><span className="dcs-field__label">Roughness</span><Combo value={0.35} min={0} max={1} step={0.01} format={v => v.toFixed(2)} /></div>
+              <div className="dcs-field"><span className="dcs-field__label">Base</span><ColorField value="#4d9fff" /></div>
+              <div className="dcs-field"><span className="dcs-field__label">Rim</span><ColorField value="#ff7ab8" /></div>
+              <div className="dcs-field"><span className="dcs-field__label">Blend</span>
+                <select className="dcs-select"><option>Normal</option><option>Add</option><option>Multiply</option><option>Screen</option></select>
+              </div>
+              <div className="dcs-field"><span className="dcs-field__label">Shading</span>
+                <ButtonGroup value="pbr" options={[{ value: 'flat', label: 'Flat' }, { value: 'pbr', label: 'PBR' }, { value: 'toon', label: 'Toon' }]} />
+              </div>
+              <div className="dcs-field"><span className="dcs-field__label">Two-sided</span><Switch /></div>
+              <div className="dcs-field"><span className="dcs-field__label">Cast shadow</span><Check checked /></div>
+            </div>
+          </Panel>
+          <div className="dcs-col" style={{ gap: 12, minWidth: 200 }}>
+            <div className="dcs-row" style={{ gap: 10, alignItems: 'center' }}>
+              <ColorField value="#4ad5d5" colorOnly />
+              <ColorField value="#f2b14a" colorOnly />
+              <ColorField value="#b48cff" colorOnly />
+              <span style={{ fontSize: 11, color: 'var(--dcs-text-mute)' }}>color-only</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--dcs-text-dim)', lineHeight: 1.6, maxWidth: 220 }}>
+              Each row is one channel widget at a uniform height —
+              <strong style={{ color: 'var(--dw-text)' }}> textbox, value editor, color chip, dropdown, toggle / checkbox</strong>,
+              and a <strong style={{ color: 'var(--dw-text)' }}>multiple-choice</strong> group — so they line up when stacked.
+              The color chip <strong style={{ color: 'var(--dw-text)' }}>scrubs</strong> on drag
+              (←→ hue, ↕ value, Ctrl saturation); its hex is a real field you can
+              <strong style={{ color: 'var(--dw-text)' }}> copy &amp; paste</strong>, and the chevron opens the full picker.
             </div>
           </div>
         </div>

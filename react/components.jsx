@@ -578,7 +578,7 @@ function Check({ checked, onChange, children, radio }) {
       <div className="dcs-check__box">
         {!radio && cur && <Icon name="check" />}
       </div>
-      <span>{children}</span>
+      {children != null && children !== '' && <span>{children}</span>}
     </div>
   );
 }

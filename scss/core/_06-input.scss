@@ -38,9 +38,20 @@
 }
 .dcs-field--row > * { flex: 1; }
 
-/* Property rows: a stack with even vertical rhythm. Every row is
-   exactly --dcs-h tall so a switch, slider, swatch, combo and text
-   field all align baselines and stack with consistent spacing. */
+/* ── Channel-widget contract ──────────────────────────────────────
+   An inspector is a vertical stack of `.dcs-field` rows inside
+   `.dcs-props`. Each row is locked to --dcs-h-in tall, so the whole
+   stack reads as even, same-size rows — that's the one rule that makes
+   an inspector look tidy.
+
+   A "channel widget" is just any control that obeys two things:
+     1. it's no taller than the row (--dcs-h-in), and
+     2. if it should span the row, it stretches (flex: 1).
+   The built-ins listed below already comply; a custom widget complies
+   by adding `.dcs-field__fill` (to span) or simply staying short (to
+   sit right-aligned, like a switch/check). The set is open — anything
+   that follows the contract keeps the rhythm; anything that ignores it
+   just breaks the even spacing, which is allowed, only less tidy. */
 .dcs-props {
   display: flex; flex-direction: column;
   gap: var(--dcs-s-3);
@@ -50,14 +61,25 @@
   min-height: var(--dcs-h-in);
   justify-content: space-between;
 }
+/* Spanning channel widgets: fill the row after the label and collapse
+   to one uniform height (so the 24px-tall defaults — slider, swatch,
+   button-group — match the 22px text/number fields when stacked).
+   `.dcs-field__fill` is the opt-in escape hatch for custom widgets. */
 .dcs-props > .dcs-field > .dcs-slider,
 .dcs-props > .dcs-field > .dcs-input,
 .dcs-props > .dcs-field > .dcs-select,
 .dcs-props > .dcs-field > .dcs-combo,
 .dcs-props > .dcs-field > .dcs-swatch,
-.dcs-props > .dcs-field > .dcs-btn-group {
+.dcs-props > .dcs-field > .dcs-colorfield,
+.dcs-props > .dcs-field > .dcs-btn-group,
+.dcs-props > .dcs-field > .dcs-field__fill {
   flex: 1;
   min-width: 0;
+  height: var(--dcs-h-in);
+}
+.dcs-props > .dcs-field > .dcs-btn-group .dcs-btn {
+  height: calc(var(--dcs-h-in) - 6px);
+  min-width: calc(var(--dcs-h-in) - 6px);
 }
 
 /* ZBrush-style combo number/slider — flat by default */

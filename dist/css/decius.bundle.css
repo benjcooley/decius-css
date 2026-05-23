@@ -785,6 +785,9 @@
   flex-basis: 1px;
 }
 
+/* The ::before is just a wider, invisible grab area — DCC splitters keep
+   the resize cursor as the only affordance and avoid an accent flash as
+   the pointer sweeps the screen. */
 .dcs-splitter::before {
   content: "";
   position: absolute;
@@ -792,8 +795,6 @@
   right: -3px;
   top: 0;
   bottom: 0;
-  background: transparent;
-  transition: background var(--dcs-t-fast);
   z-index: 2;
 }
 
@@ -803,11 +804,6 @@
   right: 0;
   top: -3px;
   bottom: -3px;
-}
-
-.dcs-splitter:hover::before,
-.dcs-splitter--active::before {
-  background: var(--dcs-accent);
 }
 
 /* ------------------------------------------------------------
@@ -1050,9 +1046,20 @@
   flex: 1;
 }
 
-/* Property rows: a stack with even vertical rhythm. Every row is
-   exactly --dcs-h tall so a switch, slider, swatch, combo and text
-   field all align baselines and stack with consistent spacing. */
+/* ── Channel-widget contract ──────────────────────────────────────
+   An inspector is a vertical stack of `.dcs-field` rows inside
+   `.dcs-props`. Each row is locked to --dcs-h-in tall, so the whole
+   stack reads as even, same-size rows — that's the one rule that makes
+   an inspector look tidy.
+
+   A "channel widget" is just any control that obeys two things:
+     1. it's no taller than the row (--dcs-h-in), and
+     2. if it should span the row, it stretches (flex: 1).
+   The built-ins listed below already comply; a custom widget complies
+   by adding `.dcs-field__fill` (to span) or simply staying short (to
+   sit right-aligned, like a switch/check). The set is open — anything
+   that follows the contract keeps the rhythm; anything that ignores it
+   just breaks the even spacing, which is allowed, only less tidy. */
 .dcs-props {
   display: flex;
   flex-direction: column;
@@ -1065,14 +1072,26 @@
   justify-content: space-between;
 }
 
+/* Spanning channel widgets: fill the row after the label and collapse
+   to one uniform height (so the 24px-tall defaults — slider, swatch,
+   button-group — match the 22px text/number fields when stacked).
+   `.dcs-field__fill` is the opt-in escape hatch for custom widgets. */
 .dcs-props > .dcs-field > .dcs-slider,
 .dcs-props > .dcs-field > .dcs-input,
 .dcs-props > .dcs-field > .dcs-select,
 .dcs-props > .dcs-field > .dcs-combo,
 .dcs-props > .dcs-field > .dcs-swatch,
-.dcs-props > .dcs-field > .dcs-btn-group {
+.dcs-props > .dcs-field > .dcs-colorfield,
+.dcs-props > .dcs-field > .dcs-btn-group,
+.dcs-props > .dcs-field > .dcs-field__fill {
   flex: 1;
   min-width: 0;
+  height: var(--dcs-h-in);
+}
+
+.dcs-props > .dcs-field > .dcs-btn-group .dcs-btn {
+  height: calc(var(--dcs-h-in) - 6px);
+  min-width: calc(var(--dcs-h-in) - 6px);
 }
 
 /* ZBrush-style combo number/slider — flat by default */
@@ -2053,17 +2072,17 @@
   position: relative;
 }
 
-/* Channel-editor color field — input-height widget that opens a dropdown picker */
+/* Channel color field — input-height widget (matches other inspector rows):
+   a drag-scrub chip + an editable/copyable hex + a dropdown-picker caret. */
 .dcs-colorfield {
   display: inline-flex;
   align-items: center;
-  gap: var(--dcs-s-3);
+  gap: var(--dcs-s-2);
   height: var(--dcs-h-in);
-  padding: 0 var(--dcs-s-2);
+  padding: 0 var(--dcs-s-1) 0 var(--dcs-s-1);
   background: var(--dcs-well);
   border: 1px solid var(--dcs-line);
   border-radius: var(--dcs-r-2);
-  cursor: pointer;
   -webkit-user-select: none;
      -moz-user-select: none;
           user-select: none;
@@ -2077,19 +2096,56 @@
 }
 
 .dcs-colorfield__chip {
-  width: 16px;
-  height: 16px;
+  width: calc(var(--dcs-h-in) - 8px);
+  height: calc(var(--dcs-h-in) - 8px);
   flex: 0 0 auto;
   border-radius: var(--dcs-r-1);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  cursor: ew-resize; /* drag-scrub */
+  touch-action: none;
 }
 
 .dcs-colorfield__hex {
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--dcs-text-dim);
+  font-family: var(--dcs-font-mono);
+  font-size: var(--dcs-fs-sm);
+  letter-spacing: 0.02em;
+  padding: 0;
 }
 
-.dcs-colorfield svg, .dcs-colorfield i {
+.dcs-colorfield__hex:focus {
+  color: var(--dcs-text);
+}
+
+.dcs-colorfield__caret {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
   color: var(--dcs-text-mute);
+  cursor: pointer;
+}
+
+.dcs-colorfield__caret:hover {
+  color: var(--dcs-text);
+}
+
+/* Color-only variant — just the chip + caret, no hex. */
+.dcs-colorfield--swatch {
+  padding: 0 var(--dcs-s-2);
+  gap: var(--dcs-s-1);
+}
+
+.dcs-colorfield--swatch .dcs-colorfield__chip {
+  width: 18px;
+  height: 18px;
 }
 
 /* ------------------------------------------------------------

@@ -67,24 +67,42 @@
   position: relative;
 }
 
-/* Channel-editor color field — input-height widget that opens a dropdown picker */
+/* Channel color field — input-height widget (matches other inspector rows):
+   a drag-scrub chip + an editable/copyable hex + a dropdown-picker caret. */
 .dcs-colorfield {
-  display: inline-flex; align-items: center; gap: var(--dcs-s-3);
+  display: inline-flex; align-items: center; gap: var(--dcs-s-2);
   height: var(--dcs-h-in);
-  padding: 0 var(--dcs-s-2);
+  padding: 0 var(--dcs-s-1) 0 var(--dcs-s-1);
   background: var(--dcs-well);
   border: 1px solid var(--dcs-line);
   border-radius: var(--dcs-r-2);
-  cursor: pointer; user-select: none;
+  user-select: none;
   color: var(--dcs-text-dim);
   font-family: var(--dcs-font-mono);
   font-size: var(--dcs-fs-sm);
 }
 .dcs-colorfield:hover { border-color: var(--dcs-line-strong); }
 .dcs-colorfield__chip {
-  width: 16px; height: 16px; flex: 0 0 auto;
+  width: calc(var(--dcs-h-in) - 8px); height: calc(var(--dcs-h-in) - 8px);
+  flex: 0 0 auto;
   border-radius: var(--dcs-r-1);
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.3);
+  cursor: ew-resize;           /* drag-scrub */
+  touch-action: none;
 }
-.dcs-colorfield__hex { flex: 1; }
-.dcs-colorfield svg, .dcs-colorfield i { color: var(--dcs-text-mute); }
+.dcs-colorfield__hex {
+  flex: 1; min-width: 0; width: 100%;
+  background: transparent; border: none; outline: none;
+  color: var(--dcs-text-dim);
+  font-family: var(--dcs-font-mono); font-size: var(--dcs-fs-sm);
+  letter-spacing: .02em; padding: 0;
+}
+.dcs-colorfield__hex:focus { color: var(--dcs-text); }
+.dcs-colorfield__caret {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 16px; color: var(--dcs-text-mute); cursor: pointer;
+}
+.dcs-colorfield__caret:hover { color: var(--dcs-text); }
+/* Color-only variant — just the chip + caret, no hex. */
+.dcs-colorfield--swatch { padding: 0 var(--dcs-s-2); gap: var(--dcs-s-1); }
+.dcs-colorfield--swatch .dcs-colorfield__chip { width: 18px; height: 18px; }
