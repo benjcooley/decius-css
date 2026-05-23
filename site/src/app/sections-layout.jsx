@@ -161,12 +161,12 @@ function SectionDock() {
 
   const renderContent = (id) => {
     switch (id) {
-      case 'tree': return TreeView();
-      case 'files': return Files();
+      case 'tree': return <div style={{ padding: 'var(--dcs-s-2) 0' }}>{TreeView()}</div>;
+      case 'files': return <div style={{ padding: 'var(--dcs-s-2) 0' }}>{Files()}</div>;
       case 'preview': return <div style={{ position: 'relative', height: '100%', minHeight: 180 }}>{Preview()}</div>;
       case 'widgets': return Widgets();
       case 'log': return LogView();
-      case 'inspector': return Inspector();
+      case 'inspector': return <div style={{ padding: 'var(--dcs-s-3) var(--dcs-s-4)' }}>{Inspector()}</div>;
       default: return null;
     }
   };

@@ -1,12 +1,11 @@
 /* ------------------------------------------------------------
    14 · TREE / TABLE / LIST
    ------------------------------------------------------------ */
+/* A list is a tree without folding — same row metrics, hover, selection,
+   no per-row rules, no container chrome. Just a plain stack like .dcs-tree. */
 .dcs-list {
   display: flex; flex-direction: column;
-  background: var(--dcs-bg);
-  border: 1px solid var(--dcs-line);
-  border-radius: var(--dcs-r-2);
-  overflow: hidden;
+  user-select: none;
 }
 /* Lists and trees are the same primitive — identical row metrics, hover, and
    selection. A tree row just adds depth indent + a chevron. Both are
@@ -25,8 +24,8 @@
   cursor: default;
   user-select: none;
 }
-.dcs-list__item { gap: var(--dcs-s-3); padding: 0 var(--dcs-s-4); border-bottom: 1px solid var(--dcs-line-soft); }
-.dcs-list__item:last-child { border-bottom: none; }
+/* No per-line rule — matches the tree's left inset so the two read alike. */
+.dcs-list__item { gap: var(--dcs-s-2); padding: 0 var(--dcs-s-4) 0 var(--dcs-s-2); }
 .dcs-tree { user-select: none; }
 .dcs-tree__row {
   gap: 2px;
