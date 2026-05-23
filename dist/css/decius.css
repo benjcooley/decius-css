@@ -1386,6 +1386,11 @@
   display: flex;
   align-items: center;
   height: var(--dcs-h);
+  /* .dcs-list is a flex column; without this its rows shrink below --dcs-h
+     when the list overflows/scrolls, breaking parity with tree rows (which
+     live in a plain block). Lock both to exactly --dcs-h. */
+  flex: 0 0 var(--dcs-h);
+  box-sizing: border-box;
   font-size: var(--dcs-fs-sm);
   color: var(--dcs-text-dim);
   cursor: default;
