@@ -23,12 +23,13 @@
   user-select: none;
   min-height: var(--dcs-h);
 }
-.dcs-foldout__header:hover { background: var(--dcs-surface-2); }
+/* No background flash on hover — only the chevron reacts (DCC-quiet). */
+.dcs-foldout__header:hover .dcs-foldout__chevron { color: var(--dcs-text); }
 .dcs-foldout__chevron {
   width: 16px; height: 16px;
   display: flex; align-items: center; justify-content: center;
   color: var(--dcs-text-mute);
-  transition: transform var(--dcs-t-fast);
+  transition: transform var(--dcs-t-fast), color var(--dcs-t-fast);
 }
 .dcs-foldout__chevron--open { transform: rotate(90deg); }
 .dcs-foldout__icon { color: var(--dcs-text-mute); flex: 0 0 auto; }
@@ -48,5 +49,14 @@
 .dcs-foldout__body {
   padding: var(--dcs-s-1) var(--dcs-s-5) var(--dcs-s-5) var(--dcs-s-5);
 }
-/* Collapsed: hide the body (the chevron un-rotates separately). */
+/* Collapsed (class-driven: React / decius.js) — hide the body. */
 .dcs-foldout--collapsed > .dcs-foldout__body { display: none; }
+
+/* Base component: also works as a native <details>/<summary> with zero JS.
+     <details class="dcs-foldout"><summary class="dcs-foldout__header">…
+   The browser shows/hides the body; we just hide the default marker and
+   rotate the chevron from the [open] attribute. */
+.dcs-foldout > summary.dcs-foldout__header { list-style: none; }
+.dcs-foldout > summary.dcs-foldout__header::-webkit-details-marker { display: none; }
+.dcs-foldout > summary.dcs-foldout__header::marker { content: ""; }
+details.dcs-foldout[open] > summary .dcs-foldout__chevron { transform: rotate(90deg); }

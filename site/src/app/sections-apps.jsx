@@ -137,7 +137,7 @@ function SampleDCC() {
   );
   const Inspector = () => (
     <Foldouts>
-      <Foldout title="Transform" icon="move" tools={<Button ghost sm icon iconLeft="key" />}>
+      <Foldout title="Transform" icon="move">
         <div className="dcs-props">
           {[['X', '#ef6b6b', pos.x, 'x'], ['Y', '#4ed18a', pos.y, 'y'], ['Z', '#4d9fff', pos.z, 'z']].map(([k, c, v, key]) => (
             <div key={k} className="dcs-field"><span className="dcs-field__label" style={{ flex: '0 0 14px', color: c, fontSize: 11 }}>{k}</span><Combo value={v} onChange={nv => setPos(p => ({ ...p, [key]: nv }))} min={-10} max={10} step={0.001} format={n => n.toFixed(3)} /></div>

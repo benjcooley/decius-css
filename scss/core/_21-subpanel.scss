@@ -24,11 +24,13 @@
   cursor: default;
   user-select: none;
 }
-.dcs-subpanel__header:hover { color: var(--dcs-text-dim); background: var(--dcs-surface-2); }
+/* No background flash on hover — only the chevron reacts (matches foldout). */
+.dcs-subpanel__header:hover { color: var(--dcs-text-dim); }
+.dcs-subpanel__header:hover .dcs-subpanel__chevron { color: var(--dcs-text); }
 .dcs-subpanel__chevron {
   width: 12px; height: 12px;
   display: flex; align-items: center; justify-content: center;
-  transition: transform var(--dcs-t-fast);
+  transition: transform var(--dcs-t-fast), color var(--dcs-t-fast);
   cursor: pointer;
   flex: 0 0 auto;
   color: var(--dcs-text-mute);
@@ -52,3 +54,10 @@
 }
 .dcs-subpanel--collapsed .dcs-subpanel__body { display: none; }
 .dcs-subpanel--collapsed .dcs-subpanel__header { border-bottom: none; }
+
+/* Base component: also works as a native <details>/<summary> with zero JS. */
+.dcs-subpanel > summary.dcs-subpanel__header { list-style: none; }
+.dcs-subpanel > summary.dcs-subpanel__header::-webkit-details-marker { display: none; }
+.dcs-subpanel > summary.dcs-subpanel__header::marker { content: ""; }
+details.dcs-subpanel:not([open]) > summary.dcs-subpanel__header { border-bottom: none; }
+details.dcs-subpanel[open] > summary .dcs-subpanel__chevron { transform: rotate(90deg); }

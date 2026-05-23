@@ -244,7 +244,7 @@ function SectionFoldouts() {
                  tools={<><Button ghost sm icon iconLeft="pin" /><Button ghost sm icon iconLeft="more-h" /></>}>
             <div style={{ maxHeight: 420, overflowY: 'auto' }}>
               <Foldouts>
-                <Foldout title="Transform" icon="move" meta="Local" tools={<Button ghost sm icon iconLeft="key" />}>
+                <Foldout title="Transform" icon="move" meta="Local">
                   <div className="dcs-props">
                     {[['X', '#ef6b6b', 1.428], ['Y', '#4ed18a', -0.952], ['Z', '#4d9fff', 3.000]].map(([k, c, v]) => (
                       <div key={k} className="dcs-field">
@@ -311,6 +311,47 @@ function SectionFoldouts() {
             <p><strong style={{ color: 'var(--dw-text)' }}>Foldouts</strong> are soft, lighter-bg cards with margins — they feel like grouped properties. Use for inspectors with many heterogeneous sections (Blender's N-panel, Unity's Inspector).</p>
             <p><strong style={{ color: 'var(--dw-text)' }}>Subpanels</strong> are full-width seams in a stack — they feel like rigid rows. Use when controls are dense and visual chunking matters more than soft separation (Maya's Channel Box, Houdini's parameter editor).</p>
           </div>
+        </div>
+      </Demo>
+
+      <h3 style={{ marginTop: 36, marginBottom: 8 }}>It's a base component — raw CSS or JS</h3>
+      <p className="dw-section__lead" style={{ marginTop: 0 }}>
+        A foldout is just markup. Wrap it in a native <code>&lt;details&gt;</code> and it opens and closes
+        with <strong style={{ color: 'var(--dw-text)' }}>zero JavaScript</strong> — same class names, same look
+        (the second one below starts collapsed). Or drive it yourself by toggling the
+        {' '}<code>.dcs-foldout--collapsed</code> class — that's what React does here, and what the vanilla
+        {' '}<code>decius.js</code> runtime wires up automatically on any <code>.dcs-foldout__header</code>.
+      </p>
+      <Demo frame="app">
+        <div className="dcs-foldouts" style={{ maxWidth: 360 }}>
+          <details className="dcs-foldout" open>
+            <summary className="dcs-foldout__header">
+              <span className="dcs-foldout__chevron"><Icon name="chevron-right" size="sm" /></span>
+              <Icon className="dcs-foldout__icon" name="move" size="sm" />
+              <span className="dcs-foldout__title">Transform</span>
+              <span className="dcs-foldout__meta">native &lt;details&gt;</span>
+            </summary>
+            <div className="dcs-foldout__body">
+              <div className="dcs-props">
+                <div className="dcs-field"><span className="dcs-field__label">Position</span><input className="dcs-input" defaultValue="0.0, 0.0, 0.0" /></div>
+                <div className="dcs-field"><span className="dcs-field__label">Scale</span><input className="dcs-input" defaultValue="1.0" /></div>
+              </div>
+            </div>
+          </details>
+          <details className="dcs-foldout">
+            <summary className="dcs-foldout__header">
+              <span className="dcs-foldout__chevron"><Icon name="chevron-right" size="sm" /></span>
+              <Icon className="dcs-foldout__icon" name="palette" size="sm" />
+              <span className="dcs-foldout__title">Material</span>
+              <span className="dcs-foldout__meta">native &lt;details&gt;</span>
+            </summary>
+            <div className="dcs-foldout__body">
+              <div className="dcs-props">
+                <div className="dcs-field"><span className="dcs-field__label">Albedo</span><input className="dcs-input" defaultValue="#4D9FFF" /></div>
+                <div className="dcs-field"><span className="dcs-field__label">Roughness</span><input className="dcs-input" defaultValue="0.42" /></div>
+              </div>
+            </div>
+          </details>
         </div>
       </Demo>
     </section>

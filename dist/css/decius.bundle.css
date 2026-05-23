@@ -2327,9 +2327,13 @@
           user-select: none;
 }
 
+/* No background flash on hover — only the chevron reacts (matches foldout). */
 .dcs-subpanel__header:hover {
   color: var(--dcs-text-dim);
-  background: var(--dcs-surface-2);
+}
+
+.dcs-subpanel__header:hover .dcs-subpanel__chevron {
+  color: var(--dcs-text);
 }
 
 .dcs-subpanel__chevron {
@@ -2338,7 +2342,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform var(--dcs-t-fast);
+  transition: transform var(--dcs-t-fast), color var(--dcs-t-fast);
   cursor: pointer;
   flex: 0 0 auto;
   color: var(--dcs-text-mute);
@@ -2392,6 +2396,27 @@
   border-bottom: none;
 }
 
+/* Base component: also works as a native <details>/<summary> with zero JS. */
+.dcs-subpanel > summary.dcs-subpanel__header {
+  list-style: none;
+}
+
+.dcs-subpanel > summary.dcs-subpanel__header::-webkit-details-marker {
+  display: none;
+}
+
+.dcs-subpanel > summary.dcs-subpanel__header::marker {
+  content: "";
+}
+
+details.dcs-subpanel:not([open]) > summary.dcs-subpanel__header {
+  border-bottom: none;
+}
+
+details.dcs-subpanel[open] > summary .dcs-subpanel__chevron {
+  transform: rotate(90deg);
+}
+
 /* ============================================================
    23 · FOLDOUT — Blender-style soft section
    For property inspectors: rounded, slightly lighter card with
@@ -2425,8 +2450,9 @@
   min-height: var(--dcs-h);
 }
 
-.dcs-foldout__header:hover {
-  background: var(--dcs-surface-2);
+/* No background flash on hover — only the chevron reacts (DCC-quiet). */
+.dcs-foldout__header:hover .dcs-foldout__chevron {
+  color: var(--dcs-text);
 }
 
 .dcs-foldout__chevron {
@@ -2436,7 +2462,7 @@
   align-items: center;
   justify-content: center;
   color: var(--dcs-text-mute);
-  transition: transform var(--dcs-t-fast);
+  transition: transform var(--dcs-t-fast), color var(--dcs-t-fast);
 }
 
 .dcs-foldout__chevron--open {
@@ -2479,9 +2505,29 @@
   padding: var(--dcs-s-1) var(--dcs-s-5) var(--dcs-s-5) var(--dcs-s-5);
 }
 
-/* Collapsed: hide the body (the chevron un-rotates separately). */
+/* Collapsed (class-driven: React / decius.js) — hide the body. */
 .dcs-foldout--collapsed > .dcs-foldout__body {
   display: none;
+}
+
+/* Base component: also works as a native <details>/<summary> with zero JS.
+     <details class="dcs-foldout"><summary class="dcs-foldout__header">…
+   The browser shows/hides the body; we just hide the default marker and
+   rotate the chevron from the [open] attribute. */
+.dcs-foldout > summary.dcs-foldout__header {
+  list-style: none;
+}
+
+.dcs-foldout > summary.dcs-foldout__header::-webkit-details-marker {
+  display: none;
+}
+
+.dcs-foldout > summary.dcs-foldout__header::marker {
+  content: "";
+}
+
+details.dcs-foldout[open] > summary .dcs-foldout__chevron {
+  transform: rotate(90deg);
 }
 
 /* ============================================================
