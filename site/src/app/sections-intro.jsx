@@ -125,7 +125,7 @@ function HeroDeck() {
 function SectionHero() {
   return (
     <section className="dw-section" id="top" style={{ marginBottom: 60 }}>
-      <a href="#" style={{
+      <a href="https://github.com/benjcooley/affineui" target="_blank" rel="noreferrer" style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '8px 14px',
         background: 'var(--dw-accent-dim)',
@@ -152,17 +152,26 @@ function SectionHero() {
           <p className="lede">
             A complete component system for digital content creation tools, synths, video editors, and
             pro desktop interfaces — built around the conventions of Blender, DaVinci Resolve, and Vital,
-            but distributed as plain CSS and SVG. <strong style={{ color: 'var(--dw-text)' }}>One stylesheet.
-            Zero runtime.</strong>
+            distributed as plain CSS, a vanilla-JS runtime, an icon font, and self-hosted type.
+            <strong style={{ color: 'var(--dw-text)' }}> One download. Zero dependencies.</strong>
           </p>
           <div className="dw-hero__actions">
-            <button className="dw-cta dw-cta--primary">
+            <a className="dw-cta dw-cta--primary dw-cta--lg" href={`${import.meta.env.BASE_URL}dl/decius-css.zip`} download>
+              <Icon name="import" size="sm" /> Download decius <span style={{ opacity: .7, fontWeight: 400 }}>· .zip · css + js + fonts</span>
+            </a>
+            <a className="dw-cta dw-cta--ghost" href="#install">
               <Icon name="rocket" size="sm" /> Get started
-            </button>
-            <button className="dw-cta dw-cta--ghost">
+            </a>
+            <a className="dw-cta dw-cta--ghost" href="#buttons">
               <Icon name="graph" size="sm" /> View components
-            </button>
+            </a>
             <span className="dw-pill dw-pill--accent dw-pill--dot">MIT license</span>
+          </div>
+          <div style={{ display: 'flex', gap: 18, marginTop: 14, fontSize: 13, color: 'var(--dw-text-mute)', flexWrap: 'wrap' }}>
+            <span>or grab just what you need:</span>
+            <a href={`${import.meta.env.BASE_URL}dl/css/decius.bundle.min.css`} download>decius.bundle.min.css</a>
+            <a href={`${import.meta.env.BASE_URL}dl/js/decius.min.js`} download>decius.min.js</a>
+            <a href="#install">CDN &amp; npm</a>
           </div>
         </div>
         <HeroDeck />

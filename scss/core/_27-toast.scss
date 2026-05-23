@@ -1,0 +1,69 @@
+/* ============================================================
+   27 · TOAST / NOTIFICATION
+   Transient, stacked notifications. The container is created on
+   demand by decius.js (decius.toast({…})); markup is documented
+   so they can also be authored statically.
+   ============================================================ */
+.dcs-toasts {
+  position: fixed;
+  z-index: 300;
+  bottom: var(--dcs-s-6);
+  right: var(--dcs-s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--dcs-s-3);
+  width: 320px;
+  max-width: calc(100vw - 2 * var(--dcs-s-6));
+  pointer-events: none;
+}
+.dcs-toasts--top-right  { top: var(--dcs-s-6); bottom: auto; }
+.dcs-toasts--top-left   { top: var(--dcs-s-6); bottom: auto; left: var(--dcs-s-6); right: auto; }
+.dcs-toasts--bottom-left { left: var(--dcs-s-6); right: auto; }
+
+.dcs-toast {
+  pointer-events: auto;
+  display: flex;
+  gap: var(--dcs-s-4);
+  padding: var(--dcs-s-4) var(--dcs-s-5);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-left: 3px solid var(--dcs-accent);
+  border-radius: var(--dcs-r-2);
+  box-shadow: var(--dcs-shadow-3);
+  font-size: var(--dcs-fs-sm);
+  align-items: flex-start;
+  animation: dcs-toast-in var(--dcs-t-slow);
+}
+@keyframes dcs-toast-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.dcs-toast--out { animation: dcs-toast-out var(--dcs-t) forwards; }
+@keyframes dcs-toast-out {
+  from { opacity: 1; transform: translateX(0); max-height: 80px; }
+  to   { opacity: 0; transform: translateX(16px); max-height: 0;
+         padding-top: 0; padding-bottom: 0; margin-top: -8px; }
+}
+
+.dcs-toast--ok     { border-left-color: var(--dcs-ok); }
+.dcs-toast--warn   { border-left-color: var(--dcs-warn); }
+.dcs-toast--danger { border-left-color: var(--dcs-danger); }
+.dcs-toast--info   { border-left-color: var(--dcs-accent); }
+
+.dcs-toast__icon { color: var(--dcs-accent); flex: 0 0 auto; margin-top: 1px; }
+.dcs-toast--ok     .dcs-toast__icon { color: var(--dcs-ok); }
+.dcs-toast--warn   .dcs-toast__icon { color: var(--dcs-warn); }
+.dcs-toast--danger .dcs-toast__icon { color: var(--dcs-danger); }
+
+.dcs-toast__body { flex: 1; min-width: 0; }
+.dcs-toast__title { color: var(--dcs-text); font-weight: 500; margin-bottom: 2px; }
+.dcs-toast__msg { color: var(--dcs-text-dim); }
+.dcs-toast__close {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  color: var(--dcs-text-mute);
+  cursor: pointer;
+  border-radius: var(--dcs-r-1);
+}
+.dcs-toast__close:hover { color: var(--dcs-text); background: var(--dcs-surface-3); }

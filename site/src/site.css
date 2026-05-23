@@ -1,6 +1,13 @@
 /* Docs-only page styles: palettes, type spec rows, the icon catalog grid,
    embedded-demo containers. The framework itself lives in dist/css. */
 
+/* Smooth in-page anchor nav, clearing the sticky top bar. */
+html { scroll-behavior: smooth; }
+.dw-section, [id] { scroll-margin-top: 84px; }
+
+/* Large hero CTA (download button). */
+.dw-cta--lg { height: 44px; padding: 0 20px; font-size: 14px; }
+
 /* ───────────── Palette grid ───────────── */
 .palette-grid {
   display: grid;

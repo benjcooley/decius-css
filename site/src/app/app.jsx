@@ -13,6 +13,7 @@ const NAV = [
     { id: 'top',    label: 'Introduction',  icon: 'decius' },
     { id: 'why',    label: 'Why decius',    icon: 'help' },
     { id: 'install',label: 'Install',       icon: 'rocket' },
+    { id: 'javascript', label: 'JavaScript', icon: 'cpu' },
   ]},
   { group: 'Foundations', items: [
     { id: 'colors',  label: 'Color',    icon: 'palette' },
@@ -44,6 +45,11 @@ const NAV = [
   { group: 'Feedback', items: [
     { id: 'alerts', label: 'Alerts', icon: 'alert' },
     { id: 'modals', label: 'Modals', icon: 'info' },
+  ]},
+  { group: 'Overlays', items: [
+    { id: 'menus',    label: 'Menus & dropdowns', icon: 'menu' },
+    { id: 'popovers', label: 'Popovers',          icon: 'info' },
+    { id: 'toasts',   label: 'Toasts',            icon: 'alert' },
   ]},
   { group: 'Editors', items: [
     { id: 'color-pickers', label: 'Color pickers', icon: 'droplet' },
@@ -229,6 +235,7 @@ function App() {
         <SectionHero />
         <SectionWhy />
         <SectionInstall />
+        <SectionJavaScript />
 
         <hr />
         <SectionColors />
@@ -260,6 +267,11 @@ function App() {
         <hr />
         <SectionAlerts />
         <SectionModals />
+
+        <hr />
+        <SectionMenus />
+        <SectionPopovers />
+        <SectionToasts />
 
         <hr />
         <SectionColorPicker />

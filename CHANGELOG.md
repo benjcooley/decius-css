@@ -12,7 +12,13 @@ First public release.
 - Core framework `decius.css` (scoped to `.dcs`): panels, dock/split, buttons, inputs, sliders &
   faders, knobs, checks/switches, badges/tags/chips, kbd, alerts, modals, trees/tables/lists,
   toolbars, tooltips, color swatches & pickers, curve & node-graph editor surfaces, subpanels,
-  foldouts, and skeuomorphic hardware elements.
+  foldouts, menus/dropdowns/context menus, popovers, toasts/notifications, and skeuomorphic
+  hardware elements.
+- **`decius.js`** — a zero-dependency vanilla component runtime with a Bootstrap-style data API
+  (`data-dcs-*`) and a programmatic API (`decius.toast`, `decius.modal`, `decius.menu`, …). Drives
+  collapse, modals, menus, popovers, tabs, toasts, dismiss/close, toggles, and the drag controls.
+  Ships as IIFE (global `decius`), minified, and ES module.
+- One-archive download `decius-css.zip` (css + js + fonts) and a `kitchen-sink.html` example.
 - Runtime theming via `--dcs-*` CSS custom properties and `data-dcs-*` attributes
   (density, radius, accent, darkness, and a `3d` synth style).
 - Light web/docs theme `decius-web.css` (`--dw-*`).

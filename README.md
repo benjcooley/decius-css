@@ -2,7 +2,8 @@
 
 **A CSS framework for digital content creation (DCC) tools, synths, and pro desktop interfaces.**
 Dark, dense, and token-driven — the vocabulary your power users already speak (Blender, DaVinci
-Resolve, Vital), distributed as plain CSS, a web font, and self-hosted type.
+Resolve, Vital), distributed as plain CSS, a zero-dependency JS runtime, an icon font, and
+self-hosted type. One download, no dependencies.
 
 decius is built for **[affineui](https://github.com/benjcooley/affineui)** — a zero-dependency C++
 HTML/CSS renderer for native apps and games — and runs in any modern browser too.
@@ -21,7 +22,8 @@ HTML/CSS renderer for native apps and games — and runs in any modern browser t
 |---|---|
 | **Zero runtime** | One stylesheet with the fonts and icon font baked in. No compile step, no design-system tax. |
 | **Tokenized to the wall** | Every color, size, radius, shadow and motion value is a CSS custom property. Re-theme by overriding a handful of variables — at runtime, no rebuild. |
-| **Built for pros** | Combo number fields, knobs, bipolar sliders, dockable panels, tree/table/list, curve & node-graph editors, even skeuomorphic hardware. |
+| **Built for pros** | Combo number fields, knobs, bipolar sliders, dockable panels, tree/table/list, curve & node-graph editors, menus, popovers, toasts, even skeuomorphic hardware. |
+| **Behavior, no framework** | `decius.js` — a tiny vanilla runtime with a Bootstrap-style data API — drives modals, menus, popovers, tabs, toasts, and the drag controls. No React required. |
 | **Scoped** | Everything lives under `.dcs`, so the framework never leaks into the rest of your page. |
 | **225 icons as a font** | A `<i class="di di-cube">` glyph that inherits `currentColor` and `font-size`. |
 
@@ -49,9 +51,14 @@ import 'decius-css/css/decius.bundle.min.css';
 @use 'decius-css/scss/decius';
 ```
 
+Or [download the `.zip`](https://benjcooley.github.io/decius-css/) (css + js + fonts) from the docs site.
+
 ### Then wrap your UI
 
 ```html
+<link rel="stylesheet" href="…/decius.bundle.min.css">
+<script src="…/decius.min.js"></script>      <!-- optional: component behavior -->
+
 <div class="dcs" data-dcs-density="comfortable">
   <button class="dcs-btn dcs-btn--primary">
     <i class="di di-render"></i>
@@ -59,6 +66,27 @@ import 'decius-css/css/decius.bundle.min.css';
   </button>
 </div>
 ```
+
+## JavaScript
+
+Stateful components (modals, menus, popovers, tabs, toasts, and the drag controls — sliders,
+faders, knobs, combo fields) are driven by **`decius.js`**, a zero-dependency vanilla script with a
+Bootstrap-style data API. It auto-initializes on `DOMContentLoaded`.
+
+```html
+<!-- data API -->
+<button data-dcs-toggle="modal" data-dcs-target="#m">Open</button>
+<div data-dcs-slider data-min="0" data-max="1" data-value="0.6"></div>
+```
+
+```js
+// programmatic API
+decius.toast({ title: 'Saved', variant: 'ok' });
+decius.modal.open('#confirm');
+decius.init(container);   // wire up dynamically-added markup
+```
+
+It's also an ES module: `import decius from 'decius-css/js'`.
 
 ## Theming
 
@@ -93,8 +121,10 @@ Everything is built into `dist/`:
 | `dist/css/decius-icons.css` | `@font-face` + `.di-*` classes for the icon font. |
 | `dist/css/decius-fonts.css` | `@font-face` for self-hosted IBM Plex Sans + JetBrains Mono. |
 | `dist/css/decius.bundle.css` / `.min.css` | One drop-in file = fonts + icons + framework. |
+| `dist/js/decius.js` / `.min.js` / `.esm.js` | Vanilla component runtime (IIFE global + ES module). |
 | `dist/fonts/decius-icons.woff2` | The 225-glyph icon web font. |
 | `dist/fonts/*.woff2` | Self-hosted text webfonts (latin + latin-ext). |
+| `dist/decius-css.zip` | Everything (css + js + fonts) in one archive. |
 
 ## Repository layout
 
@@ -105,8 +135,10 @@ scss/            Sass source (Bootstrap-style partials → dist/css)
 icons/
   svg/           per-icon SOURCE svgs (the icon font is built from these)
   icons.json     icon catalog manifest
+js/src/          vanilla component runtime (decius.js) source
 fonts/           vendored self-hosted text webfonts + OFL licenses
-scripts/         build pipeline (css, icon font, fonts, bundle)
+examples/        standalone, framework-only usage examples (kitchen-sink.html)
+scripts/         build pipeline (css, icon font, fonts, js, bundle, zip)
   outline_icons.py   stroke→fill outliner (Shapely) used by the icon-font build
 site/            the documentation site (Vite + React)
 dist/            built artifacts (committed, CDN-served)

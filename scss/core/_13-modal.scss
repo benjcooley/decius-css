@@ -8,6 +8,9 @@
   display: flex; align-items: center; justify-content: center;
   z-index: 100;
 }
+/* decius.js hides modals with the [hidden] attribute; the display above
+   would otherwise win over the UA [hidden] rule. */
+.dcs-modal-backdrop[hidden] { display: none; }
 .dcs-modal {
   background: var(--dcs-bg);
   border: 1px solid var(--dcs-line-soft);

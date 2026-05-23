@@ -1,0 +1,95 @@
+/* ============================================================
+   25 · MENU / DROPDOWN / CONTEXT MENU
+   A floating menu surface used for dropdowns (opened from a
+   button or menubar item) and right-click context menus.
+   Positioned at runtime by decius.js; hidden via [hidden].
+   ============================================================ */
+.dcs-menu[hidden] { display: none; }
+.dcs-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 180px;
+  max-width: 320px;
+  padding: var(--dcs-s-2);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-3);
+  box-shadow: var(--dcs-shadow-pop);
+  color: var(--dcs-text);
+  font-size: var(--dcs-fs-sm);
+  user-select: none;
+  animation: dcs-menu-in var(--dcs-t-fast);
+}
+@keyframes dcs-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dcs-menu__label {
+  padding: var(--dcs-s-2) var(--dcs-s-3) var(--dcs-s-1);
+  font-size: var(--dcs-fs-xs);
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dcs-text-mute);
+}
+
+.dcs-menu__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-3);
+  height: var(--dcs-h);
+  padding: 0 var(--dcs-s-3);
+  border-radius: var(--dcs-r-2);
+  color: var(--dcs-text-dim);
+  cursor: default;
+  white-space: nowrap;
+}
+.dcs-menu__item:hover,
+.dcs-menu__item--active {
+  background: var(--dcs-accent);
+  color: #fff;
+}
+.dcs-menu__item:hover .dcs-menu__shortcut,
+.dcs-menu__item--active .dcs-menu__shortcut { color: rgba(255,255,255,.7); }
+.dcs-menu__item--danger { color: var(--dcs-danger); }
+.dcs-menu__item--danger:hover { background: var(--dcs-danger); color: #fff; }
+.dcs-menu__item[aria-disabled="true"],
+.dcs-menu__item--disabled {
+  color: var(--dcs-text-mute);
+  opacity: .5;
+  pointer-events: none;
+}
+
+.dcs-menu__icon { flex: 0 0 auto; width: 16px; display: flex; }
+.dcs-menu__check {
+  flex: 0 0 auto; width: 14px; display: flex; align-items: center;
+  color: var(--dcs-accent);
+}
+.dcs-menu__item:hover .dcs-menu__check { color: #fff; }
+.dcs-menu__label-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dcs-menu__shortcut {
+  flex: 0 0 auto;
+  font-family: var(--dcs-font-mono);
+  font-size: var(--dcs-fs-xs);
+  color: var(--dcs-text-mute);
+  letter-spacing: .02em;
+}
+.dcs-menu__caret { flex: 0 0 auto; margin-right: -2px; color: inherit; opacity: .8; }
+
+.dcs-menu__sep {
+  height: 1px;
+  margin: var(--dcs-s-2) calc(-1 * var(--dcs-s-2));
+  background: var(--dcs-line);
+}
+
+/* Submenus — nested .dcs-menu, opened on hover. */
+.dcs-menu__sub {
+  position: absolute;
+  top: calc(-1 * var(--dcs-s-2));
+  left: 100%;
+  margin-left: var(--dcs-s-1);
+}
+.dcs-menu__item--has-sub > .dcs-menu__sub { display: none; }
+.dcs-menu__item--has-sub:hover > .dcs-menu__sub { display: block; }

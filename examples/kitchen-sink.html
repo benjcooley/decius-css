@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>decius.css — vanilla kitchen sink</title>
+  <!-- one stylesheet (fonts + icon font + framework) and one script, no deps -->
+  <link rel="stylesheet" href="../dist/css/decius.bundle.min.css">
+  <script defer src="../dist/js/decius.min.js"></script>
+  <style>
+    body { margin: 0; background: var(--dcs-bg-app); padding: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    h4 { color: var(--dcs-text-mute); font: 600 11px var(--dcs-font); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 4px; }
+  </style>
+</head>
+<body class="dcs" data-dcs-density="comfortable">
+  <div class="grid">
+
+    <div class="dcs-panel">
+      <div class="dcs-panel__header"><div class="dcs-panel__title"><i class="di di-cog"></i><span>Menus &amp; popovers</span></div></div>
+      <div class="dcs-panel__body dcs-col">
+        <div class="row">
+          <button class="dcs-btn dcs-btn--primary" data-dcs-toggle="menu" data-dcs-target="#m1"><i class="di di-menu"></i> Dropdown</button>
+          <button class="dcs-btn" data-dcs-toggle="popover" data-dcs-target="#pop1" data-dcs-placement="bottom"><i class="di di-info"></i> Popover</button>
+        </div>
+        <div class="dcs-well" data-dcs-menu="#m2" style="padding:14px;border-radius:5px;text-align:center;color:var(--dcs-text-mute)">right-click for a context menu</div>
+      </div>
+    </div>
+
+    <div class="dcs-panel">
+      <div class="dcs-panel__header"><div class="dcs-panel__title"><i class="di di-alert"></i><span>Toasts &amp; modal</span></div></div>
+      <div class="dcs-panel__body dcs-col">
+        <div class="row">
+          <button class="dcs-btn" onclick="decius.toast({title:'Saved',message:'scene.blend written',variant:'ok'})">OK</button>
+          <button class="dcs-btn" onclick="decius.toast({title:'Heads up',message:'Unsaved changes',variant:'warn'})">Warn</button>
+          <button class="dcs-btn" onclick="decius.toast({title:'Render failed',message:'GPU out of memory',variant:'danger'})">Danger</button>
+        </div>
+        <button class="dcs-btn dcs-btn--primary" data-dcs-toggle="modal" data-dcs-target="#mod1"><i class="di di-export"></i> Open modal</button>
+      </div>
+    </div>
+
+    <div class="dcs-panel">
+      <div class="dcs-panel__header"><div class="dcs-panel__title"><i class="di di-layers"></i><span>Collapse</span></div></div>
+      <div class="dcs-panel__body" style="padding:0">
+        <div class="dcs-subpanel">
+          <div class="dcs-subpanel__header"><div class="dcs-subpanel__chevron"><i class="di di-chevron-right"></i></div><div class="dcs-subpanel__title">Transform</div><div class="dcs-subpanel__close"><i class="di di-close"></i></div></div>
+          <div class="dcs-subpanel__body dcs-col">
+            <div data-dcs-combo data-min="0" data-max="360" data-step="1" data-value="45" data-label="Rotate"></div>
+          </div>
+        </div>
+        <div class="dcs-foldouts">
+          <div class="dcs-foldout">
+            <div class="dcs-foldout__header"><div class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></div><i class="di di-droplet dcs-foldout__icon"></i><div class="dcs-foldout__title">Material</div></div>
+            <div class="dcs-foldout__body dcs-col">
+              <div class="dcs-check"><div class="dcs-check__box"></div><span>Cast shadows</span></div>
+              <div class="dcs-switch"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dcs-panel">
+      <div class="dcs-panel__header"><div class="dcs-panel__title"><i class="di di-wave-sine"></i><span>Controls</span></div></div>
+      <div class="dcs-panel__body dcs-col">
+        <div data-dcs-slider data-min="0" data-max="1" data-value="0.6"></div>
+        <div class="row" style="gap:24px">
+          <div data-dcs-knob data-min="0" data-max="1" data-value="0.4" data-label="CUT"></div>
+          <div data-dcs-knob data-min="-1" data-max="1" data-value="0.2" data-bipolar data-label="PAN"></div>
+          <div data-dcs-fader data-min="0" data-max="1" data-value="0.7" style="height:120px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dcs-panel">
+      <div class="dcs-panel__header"><div class="dcs-panel__title"><i class="di di-array"></i><span>Tabs</span></div></div>
+      <div class="dcs-panel__body">
+        <div class="dcs-tabs">
+          <button class="dcs-tab" aria-selected="true" data-dcs-target="#t1"><i class="di di-cube"></i> Mesh</button>
+          <button class="dcs-tab" data-dcs-target="#t2"><i class="di di-droplet"></i> Shading</button>
+        </div>
+        <div style="padding-top:10px">
+          <div id="t1" data-dcs-tabpanel>Mesh inspector content.</div>
+          <div id="t2" data-dcs-tabpanel hidden>Shading inspector content.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- floating layers -->
+  <div class="dcs-menu" id="m1">
+    <div class="dcs-menu__label">File</div>
+    <div class="dcs-menu__item" data-dcs-value="new"><span class="dcs-menu__icon"><i class="di di-file"></i></span><span class="dcs-menu__label-text">New</span><span class="dcs-menu__shortcut">⌘N</span></div>
+    <div class="dcs-menu__item" data-dcs-value="open"><span class="dcs-menu__icon"><i class="di di-folder-open"></i></span><span class="dcs-menu__label-text">Open…</span><span class="dcs-menu__shortcut">⌘O</span></div>
+    <div class="dcs-menu__item"><span class="dcs-menu__check"><i class="di di-check"></i></span><span class="dcs-menu__label-text">Autosave</span></div>
+    <div class="dcs-menu__sep"></div>
+    <div class="dcs-menu__item dcs-menu__item--danger" data-dcs-value="del"><span class="dcs-menu__icon"><i class="di di-trash"></i></span><span class="dcs-menu__label-text">Delete</span></div>
+  </div>
+
+  <div class="dcs-menu" id="m2">
+    <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-copy"></i></span><span class="dcs-menu__label-text">Copy</span></div>
+    <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-paste"></i></span><span class="dcs-menu__label-text">Paste</span></div>
+    <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__icon"><i class="di di-export"></i></span><span class="dcs-menu__label-text">Export</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span>
+      <div class="dcs-menu dcs-menu__sub"><div class="dcs-menu__item">PNG</div><div class="dcs-menu__item">EXR</div></div>
+    </div>
+  </div>
+
+  <div class="dcs-popover" id="pop1" style="width:240px">
+    <div class="dcs-popover__header">Quick settings <span style="flex:1"></span><span class="dcs-toast__close" data-dcs-dismiss="popover"><i class="di di-close"></i></span></div>
+    <div class="dcs-popover__body">A popover can hold real controls, not just text. <code>data-dcs-placement</code> sets the side.</div>
+    <div class="dcs-popover__arrow"></div>
+  </div>
+
+  <div class="dcs-modal-backdrop" id="mod1">
+    <div class="dcs-modal">
+      <div class="dcs-modal__header"><i class="di di-alert"></i> Discard changes?<span style="flex:1"></span><span class="dcs-toast__close" data-dcs-dismiss="modal"><i class="di di-close"></i></span></div>
+      <div class="dcs-modal__body">This will discard unsaved edits to the current scene. This cannot be undone.</div>
+      <div class="dcs-modal__footer">
+        <button class="dcs-btn" data-dcs-dismiss="modal">Cancel</button>
+        <button class="dcs-btn dcs-btn--danger" data-dcs-dismiss="modal">Discard</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+/* ============================================================
+   26 · POPOVER / POPUP
+   A small floating card anchored to a trigger — richer than a
+   tooltip (can hold controls). Positioned by decius.js via
+   data-dcs-placement; hidden via [hidden].
+   ============================================================ */
+.dcs-popover[hidden] { display: none; }
+.dcs-popover {
+  position: fixed;
+  z-index: 190;
+  min-width: 200px;
+  max-width: 320px;
+  background: var(--dcs-bg);
+  border: 1px solid var(--dcs-line-soft);
+  border-radius: var(--dcs-r-3);
+  box-shadow: var(--dcs-shadow-pop);
+  color: var(--dcs-text);
+  font-size: var(--dcs-fs-sm);
+  animation: dcs-menu-in var(--dcs-t-fast);
+}
+.dcs-popover__header {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  height: var(--dcs-h);
+  padding: 0 var(--dcs-s-4);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-3) var(--dcs-r-3) 0 0;
+  font-size: var(--dcs-fs-sm);
+  font-weight: 500;
+}
+.dcs-popover__body { padding: var(--dcs-s-5); color: var(--dcs-text-dim); }
+.dcs-popover__body code {
+  font-family: var(--dcs-font-mono);
+  font-size: .92em;
+  padding: 1px 6px;
+  background: var(--dcs-well);
+  border-radius: var(--dcs-r-1);
+  color: var(--dcs-warn);
+}
+
+/* Little arrow pointing at the trigger; placed by decius.js. */
+.dcs-popover__arrow {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: var(--dcs-bg);
+  border: 1px solid var(--dcs-line-soft);
+  transform: rotate(45deg);
+}
+.dcs-popover[data-dcs-pos="top"] .dcs-popover__arrow {
+  bottom: -6px; border-top: none; border-left: none;
+}
+.dcs-popover[data-dcs-pos="bottom"] .dcs-popover__arrow {
+  top: -6px; border-bottom: none; border-right: none;
+}
+.dcs-popover[data-dcs-pos="left"] .dcs-popover__arrow {
+  right: -6px; border-bottom: none; border-left: none;
+}
+.dcs-popover[data-dcs-pos="right"] .dcs-popover__arrow {
+  left: -6px; border-top: none; border-right: none;
+}

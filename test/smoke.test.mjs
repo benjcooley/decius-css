@@ -64,6 +64,32 @@ if (exists('dist/css/decius-fonts.css')) {
   });
 }
 
+// ---- vanilla js runtime (after full build) -----------------------------
+if (exists('dist/js/decius.min.js')) {
+  check('js runtime built (iife + esm) with components', () => {
+    const j = readFileSync(resolve(root, 'dist/js/decius.js'), 'utf8');
+    assert.match(j, /decius/);
+    assert.match(j, /toast/);
+    assert.ok(exists('dist/js/decius.esm.js'));
+    assert.ok(size('dist/js/decius.min.js') < size('dist/js/decius.js'));
+  });
+}
+
+// ---- new components in css ---------------------------------------------
+check('css includes menu, popover, toast components', () => {
+  const c = css('decius.css');
+  assert.match(c, /\.dcs-menu/);
+  assert.match(c, /\.dcs-popover/);
+  assert.match(c, /\.dcs-toast/);
+});
+
+// ---- download archive (after full build) -------------------------------
+if (exists('dist/decius-css.zip')) {
+  check('decius-css.zip archive present', () => {
+    assert.ok(size('dist/decius-css.zip') > 50000);
+  });
+}
+
 // ---- bundle (after full build) -----------------------------------------
 if (exists('dist/css/decius.bundle.css')) {
   check('bundle contains fonts + icons + core', () => {

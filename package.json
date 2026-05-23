@@ -39,7 +39,12 @@
       "style": "./dist/css/decius.css",
       "default": "./dist/css/decius.css"
     },
+    "./js": {
+      "import": "./dist/js/decius.esm.js",
+      "default": "./dist/js/decius.js"
+    },
     "./css/*": "./dist/css/*",
+    "./js/*": "./dist/js/*",
     "./scss/*": "./scss/*",
     "./icons/font/*": "./dist/fonts/*",
     "./icons/manifest": "./icons/icons.json"
@@ -59,8 +64,10 @@
     "build:css": "node scripts/build-css.mjs",
     "build:icons": "node scripts/build-icon-font.mjs",
     "build:fonts": "node scripts/build-fonts.mjs",
+    "build:js": "node scripts/build-js.mjs",
     "build:bundle": "node scripts/build-bundle.mjs",
-    "build": "npm run clean && npm run build:fonts && npm run build:icons && npm run build:css && npm run build:bundle",
+    "build:zip": "node scripts/build-zip.mjs",
+    "build": "npm run clean && npm run build:fonts && npm run build:icons && npm run build:css && npm run build:js && npm run build:bundle && npm run build:zip",
     "build:site": "npm run build && vite build",
     "dev": "vite",
     "preview": "vite preview",
@@ -72,8 +79,10 @@
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@vitejs/plugin-react": "^6.0.2",
+    "adm-zip": "^0.5.17",
     "autoprefixer": "^10.5.0",
     "cssnano": "^8.0.1",
+    "esbuild": "^0.28.0",
     "opentype.js": "^2.0.0",
     "postcss": "^8.5.15",
     "react": "^19.2.6",

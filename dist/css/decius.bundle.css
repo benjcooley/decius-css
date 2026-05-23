@@ -1659,6 +1659,12 @@
   z-index: 100;
 }
 
+/* decius.js hides modals with the [hidden] attribute; the display above
+   would otherwise win over the UA [hidden] rule. */
+.dcs-modal-backdrop[hidden] {
+  display: none;
+}
+
 .dcs-modal {
   background: var(--dcs-bg);
   border: 1px solid var(--dcs-line-soft);
@@ -3325,4 +3331,384 @@
 [data-dcs-style="3d"] .dcs-hue-bar,
 [data-dcs-style="3d"] .dcs-graph {
   box-shadow: var(--dcs-bevel-down);
+}
+
+/* ============================================================
+   25 · MENU / DROPDOWN / CONTEXT MENU
+   A floating menu surface used for dropdowns (opened from a
+   button or menubar item) and right-click context menus.
+   Positioned at runtime by decius.js; hidden via [hidden].
+   ============================================================ */
+.dcs-menu[hidden] {
+  display: none;
+}
+
+.dcs-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 180px;
+  max-width: 320px;
+  padding: var(--dcs-s-2);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-3);
+  box-shadow: var(--dcs-shadow-pop);
+  color: var(--dcs-text);
+  font-size: var(--dcs-fs-sm);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  animation: dcs-menu-in var(--dcs-t-fast);
+}
+
+@keyframes dcs-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.dcs-menu__label {
+  padding: var(--dcs-s-2) var(--dcs-s-3) var(--dcs-s-1);
+  font-size: var(--dcs-fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dcs-text-mute);
+}
+
+.dcs-menu__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-3);
+  height: var(--dcs-h);
+  padding: 0 var(--dcs-s-3);
+  border-radius: var(--dcs-r-2);
+  color: var(--dcs-text-dim);
+  cursor: default;
+  white-space: nowrap;
+}
+
+.dcs-menu__item:hover,
+.dcs-menu__item--active {
+  background: var(--dcs-accent);
+  color: #fff;
+}
+
+.dcs-menu__item:hover .dcs-menu__shortcut,
+.dcs-menu__item--active .dcs-menu__shortcut {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dcs-menu__item--danger {
+  color: var(--dcs-danger);
+}
+
+.dcs-menu__item--danger:hover {
+  background: var(--dcs-danger);
+  color: #fff;
+}
+
+.dcs-menu__item[aria-disabled=true],
+.dcs-menu__item--disabled {
+  color: var(--dcs-text-mute);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.dcs-menu__icon {
+  flex: 0 0 auto;
+  width: 16px;
+  display: flex;
+}
+
+.dcs-menu__check {
+  flex: 0 0 auto;
+  width: 14px;
+  display: flex;
+  align-items: center;
+  color: var(--dcs-accent);
+}
+
+.dcs-menu__item:hover .dcs-menu__check {
+  color: #fff;
+}
+
+.dcs-menu__label-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dcs-menu__shortcut {
+  flex: 0 0 auto;
+  font-family: var(--dcs-font-mono);
+  font-size: var(--dcs-fs-xs);
+  color: var(--dcs-text-mute);
+  letter-spacing: 0.02em;
+}
+
+.dcs-menu__caret {
+  flex: 0 0 auto;
+  margin-right: -2px;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.dcs-menu__sep {
+  height: 1px;
+  margin: var(--dcs-s-2) calc(-1 * var(--dcs-s-2));
+  background: var(--dcs-line);
+}
+
+/* Submenus — nested .dcs-menu, opened on hover. */
+.dcs-menu__sub {
+  position: absolute;
+  top: calc(-1 * var(--dcs-s-2));
+  left: 100%;
+  margin-left: var(--dcs-s-1);
+}
+
+.dcs-menu__item--has-sub > .dcs-menu__sub {
+  display: none;
+}
+
+.dcs-menu__item--has-sub:hover > .dcs-menu__sub {
+  display: block;
+}
+
+/* ============================================================
+   26 · POPOVER / POPUP
+   A small floating card anchored to a trigger — richer than a
+   tooltip (can hold controls). Positioned by decius.js via
+   data-dcs-placement; hidden via [hidden].
+   ============================================================ */
+.dcs-popover[hidden] {
+  display: none;
+}
+
+.dcs-popover {
+  position: fixed;
+  z-index: 190;
+  min-width: 200px;
+  max-width: 320px;
+  background: var(--dcs-bg);
+  border: 1px solid var(--dcs-line-soft);
+  border-radius: var(--dcs-r-3);
+  box-shadow: var(--dcs-shadow-pop);
+  color: var(--dcs-text);
+  font-size: var(--dcs-fs-sm);
+  animation: dcs-menu-in var(--dcs-t-fast);
+}
+
+.dcs-popover__header {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-3);
+  height: var(--dcs-h);
+  padding: 0 var(--dcs-s-4);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-3) var(--dcs-r-3) 0 0;
+  font-size: var(--dcs-fs-sm);
+  font-weight: 500;
+}
+
+.dcs-popover__body {
+  padding: var(--dcs-s-5);
+  color: var(--dcs-text-dim);
+}
+
+.dcs-popover__body code {
+  font-family: var(--dcs-font-mono);
+  font-size: 0.92em;
+  padding: 1px 6px;
+  background: var(--dcs-well);
+  border-radius: var(--dcs-r-1);
+  color: var(--dcs-warn);
+}
+
+/* Little arrow pointing at the trigger; placed by decius.js. */
+.dcs-popover__arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--dcs-bg);
+  border: 1px solid var(--dcs-line-soft);
+  transform: rotate(45deg);
+}
+
+.dcs-popover[data-dcs-pos=top] .dcs-popover__arrow {
+  bottom: -6px;
+  border-top: none;
+  border-left: none;
+}
+
+.dcs-popover[data-dcs-pos=bottom] .dcs-popover__arrow {
+  top: -6px;
+  border-bottom: none;
+  border-right: none;
+}
+
+.dcs-popover[data-dcs-pos=left] .dcs-popover__arrow {
+  right: -6px;
+  border-bottom: none;
+  border-left: none;
+}
+
+.dcs-popover[data-dcs-pos=right] .dcs-popover__arrow {
+  left: -6px;
+  border-top: none;
+  border-right: none;
+}
+
+/* ============================================================
+   27 · TOAST / NOTIFICATION
+   Transient, stacked notifications. The container is created on
+   demand by decius.js (decius.toast({…})); markup is documented
+   so they can also be authored statically.
+   ============================================================ */
+.dcs-toasts {
+  position: fixed;
+  z-index: 300;
+  bottom: var(--dcs-s-6);
+  right: var(--dcs-s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--dcs-s-3);
+  width: 320px;
+  max-width: calc(100vw - 2 * var(--dcs-s-6));
+  pointer-events: none;
+}
+
+.dcs-toasts--top-right {
+  top: var(--dcs-s-6);
+  bottom: auto;
+}
+
+.dcs-toasts--top-left {
+  top: var(--dcs-s-6);
+  bottom: auto;
+  left: var(--dcs-s-6);
+  right: auto;
+}
+
+.dcs-toasts--bottom-left {
+  left: var(--dcs-s-6);
+  right: auto;
+}
+
+.dcs-toast {
+  pointer-events: auto;
+  display: flex;
+  gap: var(--dcs-s-4);
+  padding: var(--dcs-s-4) var(--dcs-s-5);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line);
+  border-left: 3px solid var(--dcs-accent);
+  border-radius: var(--dcs-r-2);
+  box-shadow: var(--dcs-shadow-3);
+  font-size: var(--dcs-fs-sm);
+  align-items: flex-start;
+  animation: dcs-toast-in var(--dcs-t-slow);
+}
+
+@keyframes dcs-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.dcs-toast--out {
+  animation: dcs-toast-out var(--dcs-t) forwards;
+}
+
+@keyframes dcs-toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    max-height: 80px;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: -8px;
+  }
+}
+.dcs-toast--ok {
+  border-left-color: var(--dcs-ok);
+}
+
+.dcs-toast--warn {
+  border-left-color: var(--dcs-warn);
+}
+
+.dcs-toast--danger {
+  border-left-color: var(--dcs-danger);
+}
+
+.dcs-toast--info {
+  border-left-color: var(--dcs-accent);
+}
+
+.dcs-toast__icon {
+  color: var(--dcs-accent);
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.dcs-toast--ok .dcs-toast__icon {
+  color: var(--dcs-ok);
+}
+
+.dcs-toast--warn .dcs-toast__icon {
+  color: var(--dcs-warn);
+}
+
+.dcs-toast--danger .dcs-toast__icon {
+  color: var(--dcs-danger);
+}
+
+.dcs-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dcs-toast__title {
+  color: var(--dcs-text);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.dcs-toast__msg {
+  color: var(--dcs-text-dim);
+}
+
+.dcs-toast__close {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--dcs-text-mute);
+  cursor: pointer;
+  border-radius: var(--dcs-r-1);
+}
+
+.dcs-toast__close:hover {
+  color: var(--dcs-text);
+  background: var(--dcs-surface-3);
 }

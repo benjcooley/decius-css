@@ -7,6 +7,9 @@ _site/
 # generated docs entry (concatenated app, produced by vite.config)
 site/src/app.gen.jsx
 
+# raw dist mirrored into the site for download links (produced by vite.config)
+site/public/dl/
+
 # dev/build scratch
 .cache/
 

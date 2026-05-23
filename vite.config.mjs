@@ -1,11 +1,21 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, cpSync, rmSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = dirname(fileURLToPath(import.meta.url));
 const appDir = resolve(repoRoot, 'site', 'src', 'app');
+const distDir = resolve(repoRoot, 'dist');
+const dlDir = resolve(repoRoot, 'site', 'public', 'dl');
+
+// Mirror the built dist/ under the site's public/dl so the docs can serve the
+// raw artifacts (download buttons, direct links) in both dev and the build.
+function syncDownloads() {
+  if (!existsSync(distDir)) return;
+  rmSync(dlDir, { recursive: true, force: true });
+  cpSync(distDir, dlDir, { recursive: true });
+}
 
 // The docs app is authored as classic shared-scope scripts (each file reads
 // global React/peers and exports via Object.assign(window, …)). We preserve
@@ -14,7 +24,7 @@ const appDir = resolve(repoRoot, 'site', 'src', 'app');
 const APP_ORDER = [
   'icons', 'dcs', 'tweaks-panel',
   'sections-foundations', 'sections-components', 'sections-layout',
-  'sections-data', 'sections-feedback', 'sections-editors',
+  'sections-data', 'sections-feedback', 'sections-overlays', 'sections-editors',
   'sections-apps', 'sections-skeuomorphic', 'sections-intro',
   'app',
 ];
@@ -32,7 +42,7 @@ function generateEntry() {
 function deciusEntryPlugin() {
   return {
     name: 'decius-site-entry',
-    buildStart() { generateEntry(); },
+    buildStart() { generateEntry(); syncDownloads(); },
     configureServer(server) {
       server.watcher.add(appDir);
       server.watcher.on('change', (file) => {
@@ -46,6 +56,7 @@ function deciusEntryPlugin() {
 }
 
 generateEntry(); // ensure the generated entry exists before resolution
+syncDownloads();
 
 export default defineConfig({
   root: resolve(repoRoot, 'site'),
