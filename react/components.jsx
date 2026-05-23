@@ -625,48 +625,128 @@ function Toolbar({ children, vertical, size, floating, className = '', style }) 
 function ToolbarSep() { return <div className="dcs-toolbar__sep" />; }
 
 /* ─────────── Tree ─────────── */
-function Tree({ nodes, selected, onSelect, expanded, onExpand }) {
+/* Tree / List — one primitive (a list is a flat tree, `flat`).
+   Single-select by default; `multi` adds Ctrl/⌘ toggle + Shift range.
+   `reorderable` + `onMove(dragIds, targetId, pos)` adds drag-and-drop with a
+   drop indicator: pos is 'before' | 'after' | 'into' (into = reparent, trees
+   only). onSelect gets a Set in multi mode, the id in single mode. */
+const toIdSet = (s) => s == null ? new Set() : s instanceof Set ? new Set(s) : Array.isArray(s) ? new Set(s) : new Set([s]);
+function Tree({ nodes, selected, onSelect, expanded, onExpand, multi, reorderable, onMove, flat }) {
   const [iExp, setIExp] = useState(() => expanded || new Set());
-  const [iSel, setISel] = useState(selected);
+  const [iSel, setISel] = useState(() => toIdSet(selected));
+  const [anchor, setAnchor] = useState(null);
+  const [drop, setDrop] = useState(null);          // { id, pos }
+  const dragRef = useRef(null);                     // dragged ids
   const exp = onExpand ? expanded : iExp;
-  const sel = onSelect ? selected : iSel;
-  const select = onSelect || setISel;
-  const toggle = onExpand || ((id) => setIExp(s => {
-    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
-  }));
-  const rows = [];
-  const walk = (items, depth) => {
-    items.forEach(node => {
-      const isOpen = exp.has(node.id);
-      const hasChildren = node.children && node.children.length;
-      rows.push(
-        <div
-          key={node.id}
-          className="dcs-tree__row"
-          style={{ '--depth': depth }}
-          aria-selected={sel === node.id}
-          onClick={() => {
-            select(node.id);
-            if (hasChildren) toggle(node.id);
-          }}
-        >
-          <div
-            className={`dcs-tree__chevron${isOpen ? ' dcs-tree__chevron--open' : ''}`}
-            onClick={(e) => { e.stopPropagation(); if (hasChildren) toggle(node.id); }}
-          >
+  const selSet = onSelect ? toIdSet(selected) : iSel;
+  const toggleExp = onExpand || ((id) => setIExp(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; }));
+
+  // Visible rows, in order (respecting collapse) — drives Shift-range too.
+  const flatRows = [];
+  const walk = (items, depth) => items.forEach(node => {
+    flatRows.push({ node, depth });
+    if (!flat && node.children && node.children.length && exp.has(node.id)) walk(node.children, depth + 1);
+  });
+  walk(nodes, 0);
+  const order = flatRows.map(f => f.node.id);
+
+  const emit = (next, primary) => { if (onSelect) onSelect(multi ? next : primary); else setISel(next); };
+  const onRowClick = (id, e) => {
+    if (multi && (e.metaKey || e.ctrlKey)) { const n = new Set(selSet); n.has(id) ? n.delete(id) : n.add(id); setAnchor(id); emit(n, id); }
+    else if (multi && e.shiftKey && anchor != null && order.includes(anchor)) {
+      const a = order.indexOf(anchor), b = order.indexOf(id), [lo, hi] = a < b ? [a, b] : [b, a];
+      emit(new Set(order.slice(lo, hi + 1)), id);
+    } else { setAnchor(id); emit(new Set([id]), id); }
+  };
+
+  const descendantsOf = (id) => {
+    const out = new Set();
+    const collect = (items) => items.forEach(n => { out.add(n.id); if (n.children) collect(n.children); });
+    const find = (items) => items.some(n => n.id === id ? (collect(n.children || []), true) : (n.children && find(n.children)));
+    find(nodes); return out;
+  };
+
+  const onRowDragStart = (id, e) => {
+    const ids = selSet.has(id) ? [...selSet] : [id];
+    if (!selSet.has(id)) { setAnchor(id); emit(new Set([id]), id); }
+    dragRef.current = ids;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', ids.join(','));
+  };
+  const onRowDragOver = (node, e) => {
+    const ids = dragRef.current; if (!reorderable || !ids) return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    if (ids.includes(node.id)) { setDrop(null); return; }       // not onto self
+    const r = e.currentTarget.getBoundingClientRect();
+    const y = (e.clientY - r.top) / r.height;
+    const canInto = !flat && (node.children !== undefined || node.folder);
+    let pos = canInto ? (y < 0.28 ? 'before' : y > 0.72 ? 'after' : 'into') : (y < 0.5 ? 'before' : 'after');
+    if (pos === 'into') { const d = descendantsOf(node.id); if (ids.some(i => d.has(i))) pos = 'after'; }
+    setDrop({ id: node.id, pos });
+  };
+  const onDropEnd = (e) => {
+    if (e) e.preventDefault();
+    const ids = dragRef.current, d = drop; dragRef.current = null; setDrop(null);
+    if (ids && d && onMove) onMove(ids, d.id, d.pos);
+  };
+
+  const cCls = flat ? 'dcs-list' : 'dcs-tree';
+  const rCls = flat ? 'dcs-list__item' : 'dcs-tree__row';
+  const rows = flatRows.map(({ node, depth }) => {
+    const isOpen = exp.has(node.id);
+    const hasChildren = !flat && node.children && node.children.length;
+    const dropCls = drop && drop.id === node.id ? ` ${rCls}--drop-${drop.pos}` : '';
+    return (
+      <div key={node.id} className={`${rCls}${dropCls}${reorderable ? ` ${rCls}--draggable` : ''}`}
+        style={flat ? undefined : { '--depth': depth }}
+        aria-selected={selSet.has(node.id)}
+        draggable={reorderable || undefined}
+        onDragStart={reorderable ? (e) => onRowDragStart(node.id, e) : undefined}
+        onDragOver={reorderable ? (e) => onRowDragOver(node, e) : undefined}
+        onDrop={reorderable ? onDropEnd : undefined}
+        onDragEnd={reorderable ? () => { dragRef.current = null; setDrop(null); } : undefined}
+        onClick={(e) => { onRowClick(node.id, e); if (!multi && hasChildren) toggleExp(node.id); }}>
+        {!flat && (
+          <div className={`dcs-tree__chevron${isOpen ? ' dcs-tree__chevron--open' : ''}`}
+            onClick={(e) => { e.stopPropagation(); if (hasChildren) toggleExp(node.id); }}>
             {hasChildren && <Icon name="chevron-right" size="sm" />}
           </div>
-          {node.icon && <Icon className="dcs-tree__icon" name={node.icon} />}
-          <span className="dcs-tree__label">{node.label}</span>
-          {node.meta && <span className="dcs-tree__meta">{node.meta}</span>}
-          {node.actions && <div className="dcs-tree__actions">{node.actions}</div>}
-        </div>
-      );
-      if (hasChildren && isOpen) walk(node.children, depth + 1);
-    });
-  };
-  walk(nodes, 0);
-  return <div className="dcs-tree">{rows}</div>;
+        )}
+        {node.icon && <Icon className={flat ? undefined : 'dcs-tree__icon'} name={node.icon} />}
+        <span className="dcs-tree__label">{node.label}</span>
+        {node.meta && <span className="dcs-tree__meta">{node.meta}</span>}
+        {node.actions && <div className="dcs-tree__actions">{node.actions}</div>}
+      </div>
+    );
+  });
+  return <div className={cCls} onDragOver={reorderable ? (e) => e.preventDefault() : undefined} onDrop={reorderable ? onDropEnd : undefined}>{rows}</div>;
+}
+
+/* Move dragged subtrees within a tree (or flat list). pos: before|after|into.
+   Returns a new tree; safe for lists too (no children = no 'into'). */
+function treeMove(roots, dragIds, targetId, pos) {
+  const idset = new Set(dragIds);
+  const clone = (typeof structuredClone === 'function') ? structuredClone(roots) : JSON.parse(JSON.stringify(roots));
+  const removed = [];
+  const prune = (list) => list.filter(n => {
+    if (idset.has(n.id)) { removed.push(n); return false; }
+    if (n.children) n.children = prune(n.children);
+    return true;
+  });
+  const tree = prune(clone);
+  if (!removed.length) return tree;
+  if (pos === 'into') {
+    const into = (list) => list.some(n => n.id === targetId ? (n.children = [...(n.children || []), ...removed], true) : (n.children && into(n.children)));
+    into(tree);
+  } else {
+    const sib = (list) => {
+      const i = list.findIndex(n => n.id === targetId);
+      if (i >= 0) { list.splice(pos === 'before' ? i : i + 1, 0, ...removed); return true; }
+      return list.some(n => n.children && sib(n.children));
+    };
+    sib(tree);
+  }
+  return tree;
 }
 
 /* ─────────── Color swatch / picker (simple) ─────────── */

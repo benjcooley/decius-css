@@ -14,6 +14,7 @@
  *   [data-dcs-dismiss="modal|menu|popover|toast|alert|panel|subpanel|card"]
  *   [data-dcs-slider] / [data-dcs-fader] / [data-dcs-knob] / [data-dcs-combo]
  *   [data-dcs-splitter]   (resize previous/next flex siblings)
+ *   [data-dcs-select] / [data-dcs-select="multi"]  (row selection on list/tree)
  *   .dcs-subpanel__header / .dcs-foldout__header   (collapse, zero-config)
  *   .dcs-check / .dcs-radio / .dcs-switch          (toggle, zero-config)
  *
@@ -500,10 +501,40 @@ function toast(opts = {}) {
   return { el: t, dismiss: () => dismissToast(t) };
 }
 
+/* ============================================================ select
+   Basic row selection for lists/trees. Full multi-select + drag-and-drop
+   reorder lives in the React reference component; here we wire the common
+   case: click to select, Ctrl/Cmd to toggle, Shift for a range.
+     <div class="dcs-list" data-dcs-select>          (single)
+     <div class="dcs-tree" data-dcs-select="multi">  (Ctrl/Shift multi) */
+function initSelect(root) {
+  const ROW = '.dcs-list__item, .dcs-tree__row';
+  $$('[data-dcs-select]', root).forEach((box) => {
+    if (box[WIRED]) return; box[WIRED] = true;
+    const multi = box.getAttribute('data-dcs-select') === 'multi';
+    let anchor = null;
+    box.addEventListener('click', (e) => {
+      const row = e.target.closest(ROW);
+      if (!row || !box.contains(row)) return;
+      const rows = $$(ROW, box);
+      const mark = (r, on) => r.setAttribute('aria-selected', on ? 'true' : 'false');
+      if (multi && (e.metaKey || e.ctrlKey)) {
+        mark(row, row.getAttribute('aria-selected') !== 'true'); anchor = row;
+      } else if (multi && e.shiftKey && anchor && box.contains(anchor)) {
+        const a = rows.indexOf(anchor), b = rows.indexOf(row), lo = Math.min(a, b), hi = Math.max(a, b);
+        rows.forEach((r, i) => mark(r, i >= lo && i <= hi));
+      } else {
+        rows.forEach((r) => mark(r, r === row)); anchor = row;
+      }
+      emit(box, 'dcs:select', { selected: rows.filter((r) => r.getAttribute('aria-selected') === 'true') });
+    });
+  });
+}
+
 /* ============================================================ init / api */
 function init(root = document) {
   initCollapse(root); initDismiss(root); initModal(root); initMenu(root);
-  initPopover(root); initTabs(root); initToggles(root);
+  initPopover(root); initTabs(root); initToggles(root); initSelect(root);
   initSlider(root); initKnob(root); initCombo(root); initSplitter(root);
   return decius;
 }

@@ -3,41 +3,62 @@
 */
 const { useState: useStateD } = React;
 
+const LIST_ITEMS = [
+  { id: 0, label: 'Lambert.001',     meta: '#4d9fff', icon: 'palette' },
+  { id: 1, label: 'CarPaint_red',    meta: '#ff6b6b', icon: 'palette' },
+  { id: 2, label: 'Concrete_Rough',  meta: '#7c8492', icon: 'palette' },
+  { id: 3, label: 'GlassGreen_01',   meta: '#4ed18a', icon: 'palette' },
+  { id: 4, label: 'StudioBack.exr',  meta: '4k · 32-bit', icon: 'image' },
+  { id: 5, label: 'AnimWalk.fbx',    meta: '48 bones', icon: 'bone' },
+  { id: 6, label: 'OakBark_2k.png',  meta: '2k · sRGB', icon: 'texture' },
+  { id: 7, label: 'jane_rig.fbx',    meta: '64 bones', icon: 'bone' },
+  { id: 8, label: 'Sparks.vdb',      meta: 'volume', icon: 'cube' },
+  { id: 9, label: 'Marble_4k.exr',   meta: '4k · linear', icon: 'image' },
+  { id: 10, label: 'Brass_worn.mat', meta: 'PBR', icon: 'palette' },
+  { id: 11, label: 'crowd_walk.anim', meta: '240f', icon: 'curve' },
+  { id: 12, label: 'Velvet_red.mat', meta: 'PBR', icon: 'palette' },
+  { id: 13, label: 'city_dusk.hdr',  meta: '8k · HDR', icon: 'image' },
+  { id: 14, label: 'eric_rig.fbx',   meta: '52 bones', icon: 'bone' },
+  { id: 15, label: 'Smoke_sim.vdb',  meta: 'volume', icon: 'cube' },
+  { id: 16, label: 'Tiles_4k.png',   meta: '4k · sRGB', icon: 'texture' },
+  { id: 17, label: 'idle_loop.anim', meta: '120f', icon: 'curve' },
+  { id: 18, label: 'Chrome.mat',     meta: 'PBR · metal', icon: 'palette' },
+  { id: 19, label: 'Bark_disp.exr',  meta: '2k · linear', icon: 'image' },
+];
+
+// "Basic JS interactions vs React full behavior" — the line we draw everywhere.
+function LayerNote() {
+  return (
+    <div className="dcs-alert" style={{ background: 'var(--dw-bg-soft)', borderColor: 'var(--dw-line)', borderLeftColor: 'var(--dw-accent)', color: 'var(--dw-text)', marginTop: 14 }}>
+      <div className="dcs-alert__icon"><Icon name="cpu" /></div>
+      <div className="dcs-alert__body">
+        <div className="dcs-alert__msg" style={{ color: 'var(--dw-text-dim)' }}>
+          <strong style={{ color: 'var(--dw-text)' }}>Styling</strong> is plain CSS (selection ribbon, drop line).
+          {' '}<strong style={{ color: 'var(--dw-text)' }}>Basic interactions</strong> — click / Ctrl / Shift selection — ship in the
+          {' '}<code>decius.js</code> runtime (<code>data-dcs-select</code>). The <strong style={{ color: 'var(--dw-text)' }}>full behavior</strong> shown
+          here — multi-select plus drag-and-drop reorder / reparent with a live drop indicator — is the React reference component.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SectionLists() {
-  const [sel, setSel] = useStateD(2);
+  const [items, setItems] = useStateD(LIST_ITEMS);
+  const [sel, setSel] = useStateD(() => new Set([2, 3]));
   const [q, setQ] = useStateD('');
   const [searching, setSearching] = useStateD(false);
-  const items = [
-    { id: 0, name: 'Lambert.001',     val: '#4d9fff', icon: 'palette' },
-    { id: 1, name: 'CarPaint_red',    val: '#ff6b6b', icon: 'palette' },
-    { id: 2, name: 'Concrete_Rough',  val: '#7c8492', icon: 'palette' },
-    { id: 3, name: 'GlassGreen_01',   val: '#4ed18a', icon: 'palette' },
-    { id: 4, name: 'StudioBack.exr',  val: '4k · 32-bit', icon: 'image' },
-    { id: 5, name: 'AnimWalk.fbx',    val: '48 bones', icon: 'bone' },
-    { id: 6, name: 'OakBark_2k.png',  val: '2k · sRGB', icon: 'texture' },
-    { id: 7, name: 'jane_rig.fbx',    val: '64 bones', icon: 'bone' },
-    { id: 8, name: 'Sparks.vdb',      val: 'volume', icon: 'cube' },
-    { id: 9, name: 'Marble_4k.exr',   val: '4k · linear', icon: 'image' },
-    { id: 10, name: 'Brass_worn.mat', val: 'PBR', icon: 'palette' },
-    { id: 11, name: 'crowd_walk.anim', val: '240f', icon: 'curve' },
-    { id: 12, name: 'Velvet_red.mat', val: 'PBR', icon: 'palette' },
-    { id: 13, name: 'city_dusk.hdr',  val: '8k · HDR', icon: 'image' },
-    { id: 14, name: 'eric_rig.fbx',   val: '52 bones', icon: 'bone' },
-    { id: 15, name: 'Smoke_sim.vdb',  val: 'volume', icon: 'cube' },
-    { id: 16, name: 'Tiles_4k.png',   val: '4k · sRGB', icon: 'texture' },
-    { id: 17, name: 'idle_loop.anim', val: '120f', icon: 'curve' },
-    { id: 18, name: 'Chrome.mat',     val: 'PBR · metal', icon: 'palette' },
-    { id: 19, name: 'Bark_disp.exr',  val: '2k · linear', icon: 'image' },
-  ];
-  const shown = items.filter(it => it.name.toLowerCase().includes(q.toLowerCase()));
+  const ql = q.trim().toLowerCase();
+  const shown = ql ? items.filter(it => it.label.toLowerCase().includes(ql)) : items;
   return (
     <section className="dw-section" id="lists">
       <div className="dw-section__eyebrow">Data · 01</div>
       <h2>Lists</h2>
       <p className="dw-section__lead">
-        Flat, selectable rows. Use when items don't nest. The 2px accent ribbon on selection is
-        intentional — it survives reorder, drag, and quick visual scan. The search button filters;
-        the list scrolls when it overflows.
+        Flat, selectable rows — a tree without folding. <strong style={{ color: 'var(--dw-text)' }}>Click</strong> to select,
+        {' '}<strong style={{ color: 'var(--dw-text)' }}>Ctrl/⌘-click</strong> to toggle, <strong style={{ color: 'var(--dw-text)' }}>Shift-click</strong> for a
+        range, and <strong style={{ color: 'var(--dw-text)' }}>drag</strong> the selection to reorder — a 2px accent line shows where it lands.
+        The search button filters; the list scrolls when it overflows.
       </p>
       <Demo frame="app">
         <div style={{ maxWidth: 360 }}>
@@ -48,17 +69,14 @@ function SectionLists() {
                 <input className="dcs-input" placeholder="Filter assets…" value={q} autoFocus onChange={e => setQ(e.target.value)} />
               </div>
             )}
-            <div className="dcs-list" style={{ maxHeight: 200, overflowY: 'auto' }}>
-              {shown.map(it => (
-                <div key={it.id} className="dcs-list__item" aria-selected={sel === it.id} onClick={() => setSel(it.id)} style={{ position: 'relative' }}>
-                  <Icon name={it.icon} />
-                  <span style={{ flex: 1 }}>{it.name}</span>
-                  <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-text-mute)' }}>{it.val}</span>
-                </div>
-              ))}
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+              <Tree flat multi reorderable={!ql}
+                nodes={shown} selected={sel} onSelect={setSel}
+                onMove={(ids, t, pos) => setItems(prev => treeMove(prev, ids, t, pos))} />
               {shown.length === 0 && <div style={{ padding: 14, fontSize: 12, color: 'var(--dcs-text-mute)' }}>No matches for "{q}"</div>}
             </div>
           </Panel>
+          <LayerNote />
         </div>
       </Demo>
     </section>
@@ -106,8 +124,9 @@ function allTreeIds(nodes, acc = new Set()) {
 }
 
 function SectionTrees() {
+  const [nodes, setNodes] = useStateD(OUTLINER_NODES);
   const [expanded, setExpanded] = useStateD(new Set(['scn', 'env', 'chars', 'jane', 'rig']));
-  const [sel, setSel] = useStateD('lhand');
+  const [sel, setSel] = useStateD(() => new Set(['mesh', 'rig']));
   const [q, setQ] = useStateD('');
   const [searching, setSearching] = useStateD(false);
   const toggle = (id) => setExpanded(prev => {
@@ -116,16 +135,17 @@ function SectionTrees() {
     return n;
   });
   const query = q.trim().toLowerCase();
-  const nodes = query ? filterTree(OUTLINER_NODES, query) : OUTLINER_NODES;
-  const exp = query ? allTreeIds(nodes) : expanded;
+  const view = query ? filterTree(nodes, query) : nodes;
+  const exp = query ? allTreeIds(view) : expanded;
   return (
     <section className="dw-section" id="trees">
       <div className="dw-section__eyebrow">Data · 02</div>
       <h2>Trees</h2>
       <p className="dw-section__lead">
-        The outliner. Deep hierarchies of scenes, rigs, layers, nodes. Chevrons expand;
-        icons signal kind; right-aligned meta gives counts without taking column width. Search
-        filters and auto-expands; the body scrolls when it overflows.
+        The outliner. Deep hierarchies of scenes, rigs, layers, nodes. Same selection model as lists —
+        <strong style={{ color: 'var(--dw-text)' }}> Ctrl/⌘</strong> toggles, <strong style={{ color: 'var(--dw-text)' }}>Shift</strong> ranges —
+        and you can <strong style={{ color: 'var(--dw-text)' }}>drag rows to reorder or reparent</strong>: a line marks a sibling
+        drop, a highlighted row marks dropping <em>into</em> a folder. Chevrons expand; search filters and auto-expands.
       </p>
       <Demo frame="app">
         <div style={{ maxWidth: 380 }}>
@@ -136,9 +156,12 @@ function SectionTrees() {
                 <input className="dcs-input" placeholder="Filter outliner…" value={q} autoFocus onChange={e => setQ(e.target.value)} />
               </div>
             )}
-            <div style={{ padding: '4px 0', maxHeight: 280, overflowY: 'auto' }}>
-              <Tree expanded={exp} onExpand={toggle} selected={sel} onSelect={setSel} nodes={nodes} />
-              {nodes.length === 0 && <div style={{ padding: 14, fontSize: 12, color: 'var(--dcs-text-mute)' }}>No matches for "{q}"</div>}
+            <div style={{ padding: '4px 0', maxHeight: 300, overflowY: 'auto' }}>
+              <Tree multi reorderable={!query}
+                expanded={exp} onExpand={toggle}
+                selected={sel} onSelect={setSel} nodes={view}
+                onMove={(ids, t, pos) => setNodes(prev => treeMove(prev, ids, t, pos))} />
+              {view.length === 0 && <div style={{ padding: 14, fontSize: 12, color: 'var(--dcs-text-mute)' }}>No matches for "{q}"</div>}
             </div>
           </Panel>
         </div>

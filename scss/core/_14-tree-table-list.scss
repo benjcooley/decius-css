@@ -13,6 +13,7 @@
 .dcs-list__item,
 .dcs-tree__row {
   display: flex; align-items: center;
+  position: relative;          /* drop-indicator lines hang off ::before/::after */
   height: var(--dcs-h);
   /* .dcs-list is a flex column; without this its rows shrink below --dcs-h
      when the list overflows/scrolls, breaking parity with tree rows (which
@@ -23,6 +24,21 @@
   color: var(--dcs-text-dim);
   cursor: default;
   user-select: none;
+}
+/* Drag-to-reorder: grab affordance + a 2px accent drop-indicator line
+   (before/after a row) or an inset highlight for drop-into (reparent). */
+.dcs-list__item--draggable, .dcs-tree__row--draggable { cursor: grab; }
+.dcs-list__item--draggable:active, .dcs-tree__row--draggable:active { cursor: grabbing; }
+.dcs-list__item--drop-before::before, .dcs-tree__row--drop-before::before,
+.dcs-list__item--drop-after::after,  .dcs-tree__row--drop-after::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--dcs-accent); z-index: 3; pointer-events: none;
+}
+.dcs-list__item--drop-before::before, .dcs-tree__row--drop-before::before { top: -1px; }
+.dcs-list__item--drop-after::after,   .dcs-tree__row--drop-after::after  { bottom: -1px; }
+.dcs-list__item--drop-into, .dcs-tree__row--drop-into {
+  background: var(--dcs-accent-dim);
+  box-shadow: inset 0 0 0 1px var(--dcs-accent);
 }
 /* No per-line rule — matches the tree's left inset so the two read alike. */
 .dcs-list__item { gap: var(--dcs-s-2); padding: 0 var(--dcs-s-4) 0 var(--dcs-s-2); }
