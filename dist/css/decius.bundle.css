@@ -1512,8 +1512,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 18px;
-  padding: 0 7px;
+  height: var(--dcs-h-sm);
+  padding: 0 var(--dcs-s-3);
   font-size: var(--dcs-fs-xs);
   font-weight: 600;
   font-family: var(--dcs-font);
@@ -1566,9 +1566,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: var(--dcs-h-sm);
+  height: var(--dcs-h-sm);
+  padding: 0 var(--dcs-s-3);
   font-family: var(--dcs-font-mono);
   font-size: var(--dcs-fs-xs);
   background: var(--dcs-surface-1);
@@ -3713,4 +3713,56 @@
 .dcs-toast__close:hover {
   color: var(--dcs-text);
   background: var(--dcs-surface-3);
+}
+
+/* ============================================================
+   28 · STATUS BAR
+   The bottom strip of an app shell — counts, coordinates, mode
+   flags. Mirrors the menubar at the foot of the window.
+   ============================================================ */
+.dcs-statusbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-4);
+  height: var(--dcs-h-sm);
+  padding: 0 var(--dcs-s-4);
+  background: var(--dcs-surface-1);
+  border-top: 1px solid var(--dcs-line);
+  font-size: var(--dcs-fs-xs);
+  color: var(--dcs-text-mute);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  flex-shrink: 0;
+}
+
+.dcs-statusbar__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  font-family: var(--dcs-font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.dcs-statusbar__item--accent {
+  color: var(--dcs-accent);
+}
+
+.dcs-statusbar__item--ok {
+  color: var(--dcs-ok);
+}
+
+.dcs-statusbar__item--warn {
+  color: var(--dcs-warn);
+}
+
+.dcs-statusbar__sep {
+  width: 1px;
+  align-self: stretch;
+  margin: var(--dcs-s-2) 0;
+  background: var(--dcs-line);
+}
+
+.dcs-statusbar__spacer {
+  flex: 1;
 }

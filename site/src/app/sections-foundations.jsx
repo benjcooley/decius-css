@@ -216,8 +216,8 @@ function SectionSpacing() {
             <Button iconLeft="camera">Camera</Button>
             <Button primary iconLeft="render">Render</Button>
             <div className="dcs-divider--v" />
-            <Check checked onChange={() => {}}>Auto-key</Check>
-            <Switch checked onChange={() => {}} />
+            <Check checked>Auto-key</Check>
+            <Switch checked />
           </div>
         </div>
       </Demo>

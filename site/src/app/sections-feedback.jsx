@@ -76,7 +76,7 @@ function SectionModals() {
               <div className="dcs-modal__body">
                 <p style={{ margin: 0, color: 'var(--dcs-text-dim)' }}>This will remove <strong style={{ color: 'var(--dcs-text)' }}>Cube.003, Cube.004, Light.002</strong> from the scene. Linked instances stay intact.</p>
                 <div style={{ marginTop: 12 }}>
-                  <Check checked={false} onChange={() => {}}>Also delete from outliner collections</Check>
+                  <Check checked={false}>Also delete from outliner collections</Check>
                 </div>
               </div>
               <div className="dcs-modal__footer">
@@ -103,8 +103,8 @@ function SectionModals() {
                       <option>.fbx · export</option>
                     </select>
                   </div>
-                  <div className="dcs-field"><label className="dcs-field__label">&nbsp;</label><Check checked onChange={() => {}}>Bundle textures</Check></div>
-                  <div className="dcs-field"><label className="dcs-field__label">&nbsp;</label><Check checked={false} onChange={() => {}}>Snapshot to history</Check></div>
+                  <div className="dcs-field"><label className="dcs-field__label">&nbsp;</label><Check checked>Bundle textures</Check></div>
+                  <div className="dcs-field"><label className="dcs-field__label">&nbsp;</label><Check checked={false}>Snapshot to history</Check></div>
                 </div>
               </div>
               <div className="dcs-modal__footer">
@@ -136,22 +136,22 @@ function SectionModals() {
                   <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 12 }}>Theme</div>
                   <div className="dcs-col" style={{ gap: 8 }}>
                     <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 100 }}>Accent</label>
-                      <ButtonGroup value="blue" onChange={() => {}} options={[
+                      <ButtonGroup value="blue" options={[
                         { value: 'blue', label: 'Blue' }, { value: 'cyan', label: 'Cyan' }, { value: 'orange', label: 'Orange' }, { value: 'violet', label: 'Violet' },
                       ]} />
                     </div>
                     <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 100 }}>Darkness</label>
-                      <ButtonGroup value="cool" onChange={() => {}} options={[
+                      <ButtonGroup value="cool" options={[
                         { value: 'dark', label: 'Darker' }, { value: 'cool', label: 'Cool mid' }, { value: 'light', label: 'Lighter' },
                       ]} />
                     </div>
                     <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 100 }}>Density</label>
-                      <ButtonGroup value="comf" onChange={() => {}} options={[
+                      <ButtonGroup value="comf" options={[
                         { value: 'cmp', label: 'Compact' }, { value: 'comf', label: 'Comfortable' }, { value: 'sp', label: 'Spacious' },
                       ]} />
                     </div>
-                    <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 100 }}>Smooth UI</label><Switch checked onChange={() => {}} /></div>
-                    <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 100 }}>Hi-DPI line scale</label><Slider value={0.6} onChange={() => {}} /></div>
+                    <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 100 }}>Smooth UI</label><Switch checked /></div>
+                    <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 100 }}>Hi-DPI line scale</label><Slider value={0.6} /></div>
                   </div>
                 </div>
               </div>

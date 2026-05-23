@@ -33,11 +33,11 @@ function HeroDeck() {
           <Panel title="Filter Bank ▸ Lowpass" icon="filter-lp" headerActive
                  tools={<><Button ghost sm icon iconLeft="bolt" /><Button ghost sm icon iconLeft="more-h" /></>}>
             <div style={{ display: 'flex', justifyContent: 'space-around', padding: '14px 6px 18px', gap: 8 }}>
-              <Knob value={ring(0, 0)}     onChange={() => {}} size={56} label="CUT"   format={v => `${Math.round(v * 22050)}`} />
-              <Knob value={ring(1, 1.2)}   onChange={() => {}} size={56} label="RES"   format={v => `${(v*100).toFixed(0)}%`} />
-              <Knob value={ring(2, 0.4)}   onChange={() => {}} size={56} label="DRIVE" format={v => `${(v*24).toFixed(1)}`} />
-              <Knob value={ring(3, 2.1)}   onChange={() => {}} size={56} label="ENV"   bipolar format={v => `${((v-0.5)*2).toFixed(2)}`} />
-              <Knob value={ring(4, 1.7)}   onChange={() => {}} size={56} label="LFO"   bipolar format={v => `${((v-0.5)*100).toFixed(0)}`} />
+              <Knob value={ring(0, 0)}     size={56} label="CUT"   format={v => `${Math.round(v * 22050)}`} />
+              <Knob value={ring(1, 1.2)}   size={56} label="RES"   format={v => `${(v*100).toFixed(0)}%`} />
+              <Knob value={ring(2, 0.4)}   size={56} label="DRIVE" format={v => `${(v*24).toFixed(1)}`} />
+              <Knob value={ring(3, 2.1)}   size={56} label="ENV"   bipolar format={v => `${((v-0.5)*2).toFixed(2)}`} />
+              <Knob value={ring(4, 1.7)}   size={56} label="LFO"   bipolar format={v => `${((v-0.5)*100).toFixed(0)}`} />
             </div>
 
             <div style={{ height: 84, marginTop: 6, position: 'relative' }}>
@@ -76,9 +76,9 @@ function HeroDeck() {
               <div style={{ padding: '4px 0', minHeight: 0 }}>
                 <Tree
                   expanded={new Set(['scn', 'rig'])}
-                  onExpand={() => {}}
+                 
                   selected="hand"
-                  onSelect={() => {}}
+                 
                   nodes={[{
                     id: 'scn', label: 'Scene', icon: 'globe',
                     children: [
@@ -95,9 +95,9 @@ function HeroDeck() {
             </Panel>
             <Panel title="Inspector" icon="cog">
               <div className="dcs-col" style={{ gap: 6 }}>
-                <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 20 }}>X</label><Combo value={1.428}  onChange={() => {}} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
-                <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 20 }}>Y</label><Combo value={-0.952} onChange={() => {}} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
-                <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 20 }}>Z</label><Combo value={3.000}  onChange={() => {}} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
+                <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 20 }}>X</label><Combo value={1.428}  min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
+                <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 20 }}>Y</label><Combo value={-0.952} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
+                <div className="dcs-field"><label className="dcs-field__label" style={{ minWidth: 20 }}>Z</label><Combo value={3.000}  min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
               </div>
             </Panel>
           </div>
@@ -112,7 +112,7 @@ function HeroDeck() {
           ].map(s => (
             <div key={s.l} className="dcs-field" style={{ background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3, padding: '4px 6px', gap: 4 }}>
               <span style={{ fontSize: 10, color: 'var(--dcs-text-mute)', textTransform: 'uppercase', letterSpacing: '.06em', minWidth: 0 }}>{s.l}</span>
-              <Slider value={s.v} onChange={() => {}} />
+              <Slider value={s.v} />
               <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-accent)', minWidth: 30, textAlign: 'right' }}>{Math.round(s.v * 100)}</span>
             </div>
           ))}

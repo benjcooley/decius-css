@@ -609,7 +609,7 @@ function SectionCurve() {
       </p>
       <Demo frame="app" caption="Drag any point to reshape the curve">
         <Panel title="Envelope · Filter cutoff" icon="envelope" pad="sm"
-               tools={<><ButtonGroup value="bez" onChange={() => {}} options={[
+               tools={<><ButtonGroup value="bez" options={[
                   { value: 'lin', label: 'Linear' },
                   { value: 'bez', label: 'Bezier' },
                   { value: 'step', label: 'Step' },

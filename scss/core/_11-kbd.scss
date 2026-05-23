@@ -3,7 +3,7 @@
    ------------------------------------------------------------ */
 .dcs-kbd {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 18px; height: 18px; padding: 0 5px;
+  min-width: var(--dcs-h-sm); height: var(--dcs-h-sm); padding: 0 var(--dcs-s-3);
   font-family: var(--dcs-font-mono); font-size: var(--dcs-fs-xs);
   background: var(--dcs-surface-1);
   border: 1px solid var(--dcs-line);

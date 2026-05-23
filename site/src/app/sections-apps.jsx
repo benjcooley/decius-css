@@ -542,7 +542,7 @@ function SampleSynth() {
         {/* LFO */}
         <Section title="LFO 1" icon="lfo" color="#ff7ab8" hw="brushed">
           <div style={{ marginBottom: 6 }}>
-            <ButtonGroup value="sine" onChange={() => {}} options={[
+            <ButtonGroup value="sine" options={[
               { value: 'sine', icon: 'wave-sine' },
               { value: 'tri', icon: 'wave-tri' },
               { value: 'sq', icon: 'wave-square' },
@@ -586,12 +586,12 @@ function SampleSynth() {
             ].map(fx => (
               <div key={fx.name} style={{ padding: 10, background: 'transparent', borderRadius: 6, border: '1px solid rgba(255,255,255,.45)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Switch checked={fx.v > 0.01} onChange={() => {}} />
+                  <Switch checked={fx.v > 0.01} />
                   <span className="dcs-mono" style={{ fontSize: 10, color: fx.color, letterSpacing: '.08em' }}>{fx.name}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-around', paddingBottom: 14, paddingTop: 4 }}>
                   <Knob value={fx.v} onChange={v => upd(fx.key, v)} size={44} label="MIX" format={v => `${(v*100).toFixed(0)}`} />
-                  <Knob value={0.5} onChange={() => {}} size={44} label={fx.name === 'DELAY' ? 'TIME' : fx.name === 'CHORUS' ? 'RATE' : 'SIZE'} format={() => '0.50'} />
+                  <Knob value={0.5} size={44} label={fx.name === 'DELAY' ? 'TIME' : fx.name === 'CHORUS' ? 'RATE' : 'SIZE'} format={() => '0.50'} />
                 </div>
               </div>
             ))}

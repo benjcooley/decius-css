@@ -18,8 +18,8 @@ function SectionPanels() {
           <Panel title="Properties" icon="cog">
             <div className="dcs-col" style={{ gap: 6 }}>
               <div className="dcs-field"><label className="dcs-field__label">Name</label><input className="dcs-input" defaultValue="Cube.003" /></div>
-              <div className="dcs-field"><label className="dcs-field__label">Mass</label><Combo value={1.000} onChange={() => {}} min={0} max={100} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
-              <div className="dcs-field"><label className="dcs-field__label">Friction</label><Combo value={0.500} onChange={() => {}} min={0} max={1} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
+              <div className="dcs-field"><label className="dcs-field__label">Mass</label><Combo value={1.000} min={0} max={100} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
+              <div className="dcs-field"><label className="dcs-field__label">Friction</label><Combo value={0.500} min={0} max={1} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
             </div>
           </Panel>
           <Panel raised title="Material" icon="palette" headerActive
@@ -44,7 +44,7 @@ function SectionPanels() {
         <Panel pad={0}>
           <Tabs
             value="anim"
-            onChange={() => {}}
+           
             tabs={[
               { value: 'world', label: 'World', icon: 'globe' },
               { value: 'mesh', label: 'Mesh', icon: 'mesh' },
@@ -54,9 +54,9 @@ function SectionPanels() {
           />
           <div style={{ padding: 16 }}>
             <div className="dcs-col" style={{ gap: 8 }}>
-              <div className="dcs-field"><label className="dcs-field__label">FPS</label><Combo value={24} onChange={() => {}} min={1} max={120} step={1} format={v => `${v}`} width={100} /></div>
-              <div className="dcs-field"><label className="dcs-field__label">Length</label><Combo value={240} onChange={() => {}} min={1} max={9999} step={1} format={v => `${v} frames`} width={140} /></div>
-              <div className="dcs-field"><label className="dcs-field__label">Loop</label><Switch checked onChange={() => {}} /></div>
+              <div className="dcs-field"><label className="dcs-field__label">FPS</label><Combo value={24} min={1} max={120} step={1} format={v => `${v}`} width={100} /></div>
+              <div className="dcs-field"><label className="dcs-field__label">Length</label><Combo value={240} min={1} max={9999} step={1} format={v => `${v} frames`} width={140} /></div>
+              <div className="dcs-field"><label className="dcs-field__label">Loop</label><Switch checked /></div>
             </div>
           </div>
         </Panel>
@@ -115,9 +115,9 @@ function SectionDock() {
                 {leftTab === 'hier' ? (
                   <Tree
                     expanded={new Set(['scene', 'env', 'chars'])}
-                    onExpand={() => {}}
+                   
                     selected="cube"
-                    onSelect={() => {}}
+                   
                     nodes={[{
                       id: 'scene', label: 'Scene_Intro', icon: 'globe', meta: '37',
                       children: [
@@ -331,7 +331,7 @@ function SectionDock() {
                       <div className="dcs-props">
                         <div className="dcs-field"><span className="dcs-field__label">Wireframe</span><Switch checked={wire} onChange={setWire} /></div>
                         <div className="dcs-field"><span className="dcs-field__label">Cast shadow</span><Switch checked={shadow} onChange={setShadow} /></div>
-                        <div className="dcs-field"><span className="dcs-field__label">In viewport</span><Switch checked onChange={() => {}} /></div>
+                        <div className="dcs-field"><span className="dcs-field__label">In viewport</span><Switch checked /></div>
                       </div>
                     </Foldout>
                     <Foldout title="Modifiers" icon="bolt" defaultOpen={false} meta="3" />
@@ -343,14 +343,14 @@ function SectionDock() {
                     <Foldout title="Ambient" icon="globe">
                       <div className="dcs-props">
                         <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#7c8492' }} /><span>#7C8492</span></div></div>
-                        <div className="dcs-field"><span className="dcs-field__label">Intensity</span><Slider value={0.4} onChange={() => {}} /></div>
+                        <div className="dcs-field"><span className="dcs-field__label">Intensity</span><Slider value={0.4} /></div>
                       </div>
                     </Foldout>
                     <Foldout title="Sun" icon="light">
                       <div className="dcs-props">
                         <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#fff1d5' }} /><span>#FFF1D5</span></div></div>
-                        <div className="dcs-field"><span className="dcs-field__label">Exposure</span><Slider value={0.6} onChange={() => {}} /></div>
-                        <div className="dcs-field"><span className="dcs-field__label">Soft</span><Switch checked onChange={() => {}} /></div>
+                        <div className="dcs-field"><span className="dcs-field__label">Exposure</span><Slider value={0.6} /></div>
+                        <div className="dcs-field"><span className="dcs-field__label">Soft</span><Switch checked /></div>
                       </div>
                     </Foldout>
                   </Foldouts>
@@ -387,7 +387,7 @@ function SectionFoldouts() {
                     {[['X', '#ef6b6b', 1.428], ['Y', '#4ed18a', -0.952], ['Z', '#4d9fff', 3.000]].map(([k, c, v]) => (
                       <div key={k} className="dcs-field">
                         <span className="dcs-field__label" style={{ color: c, flex: '0 0 16px', fontFamily: 'var(--dcs-font-num)', fontVariantNumeric: 'tabular-nums', fontSize: 11 }}>{k}</span>
-                        <Combo value={v} onChange={() => {}} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} />
+                        <Combo value={v} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} />
                       </div>
                     ))}
                   </div>
@@ -400,19 +400,19 @@ function SectionFoldouts() {
                     </div>
                     <div className="dcs-field">
                       <span className="dcs-field__label">Roughness</span>
-                      <Slider value={0.42} onChange={() => {}} />
+                      <Slider value={0.42} />
                     </div>
                     <div className="dcs-field">
                       <span className="dcs-field__label">Metallic</span>
-                      <Slider value={0.08} onChange={() => {}} />
+                      <Slider value={0.08} />
                     </div>
                     <div className="dcs-field">
                       <span className="dcs-field__label">Specular</span>
-                      <Combo value={0.5} onChange={() => {}} min={0} max={1} step={0.01} format={v => v.toFixed(2)} />
+                      <Combo value={0.5} min={0} max={1} step={0.01} format={v => v.toFixed(2)} />
                     </div>
                     <div className="dcs-field">
                       <span className="dcs-field__label">Use texture</span>
-                      <Switch checked onChange={() => {}} />
+                      <Switch checked />
                     </div>
                     <div className="dcs-field">
                       <span className="dcs-field__label">Tag</span>
@@ -431,7 +431,7 @@ function SectionFoldouts() {
                     ].map(it => (
                       <div key={it.l} className="dcs-field">
                         <span className="dcs-field__label">{it.l}</span>
-                        <Switch checked={it.v} onChange={() => {}} />
+                        <Switch checked={it.v} />
                       </div>
                     ))}
                   </div>
@@ -473,15 +473,15 @@ function SectionSubpanels() {
               <div className="dcs-col" style={{ gap: 3 }}>
                 <div className="dcs-field" style={{ gap: 6 }}>
                   <span style={{ fontSize: 10, color: 'var(--dcs-danger)', width: 12, fontFamily: 'var(--dcs-font-mono)' }}>X</span>
-                  <Combo value={1.428} onChange={() => {}} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
+                  <Combo value={1.428} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
                 </div>
                 <div className="dcs-field" style={{ gap: 6 }}>
                   <span style={{ fontSize: 10, color: 'var(--dcs-ok)', width: 12, fontFamily: 'var(--dcs-font-mono)' }}>Y</span>
-                  <Combo value={-0.952} onChange={() => {}} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
+                  <Combo value={-0.952} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
                 </div>
                 <div className="dcs-field" style={{ gap: 6 }}>
                   <span style={{ fontSize: 10, color: 'var(--dcs-accent)', width: 12, fontFamily: 'var(--dcs-font-mono)' }}>Z</span>
-                  <Combo value={3.000} onChange={() => {}} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
+                  <Combo value={3.000} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
                 </div>
               </div>
             </SubPanel>
@@ -489,15 +489,15 @@ function SectionSubpanels() {
               <div className="dcs-col" style={{ gap: 4 }}>
                 <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Wireframe</span>
-                  <Switch checked={false} onChange={() => {}} />
+                  <Switch checked={false} />
                 </div>
                 <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Smooth shade</span>
-                  <Switch checked onChange={() => {}} />
+                  <Switch checked />
                 </div>
                 <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Cast shadow</span>
-                  <Switch checked onChange={() => {}} />
+                  <Switch checked />
                 </div>
               </div>
             </SubPanel>
@@ -509,20 +509,20 @@ function SectionSubpanels() {
                 </div>
                 <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Roughness</span>
-                  <Slider value={0.42} onChange={() => {}} />
+                  <Slider value={0.42} />
                 </div>
               </div>
             </SubPanel>
             <SubPanel title="Constraints" icon="link" defaultOpen={false}>
               <div className="dcs-col" style={{ gap: 4 }}>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}><span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Lock X</span><Switch checked={false} onChange={() => {}} /></div>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}><span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Track to</span><Combo value={0} onChange={() => {}} min={0} max={4} step={1} format={() => 'Cam.001'} width={90} /></div>
+                <div className="dcs-field" style={{ justifyContent: 'space-between' }}><span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Lock X</span><Switch checked={false} /></div>
+                <div className="dcs-field" style={{ justifyContent: 'space-between' }}><span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Track to</span><Combo value={0} min={0} max={4} step={1} format={() => 'Cam.001'} width={90} /></div>
               </div>
             </SubPanel>
             <SubPanel title="Subdivision" icon="subdivide" defaultOpen={false}>
               <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Level</span>
-                <Combo value={2} onChange={() => {}} min={0} max={6} step={1} format={v => `${v}×`} width={70} />
+                <Combo value={2} min={0} max={6} step={1} format={v => `${v}×`} width={70} />
               </div>
             </SubPanel>
           </Panel>

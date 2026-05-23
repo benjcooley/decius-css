@@ -180,8 +180,8 @@ function SectionSliders() {
             { v: fader3, set: setFader3, l: 'HAT' },
             { v: fader4, set: setFader4, l: 'BUS' },
           ].map(f => (
-            <div key={f.l} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <span className="dcs-mono dcs-accent-text" style={{ fontSize: 11 }}>
+            <div key={f.l} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: 54 }}>
+              <span className="dcs-mono dcs-accent-text" style={{ fontSize: 11, width: 54, textAlign: 'center' }}>
                 {Math.round((f.v - 0.75) * 60)} dB
               </span>
               <Fader value={f.v} onChange={f.set} />
@@ -189,11 +189,11 @@ function SectionSliders() {
             </div>
           ))}
           <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--dcs-line)', margin: '0 8px' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <span className="dcs-mono dcs-accent-text" style={{ fontSize: 11, color: 'var(--dcs-ok)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: 54 }}>
+            <span className="dcs-mono dcs-accent-text" style={{ fontSize: 11, color: 'var(--dcs-ok)', width: 54, textAlign: 'center' }}>
               -3 dB
             </span>
-            <Fader value={0.92} onChange={() => {}} />
+            <Fader value={0.92} />
             <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-text)', letterSpacing: '.08em' }}>MASTER</span>
           </div>
         </div>

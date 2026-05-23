@@ -6,6 +6,16 @@
 
 const { useState, useRef, useEffect, useMemo, useCallback } = React;
 
+// Controlled when an onChange is given; otherwise self-manage state seeded from
+// `value` — so docs demos are interactive without per-instance state wiring.
+// When uncontrolled we still follow `value` if it changes (e.g. the animated
+// hero), but a fixed literal only seeds once, so drags persist.
+function useControl(value, onChange) {
+  const [internal, setInternal] = useState(value);
+  useEffect(() => { if (!onChange) setInternal(value); }, [value, onChange]);
+  return onChange ? [value, onChange] : [internal, setInternal];
+}
+
 /* ─────────── Panel ─────────── */
 function Panel({ title, icon, tools, footer, raised, flat, bordered, closeable, onClose, headerActive, pad, children, style, className = '' }) {
   const [closed, setClosed] = useState(false);
@@ -66,14 +76,15 @@ function Button({ children, primary, ghost, danger, sm, lg, icon, iconLeft, icon
 }
 
 function ButtonGroup({ value, onChange, options }) {
+  const [cur, set] = useControl(value, onChange);
   return (
     <div className="dcs-btn-group" role="group">
       {options.map(opt => (
         <button
           key={opt.value}
           className="dcs-btn"
-          aria-pressed={value === opt.value}
-          onClick={() => onChange(opt.value)}
+          aria-pressed={cur === opt.value}
+          onClick={() => set(opt.value)}
         >
           {opt.icon && <Icon name={opt.icon} />}
           {opt.label && <span>{opt.label}</span>}
@@ -108,8 +119,9 @@ function useDrag(onDrag, opts = {}) {
 
 /* ─────────── Slider (DCC horizontal) ─────────── */
 function Slider({ value, onChange, min = 0, max = 1, step = 0, bipolar, width, ticks }) {
+  const [cur, set] = useControl(value, onChange);
   const trackRef = useRef(null);
-  const v = Math.max(min, Math.min(max, value));
+  const v = Math.max(min, Math.min(max, cur));
   const pct = ((v - min) / (max - min)) * 100;
   const handleDown = (e) => {
     const rect = trackRef.current.getBoundingClientRect();
@@ -117,7 +129,7 @@ function Slider({ value, onChange, min = 0, max = 1, step = 0, bipolar, width, t
       const t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       let nv = min + t * (max - min);
       if (step) nv = Math.round(nv / step) * step;
-      onChange(nv);
+      set(nv);
     };
     update(e.clientX);
     const move = ev => update(ev.clientX);
@@ -152,14 +164,15 @@ function Slider({ value, onChange, min = 0, max = 1, step = 0, bipolar, width, t
 
 /* ─────────── Fader (vertical, synth) ─────────── */
 function Fader({ value, onChange, min = 0, max = 1, height = 140, label }) {
+  const [cur, set] = useControl(value, onChange);
   const trackRef = useRef(null);
-  const v = Math.max(min, Math.min(max, value));
+  const v = Math.max(min, Math.min(max, cur));
   const pct = 100 - ((v - min) / (max - min)) * 100;
   const handleDown = (e) => {
     const rect = trackRef.current.getBoundingClientRect();
     const update = (clientY) => {
       const t = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-      onChange(min + (1 - t) * (max - min));
+      set(min + (1 - t) * (max - min));
     };
     update(e.clientY);
     const move = ev => update(ev.clientY);
@@ -181,7 +194,8 @@ function Fader({ value, onChange, min = 0, max = 1, height = 140, label }) {
 
 /* ─────────── Knob ─────────── */
 function Knob({ value, onChange, min = 0, max = 1, size = 56, label, bipolar, format }) {
-  const v = Math.max(min, Math.min(max, value));
+  const [cur, set] = useControl(value, onChange);
+  const v = Math.max(min, Math.min(max, cur));
   const norm = (v - min) / (max - min);
   // Angle range: -135° to +135°
   const angle = -135 + norm * 270;
@@ -197,7 +211,7 @@ function Knob({ value, onChange, min = 0, max = 1, size = 56, label, bipolar, fo
       const dy = startY - ev.clientY;
       const scale = ev.shiftKey ? 400 : 150;
       const delta = (dy / scale) * range;
-      onChange(Math.max(min, Math.min(max, startVal + delta)));
+      set(Math.max(min, Math.min(max, startVal + delta)));
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
@@ -242,11 +256,12 @@ function Knob({ value, onChange, min = 0, max = 1, size = 56, label, bipolar, fo
 
 /* ─────────── Combo (ZBrush-style number/slider) ─────────── */
 function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, width = 140, sm, lg }) {
+  const [cur, set] = useControl(value, onChange);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef(null);
   const containerRef = useRef(null);
-  const v = Math.max(min, Math.min(max, value));
+  const v = Math.max(min, Math.min(max, cur));
   const pct = ((v - min) / (max - min)) * 100;
 
   useEffect(() => {
@@ -271,7 +286,7 @@ function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, 
       const delta = (dx / rect.width) * range * scale;
       let nv = Math.max(min, Math.min(max, startVal + delta));
       if (step) nv = Math.round(nv / step) * step;
-      onChange(nv);
+      set(nv);
     };
     const up = (ev) => {
       window.removeEventListener('pointermove', move);
@@ -287,7 +302,7 @@ function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, 
 
   const commit = () => {
     const parsed = parseFloat(draft);
-    if (!Number.isNaN(parsed)) onChange(Math.max(min, Math.min(max, parsed)));
+    if (!Number.isNaN(parsed)) set(Math.max(min, Math.min(max, parsed)));
     setEditing(false);
   };
 
@@ -298,12 +313,12 @@ function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, 
          style={{ width, '--fill': `${pct}%` }}
          onPointerDown={handleDown}>
       <div className="dcs-combo__fill" />
-      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); onChange(Math.max(min, v - (step || 0.01))); }}>
+      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); set(Math.max(min, v - (step || 0.01))); }}>
         <Icon name="chevron-left" size="sm" />
       </div>
       {label && <div className="dcs-combo__label">{label}</div>}
       <div className="dcs-combo__value">{format ? format(v) : v.toFixed(2)}</div>
-      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); onChange(Math.min(max, v + (step || 0.01))); }}>
+      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); set(Math.min(max, v + (step || 0.01))); }}>
         <Icon name="chevron-right" size="sm" />
       </div>
       {editing && (
@@ -325,10 +340,11 @@ function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, 
 
 /* ─────────── Check / Radio / Switch ─────────── */
 function Check({ checked, onChange, children, radio }) {
+  const [cur, set] = useControl(checked, onChange);
   return (
-    <div className={`dcs-check${radio ? ' dcs-radio' : ''}`} role={radio ? 'radio' : 'checkbox'} aria-checked={checked} onClick={() => onChange(!checked)}>
+    <div className={`dcs-check${radio ? ' dcs-radio' : ''}`} role={radio ? 'radio' : 'checkbox'} aria-checked={cur} onClick={() => set(!cur)}>
       <div className="dcs-check__box">
-        {!radio && checked && <Icon name="check" />}
+        {!radio && cur && <Icon name="check" />}
       </div>
       <span>{children}</span>
     </div>
@@ -336,19 +352,21 @@ function Check({ checked, onChange, children, radio }) {
 }
 
 function Switch({ checked, onChange }) {
-  return <div className="dcs-switch" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} />;
+  const [cur, set] = useControl(checked, onChange);
+  return <div className="dcs-switch" role="switch" aria-checked={cur} onClick={() => set(!cur)} />;
 }
 
 /* ─────────── Tab bar ─────────── */
 function Tabs({ tabs, value, onChange }) {
+  const [cur, set] = useControl(value, onChange);
   return (
     <div className="dcs-tabs" role="tablist">
       {tabs.map(t => (
         <button key={t.value}
                 className="dcs-tab"
                 role="tab"
-                aria-selected={value === t.value}
-                onClick={() => onChange(t.value)}>
+                aria-selected={cur === t.value}
+                onClick={() => set(t.value)}>
           {t.icon && <Icon name={t.icon} />}
           {t.label}
         </button>
@@ -365,25 +383,33 @@ function ToolbarSep() { return <div className="dcs-toolbar__sep" />; }
 
 /* ─────────── Tree ─────────── */
 function Tree({ nodes, selected, onSelect, expanded, onExpand }) {
+  const [iExp, setIExp] = useState(() => expanded || new Set());
+  const [iSel, setISel] = useState(selected);
+  const exp = onExpand ? expanded : iExp;
+  const sel = onSelect ? selected : iSel;
+  const select = onSelect || setISel;
+  const toggle = onExpand || ((id) => setIExp(s => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+  }));
   const rows = [];
   const walk = (items, depth) => {
     items.forEach(node => {
-      const isOpen = expanded.has(node.id);
+      const isOpen = exp.has(node.id);
       const hasChildren = node.children && node.children.length;
       rows.push(
         <div
           key={node.id}
           className="dcs-tree__row"
           style={{ '--depth': depth }}
-          aria-selected={selected === node.id}
+          aria-selected={sel === node.id}
           onClick={() => {
-            onSelect(node.id);
-            if (hasChildren) onExpand(node.id);
+            select(node.id);
+            if (hasChildren) toggle(node.id);
           }}
         >
           <div
             className={`dcs-tree__chevron${isOpen ? ' dcs-tree__chevron--open' : ''}`}
-            onClick={(e) => { e.stopPropagation(); if (hasChildren) onExpand(node.id); }}
+            onClick={(e) => { e.stopPropagation(); if (hasChildren) toggle(node.id); }}
           >
             {hasChildren && <Icon name="chevron-right" size="sm" />}
           </div>

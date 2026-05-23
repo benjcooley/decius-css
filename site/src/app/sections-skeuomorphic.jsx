@@ -567,11 +567,11 @@ function SectionSkeuomorphic() {
 
                 <div style={{ display: 'flex', gap: 12 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                    <Knob value={0.45} onChange={() => {}} size={50} />
+                    <Knob value={0.45} size={50} />
                     <div className="dcs-jack__label" style={{ marginTop: -4 }}>RATE</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                    <Knob value={0.2} onChange={() => {}} size={50} />
+                    <Knob value={0.2} size={50} />
                     <div className="dcs-jack__label" style={{ marginTop: -4 }}>GLIDE</div>
                   </div>
                 </div>
@@ -600,7 +600,7 @@ function SectionSkeuomorphic() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <Knob value={0.6} onChange={() => {}} size={50} />
+                  <Knob value={0.6} size={50} />
                   <div className="dcs-jack__label">GATE TIME</div>
                 </div>
 

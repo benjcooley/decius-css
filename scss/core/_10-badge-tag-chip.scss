@@ -3,7 +3,7 @@
    ------------------------------------------------------------ */
 .dcs-badge {
   display: inline-flex; align-items: center; gap: 4px;
-  height: 18px; padding: 0 7px;
+  height: var(--dcs-h-sm); padding: 0 var(--dcs-s-3);
   font-size: var(--dcs-fs-xs); font-weight: 600;
   font-family: var(--dcs-font);
   font-variant-numeric: tabular-nums lining-nums;
