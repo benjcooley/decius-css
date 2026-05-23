@@ -403,11 +403,12 @@ function MiniPicker({ hsv, set }) {
       <div ref={hueRef} className="dcs-hue-bar" onPointerDown={dragHue}>
         <div className="dcs-hue-bar__cursor" style={{ left: `${(hsv.h / 360) * 100}%` }} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{ width: 22, height: 22, flex: '0 0 auto', borderRadius: 'var(--dcs-r-1)', background: hex, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.35)' }} />
         <input className="dcs-input dcs-mono" value={hex.toUpperCase()} spellCheck={false}
           onChange={(e) => { const h = hexToHsv(e.target.value); if (h) set(h); }}
           style={{ flex: 1, minWidth: 0, height: 'var(--dcs-h-in)' }} />
+        <Button sm icon iconLeft="eyedropper" title="Pick colour from screen" />
       </div>
     </div>
   );
