@@ -5,6 +5,21 @@ const { useState: useStateC } = React;
 
 function SectionButtons() {
   const [pressed, setPressed] = useStateC({ snap: true, sym: false, prop: false });
+  const [tool, setTool] = useStateC('select');
+  const [snap, setSnap] = useStateC(true);
+  const TOOLS = (sz) => (
+    <>
+      {['select', 'move', 'rotate', 'scale-corners'].map(t => (
+        <Button key={t} ghost icon iconLeft={t} pressed={tool === t} onClick={() => setTool(t)} />
+      ))}
+      <ToolbarSep />
+      {['brush', 'eraser', 'fill'].map(t => (
+        <Button key={t} ghost icon iconLeft={t} pressed={tool === t} onClick={() => setTool(t)} />
+      ))}
+      <ToolbarSep />
+      <Button ghost icon iconLeft="magnet" pressed={snap} onClick={() => setSnap(s => !s)} />
+    </>
+  );
   return (
     <section className="dw-section" id="buttons">
       <div className="dw-section__eyebrow">Components · 01</div>
@@ -72,24 +87,30 @@ function SectionButtons() {
         </div>
       </Demo>
 
-      <Demo caption="Tool-button strip — the spine of any DCC viewport">
-        <Toolbar>
-          <Button ghost sm icon iconLeft="select" pressed />
-          <Button ghost sm icon iconLeft="move" />
-          <Button ghost sm icon iconLeft="rotate" />
-          <Button ghost sm icon iconLeft="scale" />
-          <ToolbarSep />
-          <Button ghost sm icon iconLeft="brush" />
-          <Button ghost sm icon iconLeft="eraser" />
-          <Button ghost sm icon iconLeft="fill" />
-          <ToolbarSep />
-          <Button ghost sm icon iconLeft="pivot" />
-          <Button ghost sm icon iconLeft="magnet" pressed />
-          <Button ghost sm icon iconLeft="snap" />
-          <div style={{ flex: 1 }} />
-          <Button ghost sm icon iconLeft="undo" />
-          <Button ghost sm icon iconLeft="redo" />
-        </Toolbar>
+      <Demo caption="One uniform toolbar — sm / md / lg. Click a tool: selected = solid accent, dark icon, rounded.">
+        <div className="dcs-col" style={{ gap: 12 }}>
+          <Toolbar size="sm">{TOOLS('sm')}<div style={{ flex: 1 }} /><Button ghost icon iconLeft="undo" /><Button ghost icon iconLeft="redo" /></Toolbar>
+          <Toolbar>{TOOLS('md')}<div style={{ flex: 1 }} /><Button ghost icon iconLeft="undo" /><Button ghost icon iconLeft="redo" /></Toolbar>
+          <Toolbar size="lg">{TOOLS('lg')}<div style={{ flex: 1 }} /><Button ghost icon iconLeft="undo" /><Button ghost icon iconLeft="redo" /></Toolbar>
+        </div>
+      </Demo>
+
+      <Demo caption="Vertical rail + a floating overlay variant — same toolbar, two placements">
+        <div className="dcs-row" style={{ gap: 24, alignItems: 'flex-start' }}>
+          <Toolbar vertical>
+            {['select', 'move', 'rotate', 'scale-corners'].map(t => (
+              <Button key={t} ghost icon iconLeft={t} pressed={tool === t} onClick={() => setTool(t)} />
+            ))}
+            <ToolbarSep />
+            <Button ghost icon iconLeft="magnet" pressed={snap} onClick={() => setSnap(s => !s)} />
+          </Toolbar>
+          <div style={{ position: 'relative', flex: 1, minHeight: 120, borderRadius: 'var(--dcs-r-3)', background: 'radial-gradient(ellipse at 50% 40%, #3a4054, #161922 80%)', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 10, left: 10 }}>
+              <Toolbar floating size="sm">{TOOLS('sm')}</Toolbar>
+            </div>
+            <span style={{ position: 'absolute', bottom: 8, right: 12, fontSize: 11, color: 'var(--dcs-text-mute)', fontFamily: 'var(--dcs-font-mono)' }}>floating overlay</span>
+          </div>
+        </div>
       </Demo>
     </section>
   );

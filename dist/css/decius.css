@@ -584,30 +584,16 @@
   height: 18px;
 }
 
-/* Toolbar — slightly tighter icon size + better spacing */
-.dcs-toolbar .dcs-btn--icon {
-  width: var(--dcs-h-sm);
-  padding: 0;
-}
-
-.dcs-toolbar .dcs-btn--icon .dcs-icon {
-  width: 13px;
-  height: 13px;
-}
-
-.dcs-toolbar .dcs-btn-group .dcs-btn--icon {
-  width: var(--dcs-h-sm);
-}
-
-.dcs-toolbar .dcs-btn-group .dcs-btn--icon .dcs-icon {
-  width: 13px;
-  height: 13px;
-}
-
+/* Selected / toggled — solid key colour with a dark icon, rounded
+   (uniform across plain buttons, toolbars, button-groups, and floaters). */
 .dcs-btn[aria-pressed=true] {
-  background: var(--dcs-accent-dim);
-  border-color: var(--dcs-accent-lo);
-  color: var(--dcs-accent);
+  background: var(--dcs-accent);
+  border-color: transparent;
+  color: #0a1220;
+}
+
+.dcs-btn[aria-pressed=true]:hover {
+  background: var(--dcs-accent-hi);
 }
 
 /* Button group (segmented) — visible chassis so the grouping reads */
@@ -1524,37 +1510,105 @@
 
 /* ------------------------------------------------------------
    15 · TOOLBAR
+   One uniform toolbar: embedded under a menu bar or floating as an
+   overlay in the content view; horizontal or vertical; sm / md / lg.
+   Selected tools show a solid accent background everywhere.
    ------------------------------------------------------------ */
 .dcs-toolbar {
+  --tb-btn: var(--dcs-h); /* size of each tool button */
   display: flex;
   align-items: center;
-  gap: 2px;
-  height: var(--dcs-h);
+  gap: var(--dcs-s-2);
+  height: var(--dcs-h-lg);
   padding: 0 var(--dcs-s-3);
   background: var(--dcs-surface-1);
   border: 1px solid var(--dcs-line);
   border-radius: var(--dcs-r-2);
+  flex-shrink: 0;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.dcs-toolbar--sm {
+  --tb-btn: var(--dcs-h-sm);
+  height: var(--dcs-h);
+}
+
+.dcs-toolbar--lg {
+  --tb-btn: var(--dcs-h-lg);
+  height: var(--dcs-h-xl);
+}
+
+/* Uniform tool-button sizing, regardless of per-button size props. */
+.dcs-toolbar .dcs-btn {
+  height: var(--tb-btn);
+}
+
+.dcs-toolbar .dcs-btn--icon {
+  width: var(--tb-btn);
+  padding: 0;
+}
+
+.dcs-toolbar .dcs-btn-group {
+  height: var(--tb-btn);
+  align-self: center;
+}
+
+.dcs-toolbar .dcs-btn-group .dcs-btn {
+  height: calc(var(--tb-btn) - 6px);
+  min-width: calc(var(--tb-btn) - 6px);
+}
+
+/* Selected tool — solid key colour (matches button-groups + floaters). */
+.dcs-toolbar .dcs-btn[aria-pressed=true] {
+  background: var(--dcs-accent);
+  color: #0a1220;
+  border-color: transparent;
+}
+
+.dcs-toolbar .dcs-btn[aria-pressed=true]:hover {
+  background: var(--dcs-accent-hi);
 }
 
 .dcs-toolbar__sep {
   width: 1px;
   height: 60%;
   background: var(--dcs-line);
-  margin: 0 var(--dcs-s-3);
+  margin: 0 var(--dcs-s-2);
   flex: 0 0 1px;
 }
 
+.dcs-toolbar__spacer {
+  flex: 1;
+}
+
+/* Vertical toolbar (rail). */
 .dcs-toolbar--v {
   flex-direction: column;
   height: auto;
+  width: var(--dcs-h-lg);
+  padding: var(--dcs-s-3) 0;
+}
+
+.dcs-toolbar--v.dcs-toolbar--sm {
   width: var(--dcs-h);
-  padding: var(--dcs-s-2) 0;
+}
+
+.dcs-toolbar--v.dcs-toolbar--lg {
+  width: var(--dcs-h-xl);
 }
 
 .dcs-toolbar--v .dcs-toolbar__sep {
   width: 60%;
   height: 1px;
   margin: var(--dcs-s-2) 0;
+}
+
+/* Floating overlay — same toolbar, dropped over the content view. */
+.dcs-toolbar--floating {
+  border-color: var(--dcs-line-soft);
+  box-shadow: var(--dcs-shadow-3);
 }
 
 /* ------------------------------------------------------------

@@ -51,17 +51,14 @@
 .dcs-btn--icon.dcs-btn--lg { width: var(--dcs-h-lg); }
 .dcs-btn--icon.dcs-btn--lg .dcs-icon { width: 18px; height: 18px; }
 
-/* Toolbar — slightly tighter icon size + better spacing */
-.dcs-toolbar .dcs-btn--icon { width: var(--dcs-h-sm); padding: 0; }
-.dcs-toolbar .dcs-btn--icon .dcs-icon { width: 13px; height: 13px; }
-.dcs-toolbar .dcs-btn-group .dcs-btn--icon { width: var(--dcs-h-sm); }
-.dcs-toolbar .dcs-btn-group .dcs-btn--icon .dcs-icon { width: 13px; height: 13px; }
-
+/* Selected / toggled — solid key colour with a dark icon, rounded
+   (uniform across plain buttons, toolbars, button-groups, and floaters). */
 .dcs-btn[aria-pressed="true"] {
-  background: var(--dcs-accent-dim);
-  border-color: var(--dcs-accent-lo);
-  color: var(--dcs-accent);
+  background: var(--dcs-accent);
+  border-color: transparent;
+  color: #0a1220;
 }
+.dcs-btn[aria-pressed="true"]:hover { background: var(--dcs-accent-hi); }
 
 /* Button group (segmented) — visible chassis so the grouping reads */
 .dcs-btn-group {

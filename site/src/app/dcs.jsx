@@ -563,8 +563,15 @@ function Tabs({ tabs, value, onChange }) {
 }
 
 /* ─────────── Toolbar ─────────── */
-function Toolbar({ children, vertical }) {
-  return <div className={`dcs-toolbar${vertical ? ' dcs-toolbar--v' : ''}`}>{children}</div>;
+function Toolbar({ children, vertical, size, floating, className = '', style }) {
+  const cls = [
+    'dcs-toolbar',
+    vertical && 'dcs-toolbar--v',
+    size && `dcs-toolbar--${size}`,
+    floating && 'dcs-toolbar--floating',
+    className,
+  ].filter(Boolean).join(' ');
+  return <div className={cls} style={style}>{children}</div>;
 }
 function ToolbarSep() { return <div className="dcs-toolbar__sep" />; }
 
