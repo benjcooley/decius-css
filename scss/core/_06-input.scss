@@ -82,6 +82,24 @@
   min-width: calc(var(--dcs-h-in) - 6px);
 }
 
+/* Link field — a channel widget that accepts a dragged asset/node (DnD).
+   Dashed while empty, solid once linked; flips to accent/danger as a drop
+   target. Sits at channel-row height so it stacks with the others. */
+.dcs-linkfield {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  height: var(--dcs-h-in); padding: 0 var(--dcs-s-2);
+  background: var(--dcs-well);
+  border: 1px dashed var(--dcs-line-strong);
+  border-radius: var(--dcs-r-2);
+  color: var(--dcs-text-dim); font-size: var(--dcs-fs-sm);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.dcs-linkfield--set { border-style: solid; color: var(--dcs-text); }
+.dcs-linkfield__empty { color: var(--dcs-text-mute); font-style: italic; }
+.dcs-linkfield.dcs-drop--valid { border-style: solid; border-color: var(--dcs-accent); background: var(--dcs-accent-dim); box-shadow: none; }
+.dcs-linkfield.dcs-drop--invalid { border-color: var(--dcs-danger); box-shadow: none; }
+
 /* ZBrush-style combo number/slider — flat by default */
 .dcs-combo {
   position: relative;

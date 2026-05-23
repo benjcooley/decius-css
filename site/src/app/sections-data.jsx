@@ -170,6 +170,99 @@ function SectionTrees() {
   );
 }
 
+/* ─────────── Typed cross-view drag & drop ─────────── */
+const DND_ASSETS = [
+  { id: 'as-brass',  label: 'Brass_worn.mat', icon: 'palette' },
+  { id: 'as-oak',    label: 'OakBark_2k.png', icon: 'texture' },
+  { id: 'as-marble', label: 'Marble_4k.exr',  icon: 'image' },
+  { id: 'as-normal', label: 'rock_normal.png', icon: 'texture' },
+  { id: 'as-walk',   label: 'walk.anim',      icon: 'curve' },
+  { id: 'as-chrome', label: 'Chrome.mat',     icon: 'palette' },
+];
+const DND_HIER = [{
+  id: 'scene', label: 'Scene', icon: 'globe', children: [
+    { id: 'env', label: 'Environment', icon: 'folder-open', children: [
+      { id: 'ground', label: 'Ground', icon: 'plane' },
+      { id: 'sky', label: 'Sky', icon: 'image' },
+    ] },
+    { id: 'hero', label: 'Hero', icon: 'folder-open', children: [
+      { id: 'body', label: 'body.geo', icon: 'mesh' },
+    ] },
+    { id: 'cam', label: 'Camera', icon: 'camera' },
+  ],
+}];
+let dndUid = 0;
+
+// An inspector channel that accepts a dragged asset or hierarchy item (DnD).
+function LinkField({ label, value, onLink, onClear }) {
+  return (
+    <div className="dcs-field">
+      <span className="dcs-field__label">{label}</span>
+      <DropZone accept={['asset', 'node']} onDrop={(p) => onLink(p.items[0])}
+        className={`dcs-linkfield${value ? ' dcs-linkfield--set' : ''}`}>
+        {value
+          ? <><Icon name={value.icon || 'link'} size="sm" /><span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{value.label}</span>
+              <span className="dcs-dockpane__tab-close" style={{ opacity: .6 }} onClick={onClear}><Icon name="close" size="sm" /></span></>
+          : <span className="dcs-linkfield__empty">drop an asset…</span>}
+      </DropZone>
+    </div>
+  );
+}
+
+function SectionDragDrop() {
+  const [assetSel, setAssetSel] = useStateD(() => new Set());
+  const [tree, setTree] = useStateD(DND_HIER);
+  const [hierSel, setHierSel] = useStateD(() => new Set());
+  const [exp, setExp] = useStateD(() => new Set(['scene', 'env', 'hero']));
+  const [base, setBase] = useStateD(null);
+  const [normal, setNormal] = useStateD(null);
+  const toggle = (id) => setExp(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const dropAssets = (payload, { targetId, pos }) => {
+    const added = payload.items.map(it => ({ id: `h${++dndUid}_${it.id}`, label: it.label, icon: it.icon }));
+    setTree(t => treeInsert(t, added, targetId, pos));
+  };
+  const pane = { borderRight: '1px solid var(--dcs-line)', borderRadius: 0 };
+  return (
+    <section className="dw-section" id="dnd">
+      <div className="dw-section__eyebrow">Data · 03</div>
+      <h2>Drag &amp; drop</h2>
+      <p className="dw-section__lead">
+        A typed drag-and-drop system at the React layer — the backbone of a DCC tool. Every source carries a
+        {' '}<strong style={{ color: 'var(--dw-text)' }}>type</strong>; every target declares which types it
+        {' '}<strong style={{ color: 'var(--dw-text)' }}>accepts</strong> and verifies with a callback, lighting up
+        {' '}<strong style={{ color: 'var(--dw-text)' }}>valid</strong> (accent) or <strong style={{ color: 'var(--dw-text)' }}>invalid</strong> (red).
+        Multi-select assets and drag them into the hierarchy, reorder/reparent the hierarchy itself, or drop an asset
+        {' '}<em>or</em> a hierarchy item onto an inspector channel to <strong style={{ color: 'var(--dw-text)' }}>link</strong> it.
+      </p>
+      <Demo frame="app" caption="useDrag / useDrop + Draggable / DropZone — sources & targets are typed; targets validate by type + canDrop">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr 1.15fr', height: 340, border: '1px solid var(--dcs-line)', borderRadius: 'var(--dcs-r-2)', overflow: 'hidden', background: 'var(--dcs-bg)' }}>
+          <Panel title="Assets" icon="folder" pad={0} style={pane}
+                 meta={assetSel.size ? `${assetSel.size} selected` : null}>
+            <div style={{ padding: '4px 0', height: '100%', overflowY: 'auto' }}>
+              <Tree flat multi source dragType="asset" nodes={DND_ASSETS} selected={assetSel} onSelect={setAssetSel} />
+            </div>
+          </Panel>
+          <Panel title="Hierarchy" icon="layers" pad={0} style={pane}>
+            <div style={{ padding: '4px 0', height: '100%', overflowY: 'auto' }}>
+              <Tree multi reorderable accept={['asset']} onDropItems={dropAssets}
+                expanded={exp} onExpand={toggle} selected={hierSel} onSelect={setHierSel}
+                nodes={tree} onMove={(ids, t, pos) => setTree(p => treeMove(p, ids, t, pos))} />
+            </div>
+          </Panel>
+          <Panel title="Inspector · Material" icon="edit" pad="sm" style={{ borderRadius: 0 }}>
+            <div className="dcs-props">
+              <div className="dcs-field"><span className="dcs-field__label">Name</span><input className="dcs-input" defaultValue="hero_skin" /></div>
+              <LinkField label="Base Color" value={base} onLink={setBase} onClear={() => setBase(null)} />
+              <LinkField label="Normal" value={normal} onLink={setNormal} onClear={() => setNormal(null)} />
+              <div className="dcs-field"><span className="dcs-field__label">Rough</span><Combo value={0.4} min={0} max={1} step={0.01} format={v => v.toFixed(2)} /></div>
+            </div>
+          </Panel>
+        </div>
+      </Demo>
+    </section>
+  );
+}
+
 function SectionTables() {
   const [sel, setSel] = useStateD(0);
   const rows = [
@@ -250,7 +343,7 @@ function SectionBadges() {
   );
 }
 
-Object.assign(window, { SectionLists, SectionTrees, SectionTables, SectionBadges, SectionCards });
+Object.assign(window, { SectionLists, SectionTrees, SectionDragDrop, SectionTables, SectionBadges, SectionCards });
 
 function SectionCards() {
   const [sel, setSel] = useStateD('m2');

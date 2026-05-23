@@ -607,6 +607,48 @@ function initSelect(root) {
     });
   });
 }
+var dndCurrent = null;
+function initDnd(root) {
+  $$("[data-dcs-drag]", root).forEach((el2) => {
+    if (el2[WIRED]) return;
+    el2[WIRED] = true;
+    el2.setAttribute("draggable", "true");
+    el2.addEventListener("dragstart", (e) => {
+      dndCurrent = { type: el2.getAttribute("data-dcs-drag-type") || el2.getAttribute("data-dcs-drag") || "", id: el2.getAttribute("data-dcs-drag-id") || "", el: el2 };
+      e.dataTransfer.effectAllowed = "copyMove";
+      try {
+        e.dataTransfer.setData("text/plain", dndCurrent.id || el2.textContent.trim());
+      } catch (_) {
+      }
+      emit(el2, "dcs:dragstart", dndCurrent);
+    });
+    el2.addEventListener("dragend", () => {
+      dndCurrent = null;
+    });
+  });
+  $$("[data-dcs-drop]", root).forEach((zone) => {
+    if (zone[WIRED]) return;
+    zone[WIRED] = true;
+    const accept = (zone.getAttribute("data-dcs-accept") || "").split(/[\s,]+/).filter(Boolean);
+    const ok = () => dndCurrent && (accept.length === 0 || accept.includes(dndCurrent.type));
+    const clear = () => zone.classList.remove("dcs-drop--valid", "dcs-drop--invalid");
+    zone.addEventListener("dragover", (e) => {
+      if (!dndCurrent) return;
+      if (ok()) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        zone.classList.add("dcs-drop--valid");
+      } else zone.classList.add("dcs-drop--invalid");
+    });
+    zone.addEventListener("dragleave", clear);
+    zone.addEventListener("drop", (e) => {
+      clear();
+      if (!ok()) return;
+      e.preventDefault();
+      emit(zone, "dcs:drop", { type: dndCurrent.type, id: dndCurrent.id, source: dndCurrent.el, target: zone });
+    });
+  });
+}
 function init(root = document) {
   initCollapse(root);
   initDismiss(root);
@@ -616,6 +658,7 @@ function init(root = document) {
   initTabs(root);
   initToggles(root);
   initSelect(root);
+  initDnd(root);
   initSlider(root);
   initKnob(root);
   initCombo(root);
@@ -662,6 +705,7 @@ export {
  *   [data-dcs-slider] / [data-dcs-fader] / [data-dcs-knob] / [data-dcs-combo]
  *   [data-dcs-splitter]   (resize previous/next flex siblings)
  *   [data-dcs-select] / [data-dcs-select="multi"]  (row selection on list/tree)
+ *   [data-dcs-drag] [data-dcs-drag-type] / [data-dcs-drop] [data-dcs-accept]  (typed DnD)
  *   .dcs-subpanel__header / .dcs-foldout__header   (collapse, zero-config)
  *   .dcs-check / .dcs-radio / .dcs-switch          (toggle, zero-config)
  *

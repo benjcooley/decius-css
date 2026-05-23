@@ -40,6 +40,7 @@ const NAV = [
   { group: 'Data', items: [
     { id: 'lists',  label: 'Lists',  icon: 'menu' },
     { id: 'trees',  label: 'Trees',  icon: 'folder-open' },
+    { id: 'dnd',    label: 'Drag & drop', icon: 'move' },
     { id: 'tables', label: 'Tables', icon: 'grid' },
     { id: 'cards',  label: 'Cards',  icon: 'image' },
     { id: 'badges', label: 'Badges & keys', icon: 'tag' },
@@ -258,6 +259,7 @@ function App() {
         <hr />
         <SectionLists />
         <SectionTrees />
+        <SectionDragDrop />
         <SectionTables />
         <SectionCards />
         <SectionBadges />
@@ -302,4 +304,5 @@ function App() {
 }
 
 // Icons are a web font (loaded via CSS), so we can mount immediately.
-createRoot(document.getElementById('root')).render(<App />);
+// DndProvider wraps the app so typed drag-and-drop works across panels/demos.
+createRoot(document.getElementById('root')).render(<DndProvider><App /></DndProvider>);

@@ -15,6 +15,7 @@
  *   [data-dcs-slider] / [data-dcs-fader] / [data-dcs-knob] / [data-dcs-combo]
  *   [data-dcs-splitter]   (resize previous/next flex siblings)
  *   [data-dcs-select] / [data-dcs-select="multi"]  (row selection on list/tree)
+ *   [data-dcs-drag] [data-dcs-drag-type] / [data-dcs-drop] [data-dcs-accept]  (typed DnD)
  *   .dcs-subpanel__header / .dcs-foldout__header   (collapse, zero-config)
  *   .dcs-check / .dcs-radio / .dcs-switch          (toggle, zero-config)
  *
@@ -531,10 +532,49 @@ function initSelect(root) {
   });
 }
 
+/* ============================================================ drag & drop
+   Simple typed DnD hooks (the full system is the React reference layer):
+     <div data-dcs-drag data-dcs-drag-type="asset" data-dcs-drag-id="42">
+     <div data-dcs-drop data-dcs-accept="asset node">
+   Targets get .dcs-drop--valid / --invalid while a drag is over them, and
+   emit a `dcs:drop` CustomEvent { type, id, source, target } on a valid drop. */
+let dndCurrent = null;        // { type, id, el }
+function initDnd(root) {
+  $$('[data-dcs-drag]', root).forEach((el) => {
+    if (el[WIRED]) return; el[WIRED] = true;
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', (e) => {
+      dndCurrent = { type: el.getAttribute('data-dcs-drag-type') || el.getAttribute('data-dcs-drag') || '', id: el.getAttribute('data-dcs-drag-id') || '', el };
+      e.dataTransfer.effectAllowed = 'copyMove';
+      try { e.dataTransfer.setData('text/plain', dndCurrent.id || el.textContent.trim()); } catch (_) {}
+      emit(el, 'dcs:dragstart', dndCurrent);
+    });
+    el.addEventListener('dragend', () => { dndCurrent = null; });
+  });
+  $$('[data-dcs-drop]', root).forEach((zone) => {
+    if (zone[WIRED]) return; zone[WIRED] = true;
+    const accept = (zone.getAttribute('data-dcs-accept') || '').split(/[\s,]+/).filter(Boolean);
+    const ok = () => dndCurrent && (accept.length === 0 || accept.includes(dndCurrent.type));
+    const clear = () => zone.classList.remove('dcs-drop--valid', 'dcs-drop--invalid');
+    zone.addEventListener('dragover', (e) => {
+      if (!dndCurrent) return;
+      if (ok()) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; zone.classList.add('dcs-drop--valid'); }
+      else zone.classList.add('dcs-drop--invalid');
+    });
+    zone.addEventListener('dragleave', clear);
+    zone.addEventListener('drop', (e) => {
+      clear();
+      if (!ok()) return;
+      e.preventDefault();
+      emit(zone, 'dcs:drop', { type: dndCurrent.type, id: dndCurrent.id, source: dndCurrent.el, target: zone });
+    });
+  });
+}
+
 /* ============================================================ init / api */
 function init(root = document) {
   initCollapse(root); initDismiss(root); initModal(root); initMenu(root);
-  initPopover(root); initTabs(root); initToggles(root); initSelect(root);
+  initPopover(root); initTabs(root); initToggles(root); initSelect(root); initDnd(root);
   initSlider(root); initKnob(root); initCombo(root); initSplitter(root);
   return decius;
 }

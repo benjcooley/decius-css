@@ -4,7 +4,80 @@
    making the live examples and the documented HTML interchangeable.
 */
 
-const { useState, useRef, useEffect, useMemo, useCallback } = React;
+const { useState, useRef, useEffect, useMemo, useCallback, useContext, createContext } = React;
+
+/* ─────────── Typed drag & drop (react reference layer) ───────────
+   A small, idiomatic React DnD system that dovetails with native HTML5 DnD:
+
+     <DndProvider>                         holds the one active drag
+     const drag = useDrag({ type, item })  spread `drag` onto a source
+     const { dropProps, valid, invalid, isOver } = useDrop({ accept, canDrop, onDrop })
+
+   Sources carry a `type` and `items`; targets list accepted `type`s and an
+   optional `canDrop(payload)` predicate, and get live valid/invalid/over
+   state for affordance. The live payload lives in a context ref so targets
+   can validate by type during dragover (dataTransfer can't be read then).
+   <Draggable>/<DropZone> are thin component wrappers over the hooks. */
+const DndContext = createContext(null);
+function DndProvider({ children }) {
+  const ref = useRef(null);                 // { type, items } — live, readable in dragover
+  const [active, setActive] = useState(null);
+  const api = useMemo(() => ({
+    ref, active,
+    begin: (p) => { ref.current = p; setActive({ type: p.type, n: (p.items ? p.items.length : 0) }); },
+    end: () => { ref.current = null; setActive(null); },
+  }), [active]);
+  return <DndContext.Provider value={api}>{children}</DndContext.Provider>;
+}
+function useDndPayload() { const d = useContext(DndContext); return d ? d.ref.current : null; }
+function dndAccepts(accept, type) { return Array.isArray(accept) ? accept.includes(type) : accept === type; }
+
+function useDrag({ type, item, disabled }) {
+  const dnd = useContext(DndContext);
+  return {
+    draggable: disabled ? undefined : true,
+    onDragStart: disabled ? undefined : (e) => {
+      const items = typeof item === 'function' ? item() : Array.isArray(item) ? item : item == null ? [] : [item];
+      if (dnd) dnd.begin({ type, items });
+      e.dataTransfer.effectAllowed = 'copyMove';
+      try { e.dataTransfer.setData('text/plain', items.map(x => (x && (x.label ?? x.id)) ?? x).join(', ')); } catch (_) {}
+    },
+    onDragEnd: disabled ? undefined : () => { if (dnd) dnd.end(); },
+  };
+}
+
+function useDrop({ accept, canDrop, onDrop }) {
+  const dnd = useContext(DndContext);
+  const depth = useRef(0);
+  const [over, setOver] = useState(false);
+  const p = dnd && dnd.active ? dnd.ref.current : null;           // re-renders while a drag is active
+  const ok = (pl) => !!pl && dndAccepts(accept, pl.type) && (!canDrop || canDrop(pl));
+  const valid = over && ok(p);
+  const invalid = over && !!p && !ok(p);
+  return {
+    isOver: over, valid, invalid, payload: p,
+    dropProps: {
+      onDragEnter: () => { depth.current += 1; setOver(true); },
+      onDragOver: (e) => { if (ok(dnd && dnd.ref.current)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } },
+      onDragLeave: () => { depth.current -= 1; if (depth.current <= 0) { depth.current = 0; setOver(false); } },
+      onDrop: (e) => {
+        const pl = dnd && dnd.ref.current; depth.current = 0; setOver(false);
+        if (ok(pl)) { e.preventDefault(); if (onDrop) onDrop(pl, e); if (dnd) dnd.end(); }
+      },
+    },
+  };
+}
+
+function Draggable({ type, item, disabled, className = '', style, children, as = 'div' }) {
+  const drag = useDrag({ type, item, disabled });
+  return React.createElement(as, { className, style, ...drag }, children);
+}
+function DropZone({ accept, canDrop, onDrop, className = '', style, children, as = 'div' }) {
+  const { dropProps, valid, invalid, isOver } = useDrop({ accept, canDrop, onDrop });
+  const cls = `${className}${valid ? ' dcs-drop--valid' : ''}${invalid ? ' dcs-drop--invalid' : ''}`;
+  return React.createElement(as, { className: cls, style, ...dropProps },
+    typeof children === 'function' ? children({ valid, invalid, isOver }) : children);
+}
 
 // Controlled when an onChange is given; otherwise self-manage state seeded from
 // `value` — so docs demos are interactive without per-instance state wiring.
@@ -330,8 +403,8 @@ function ButtonGroup({ value, onChange, options }) {
   );
 }
 
-/* ─────────── Drag helper ─────────── */
-function useDrag(onDrag, opts = {}) {
+/* ─────────── Pointer-drag helper (internal: sliders/faders/knobs) ─────────── */
+function usePointerDrag(onDrag, opts = {}) {
   const ref = useRef({ active: false, startX: 0, startY: 0, startVal: 0 });
   return useCallback((e, startVal) => {
     e.preventDefault();
@@ -631,15 +704,19 @@ function ToolbarSep() { return <div className="dcs-toolbar__sep" />; }
    drop indicator: pos is 'before' | 'after' | 'into' (into = reparent, trees
    only). onSelect gets a Set in multi mode, the id in single mode. */
 const toIdSet = (s) => s == null ? new Set() : s instanceof Set ? new Set(s) : Array.isArray(s) ? new Set(s) : new Set([s]);
-function Tree({ nodes, selected, onSelect, expanded, onExpand, multi, reorderable, onMove, flat }) {
+function Tree({ nodes, selected, onSelect, expanded, onExpand, multi, reorderable, onMove,
+                flat, dragType = 'node', source, accept, onDropItems }) {
+  const dnd = useContext(DndContext);
   const [iExp, setIExp] = useState(() => expanded || new Set());
   const [iSel, setISel] = useState(() => toIdSet(selected));
   const [anchor, setAnchor] = useState(null);
-  const [drop, setDrop] = useState(null);          // { id, pos }
-  const dragRef = useRef(null);                     // dragged ids
+  const [drop, setDrop] = useState(null);          // { id, pos, mode:'move'|'drop' }
+  const dragRef = useRef(null);                     // ids being reordered within this tree
   const exp = onExpand ? expanded : iExp;
   const selSet = onSelect ? toIdSet(selected) : iSel;
   const toggleExp = onExpand || ((id) => setIExp(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; }));
+  const draggable = reorderable || source;
+  const dropable = reorderable || (accept && onDropItems);
 
   // Visible rows, in order (respecting collapse) — drives Shift-range too.
   const flatRows = [];
@@ -665,30 +742,47 @@ function Tree({ nodes, selected, onSelect, expanded, onExpand, multi, reorderabl
     const find = (items) => items.some(n => n.id === id ? (collect(n.children || []), true) : (n.children && find(n.children)));
     find(nodes); return out;
   };
+  const collectNodes = (ids) => { const set = new Set(ids), out = []; const w = (items) => items.forEach(n => { if (set.has(n.id)) out.push(n); if (n.children) w(n.children); }); w(nodes); return out; };
+  const posFor = (node, e, into) => {
+    const r = e.currentTarget.getBoundingClientRect(), y = (e.clientY - r.top) / r.height;
+    const canInto = into && !flat && (node.children !== undefined || node.folder);
+    return canInto ? (y < 0.28 ? 'before' : y > 0.72 ? 'after' : 'into') : (y < 0.5 ? 'before' : 'after');
+  };
 
   const onRowDragStart = (id, e) => {
     const ids = selSet.has(id) ? [...selSet] : [id];
     if (!selSet.has(id)) { setAnchor(id); emit(new Set([id]), id); }
-    dragRef.current = ids;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', ids.join(','));
+    if (reorderable) dragRef.current = ids;
+    if (dnd) dnd.begin({ type: dragType, items: collectNodes(ids) });
+    e.dataTransfer.effectAllowed = 'copyMove';
+    try { e.dataTransfer.setData('text/plain', ids.join(',')); } catch (_) {}
   };
   const onRowDragOver = (node, e) => {
-    const ids = dragRef.current; if (!reorderable || !ids) return;
-    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
-    if (ids.includes(node.id)) { setDrop(null); return; }       // not onto self
-    const r = e.currentTarget.getBoundingClientRect();
-    const y = (e.clientY - r.top) / r.height;
-    const canInto = !flat && (node.children !== undefined || node.folder);
-    let pos = canInto ? (y < 0.28 ? 'before' : y > 0.72 ? 'after' : 'into') : (y < 0.5 ? 'before' : 'after');
-    if (pos === 'into') { const d = descendantsOf(node.id); if (ids.some(i => d.has(i))) pos = 'after'; }
-    setDrop({ id: node.id, pos });
+    const ids = dragRef.current;
+    if (ids) {                                       // internal reorder
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      if (ids.includes(node.id)) { setDrop(null); return; }
+      let pos = posFor(node, e, true);
+      if (pos === 'into') { const d = descendantsOf(node.id); if (ids.some(i => d.has(i))) pos = 'after'; }
+      setDrop({ id: node.id, pos, mode: 'move' });
+      return;
+    }
+    const pl = dnd && dnd.ref.current;               // external typed drop
+    if (accept && onDropItems && pl && dndAccepts(accept, pl.type)) {
+      e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+      setDrop({ id: node.id, pos: posFor(node, e, true), mode: 'drop' });
+    }
   };
   const onDropEnd = (e) => {
     if (e) e.preventDefault();
     const ids = dragRef.current, d = drop; dragRef.current = null; setDrop(null);
-    if (ids && d && onMove) onMove(ids, d.id, d.pos);
+    if (d) {
+      if (d.mode === 'move' && ids && onMove) onMove(ids, d.id, d.pos);
+      else if (d.mode === 'drop' && onDropItems) { const pl = dnd && dnd.ref.current; if (pl) onDropItems(pl, { targetId: d.id, pos: d.pos }); }
+    }
+    if (dnd) dnd.end();
   };
+  const onDragEndClear = () => { dragRef.current = null; setDrop(null); if (dnd) dnd.end(); };
 
   const cCls = flat ? 'dcs-list' : 'dcs-tree';
   const rCls = flat ? 'dcs-list__item' : 'dcs-tree__row';
@@ -697,14 +791,14 @@ function Tree({ nodes, selected, onSelect, expanded, onExpand, multi, reorderabl
     const hasChildren = !flat && node.children && node.children.length;
     const dropCls = drop && drop.id === node.id ? ` ${rCls}--drop-${drop.pos}` : '';
     return (
-      <div key={node.id} className={`${rCls}${dropCls}${reorderable ? ` ${rCls}--draggable` : ''}`}
+      <div key={node.id} className={`${rCls}${dropCls}${draggable ? ` ${rCls}--draggable` : ''}`}
         style={flat ? undefined : { '--depth': depth }}
         aria-selected={selSet.has(node.id)}
-        draggable={reorderable || undefined}
-        onDragStart={reorderable ? (e) => onRowDragStart(node.id, e) : undefined}
-        onDragOver={reorderable ? (e) => onRowDragOver(node, e) : undefined}
-        onDrop={reorderable ? onDropEnd : undefined}
-        onDragEnd={reorderable ? () => { dragRef.current = null; setDrop(null); } : undefined}
+        draggable={draggable || undefined}
+        onDragStart={draggable ? (e) => onRowDragStart(node.id, e) : undefined}
+        onDragOver={dropable ? (e) => onRowDragOver(node, e) : undefined}
+        onDrop={dropable ? onDropEnd : undefined}
+        onDragEnd={draggable ? onDragEndClear : undefined}
         onClick={(e) => { onRowClick(node.id, e); if (!multi && hasChildren) toggleExp(node.id); }}>
         {!flat && (
           <div className={`dcs-tree__chevron${isOpen ? ' dcs-tree__chevron--open' : ''}`}
@@ -719,7 +813,7 @@ function Tree({ nodes, selected, onSelect, expanded, onExpand, multi, reorderabl
       </div>
     );
   });
-  return <div className={cCls} onDragOver={reorderable ? (e) => e.preventDefault() : undefined} onDrop={reorderable ? onDropEnd : undefined}>{rows}</div>;
+  return <div className={cCls} onDragOver={dropable ? (e) => e.preventDefault() : undefined} onDrop={dropable ? onDropEnd : undefined}>{rows}</div>;
 }
 
 /* Move dragged subtrees within a tree (or flat list). pos: before|after|into.
@@ -747,6 +841,24 @@ function treeMove(roots, dragIds, targetId, pos) {
     sib(tree);
   }
   return tree;
+}
+
+/* Insert brand-new nodes into a tree at a target. pos: before|after|into.
+   Used when an external typed drop (e.g. assets) lands on a tree. */
+function treeInsert(roots, newNodes, targetId, pos) {
+  const clone = (typeof structuredClone === 'function') ? structuredClone(roots) : JSON.parse(JSON.stringify(roots));
+  if (pos === 'into') {
+    const into = (list) => list.some(n => n.id === targetId ? (n.children = [...(n.children || []), ...newNodes], true) : (n.children && into(n.children)));
+    if (!into(clone)) clone.push(...newNodes);
+  } else {
+    const sib = (list) => {
+      const i = list.findIndex(n => n.id === targetId);
+      if (i >= 0) { list.splice(pos === 'before' ? i : i + 1, 0, ...newNodes); return true; }
+      return list.some(n => n.children && sib(n.children));
+    };
+    if (!sib(clone)) clone.push(...newNodes);
+  }
+  return clone;
 }
 
 /* ─────────── Color swatch / picker (simple) ─────────── */
@@ -940,7 +1052,8 @@ function CardList({ children, style }) {
 
 Object.assign(window, {
   Panel, SubPanel, Foldout, Foldouts, Button, ButtonGroup, Slider, Fader, Knob, Combo,
-  Check, Switch, Tabs, Toolbar, ToolbarSep, Tree, Swatch, DockPane, MenuBar,
+  Check, Switch, Tabs, Toolbar, ToolbarSep, Tree, treeMove, treeInsert, Swatch, DockPane, MenuBar,
   Card, CardGrid, CardList,
   useDismiss, MenuList, Splitter, DockLayout,
+  DndProvider, DndContext, useDrag, useDrop, useDndPayload, Draggable, DropZone,
 });
