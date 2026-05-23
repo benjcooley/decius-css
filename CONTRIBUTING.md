@@ -39,6 +39,29 @@ npm run build    # regenerate dist/ and commit it
 2. Add the name to a group in `scripts/dev/split-sprite.mjs`'s catalog (or it lands in "Misc").
 3. `npm run gen:icons` to refresh `icons/icons.json`, then `npm run build:icons`.
 
+## Releasing
+
+Releases are automated by `.github/workflows/release.yml` — pushing a `v*` tag
+builds, lints, smoke-tests, publishes to npm (with provenance), and creates a
+GitHub release with `decius-css.zip`.
+
+One-time setup: add an **`NPM_TOKEN`** repo secret — an [npmjs.com](https://npmjs.com)
+**granular/automation token** with publish permission for `decius-css` and
+*bypass 2FA* enabled:
+
+```bash
+gh secret set NPM_TOKEN     # paste the token when prompted
+```
+
+Then cut a release:
+
+```bash
+npm version patch           # bumps package.json + creates the vX.Y.Z tag
+git push --follow-tags      # pushes main + the tag → triggers the workflow
+```
+
+The workflow fails fast if the tag doesn't match `package.json`'s version.
+
 ## Commit style
 
 Keep commits focused. Describe the *why*. Match the surrounding code's conventions.

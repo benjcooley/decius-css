@@ -1,0 +1,64 @@
+name: Release
+
+# Publish to npm + create a GitHub release when a version tag is pushed:
+#   npm version patch && git push --follow-tags     (or tag manually: v0.5.0)
+#
+# Requires an NPM_TOKEN repo secret: a npmjs.com granular/automation token with
+# publish permission for `decius-css` and "bypass 2FA" enabled.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # create the GitHub release
+  id-token: write   # npm provenance attestation
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps (icon outlining)
+        run: python -m pip install shapely svgelements
+
+      - name: Install Node deps
+        run: npm ci
+
+      - name: Verify tag matches package version
+        run: |
+          PKG="v$(node -p "require('./package.json').version")"
+          if [ "$PKG" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($PKG)"
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint & smoke test
+        run: npm run lint && node test/smoke.test.mjs
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/decius-css.zip \
+            --title "decius.css $GITHUB_REF_NAME" --generate-notes \
+          || gh release upload "$GITHUB_REF_NAME" dist/decius-css.zip --clobber
