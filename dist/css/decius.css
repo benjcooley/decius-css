@@ -2142,17 +2142,6 @@
    Patch jacks, backlit buttons, 7-seg LED, LED bargraph meters.
    For modular/synth-style hardware emulation UIs.
    ============================================================ */
-/* Hardware finish — red enamel */
-.dcs-hw--red {
-  background: radial-gradient(ellipse 100% 80% at 50% -10%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.18) 4%, rgba(255, 255, 255, 0.08) 14%, rgba(255, 255, 255, 0.04) 38%, rgba(255, 255, 255, 0.015) 70%, transparent 100%), linear-gradient(180deg, #d62034 0%, #b41a2c 60%, #931523 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 22px rgba(0, 0, 0, 0.5);
-}
-
-.dcs-hw--red .dcs-hw__label {
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
-}
-
 /* ─────────── Patch jack — TS/TRS audio socket with hex nut ─────────── */
 .dcs-jack {
   display: inline-flex;
@@ -2464,6 +2453,71 @@
 
 .dcs-hw--cream .dcs-knob__label {
   color: #4a4030;
+}
+
+/* Hardware finish — red enamel (defined AFTER .dcs-hw so the colour wins) */
+.dcs-hw--red {
+  background: radial-gradient(ellipse 100% 80% at 50% -10%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.18) 4%, rgba(255, 255, 255, 0.08) 14%, rgba(255, 255, 255, 0.04) 38%, rgba(255, 255, 255, 0.015) 70%, transparent 100%), linear-gradient(180deg, #d62034 0%, #b41a2c 60%, #931523 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 22px rgba(0, 0, 0, 0.5);
+}
+
+.dcs-hw--red .dcs-hw__label {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ─────────── Silkscreen group box ───────────
+   1970s control-panel look: a rounded rectangle printed in off-white ink
+   that groups knobs / jacks / displays, with an uppercase legend that
+   breaks the top line (a <fieldset>/<legend> does this over any finish). */
+/* off-white silkscreen ink */
+.dcs-silk {
+  min-width: 0;
+  margin: 0;
+  border: 1.5px solid rgba(236, 230, 214, 0.62);
+  border-radius: 10px;
+  padding: 12px 14px 14px;
+}
+
+.dcs-silk > legend, .dcs-silk__title {
+  padding: 0 7px;
+  font-family: var(--dcs-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(236, 230, 214, 0.9);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* When not using a real <legend>, place a title chip over the top edge,
+   masking the border behind it so the line reads as broken. */
+.dcs-silk--titled {
+  position: relative;
+}
+
+.dcs-silk--titled > .dcs-silk__title {
+  position: absolute;
+  top: 0;
+  left: 14px;
+  transform: translateY(-50%);
+  background: var(--silk-bg, #b41a2c); /* match the panel finish behind it */
+}
+
+.dcs-silk__title--center {
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Cream / light finishes flip the ink to dark */
+.dcs-hw--cream .dcs-silk {
+  border-color: rgba(60, 50, 30, 0.5);
+}
+
+.dcs-hw--cream .dcs-silk > legend,
+.dcs-hw--cream .dcs-silk__title {
+  color: rgba(50, 42, 24, 0.85);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* Screw heads in the corners */

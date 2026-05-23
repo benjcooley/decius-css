@@ -1,5 +1,7 @@
 /* app.jsx — main docs site wiring */
-const { useState: useStateApp, useEffect: useEffectApp } = React;
+const { useState: useStateApp, useEffect: useEffectApp, useRef: useRefApp } = React;
+
+const REPO_URL = 'https://github.com/benjcooley/decius-css';
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "blue",
@@ -83,7 +85,7 @@ function Sidebar({ active, onJump }) {
   );
 }
 
-function TopBar() {
+function TopBar({ onOpenSearch }) {
   return (
     <header className="dw-top">
       <a href="#top" className="dw-brand">
@@ -101,16 +103,90 @@ function TopBar() {
       </nav>
       <div className="dw-top__spacer" />
       <div className="dw-top__actions">
-        <div className="dw-search">
+        <button type="button" className="dw-search" onClick={onOpenSearch}
+                aria-label="Search components" style={{ fontFamily: 'inherit', cursor: 'pointer' }}>
           <Icon name="search" size="sm" />
           <span>Search components…</span>
           <kbd>⌘K</kbd>
-        </div>
-        <a href="#" className="dw-cta dw-cta--ghost" style={{ height: 32, padding: '0 12px' }}>
+        </button>
+        <a href={REPO_URL} target="_blank" rel="noreferrer noopener"
+           className="dw-cta dw-cta--ghost" style={{ height: 32, padding: '0 12px' }}>
           <Icon name="export" size="sm" /> GitHub
         </a>
       </div>
     </header>
+  );
+}
+
+/* ⌘K command palette — searches every documented section and jumps to it. */
+function SearchPalette({ open, onClose, onJump }) {
+  const [q, setQ] = useStateApp('');
+  const [hi, setHi] = useStateApp(0);
+  const inputRef = useRefApp(null);
+  const items = NAV.flatMap(g => g.items.map(it => ({ ...it, group: g.group })));
+  const ql = q.trim().toLowerCase();
+  const results = ql
+    ? items.filter(it =>
+        it.label.toLowerCase().includes(ql) ||
+        it.group.toLowerCase().includes(ql) ||
+        it.id.includes(ql))
+    : items;
+
+  useEffectApp(() => {
+    if (!open) return;
+    setQ(''); setHi(0);
+    const id = setTimeout(() => inputRef.current && inputRef.current.focus(), 0);
+    return () => clearTimeout(id);
+  }, [open]);
+
+  if (!open) return null;
+  const pick = (it) => { onClose(); onJump(it.id); };
+  const onKey = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHi(h => Math.min(results.length - 1, h + 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHi(h => Math.max(0, h - 1)); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (results[hi]) pick(results[hi]); }
+    else if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(16,22,34,.45)',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '12vh 16px 16px',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: 'min(560px, 100%)', background: 'var(--dw-bg)', border: '1px solid var(--dw-line)',
+        borderRadius: 12, boxShadow: '0 24px 64px rgba(16,24,40,.28)', overflow: 'hidden',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid var(--dw-line)' }}>
+          <Icon name="search" />
+          <input ref={inputRef} value={q} onChange={e => { setQ(e.target.value); setHi(0); }} onKeyDown={onKey}
+            placeholder="Search components…" spellCheck={false} style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: 'var(--dw-text)', fontSize: 15, fontFamily: 'inherit',
+            }} />
+          <kbd style={{ fontSize: 11, color: 'var(--dw-text-mute)', border: '1px solid var(--dw-line)', borderRadius: 4, padding: '1px 6px' }}>esc</kbd>
+        </div>
+        <div style={{ maxHeight: '52vh', overflowY: 'auto', padding: 6 }}>
+          {results.length === 0 && (
+            <div style={{ padding: 16, color: 'var(--dw-text-mute)', fontSize: 13 }}>No matches for “{q}”.</div>
+          )}
+          {results.map((it, i) => (
+            <div key={it.id} role="option" aria-selected={i === hi}
+              onMouseEnter={() => setHi(i)} onClick={() => pick(it)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
+                borderRadius: 8, cursor: 'pointer',
+                background: i === hi ? 'var(--dw-accent-dim)' : 'transparent',
+                color: i === hi ? 'var(--dw-text)' : 'var(--dw-text-dim)',
+              }}>
+              <Icon name={it.icon} size="sm" />
+              <span style={{ flex: 1 }}>{it.label}</span>
+              <span style={{ fontSize: 11, color: 'var(--dw-text-mute)' }}>{it.group}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -192,6 +268,7 @@ function Tweaks() {
 
 function App() {
   const [active, setActive] = useStateApp('top');
+  const [searchOpen, setSearchOpen] = useStateApp(false);
   useEffectApp(() => {
     // Sync hash → active
     const sync = () => {
@@ -200,6 +277,15 @@ function App() {
     };
     sync();
     window.addEventListener('hashchange', sync);
+
+    // ⌘K / Ctrl+K opens the command palette from anywhere.
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setSearchOpen(o => !o);
+      }
+    };
+    window.addEventListener('keydown', onKey);
 
     // Intersection observer for scroll-spy
     const sections = NAV.flatMap(g => g.items.map(i => i.id));
@@ -213,6 +299,7 @@ function App() {
 
     return () => {
       window.removeEventListener('hashchange', sync);
+      window.removeEventListener('keydown', onKey);
       obs.disconnect();
     };
   }, []);
@@ -229,7 +316,8 @@ function App() {
 
   return (
     <div className="dw-page">
-      <TopBar />
+      <TopBar onOpenSearch={() => setSearchOpen(true)} />
+      <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} onJump={jump} />
       <Sidebar active={active} onJump={jump} />
       <main className="dw-main">
         <SectionHero />
@@ -294,8 +382,8 @@ function App() {
           <a href="#install">Install</a>
           <a href="#colors">Tokens</a>
           <a href="#sample-dcc">Showpieces</a>
-          <a href="#">GitHub</a>
-          <a href="#">Changelog</a>
+          <a href={REPO_URL} target="_blank" rel="noreferrer noopener">GitHub</a>
+          <a href={`${REPO_URL}/releases`} target="_blank" rel="noreferrer noopener">Changelog</a>
         </footer>
       </main>
       <Tweaks />

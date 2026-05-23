@@ -565,16 +565,19 @@ function SectionSkeuomorphic() {
                   <div className="dcs-jack__label">CV OFFSET</div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                    <Knob value={0.45} size={50} />
-                    <div className="dcs-jack__label" style={{ marginTop: -4 }}>RATE</div>
+                <fieldset className="dcs-silk">
+                  <legend className="dcs-silk__title">CLOCK</legend>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <Knob value={0.45} size={50} />
+                      <div className="dcs-jack__label" style={{ marginTop: -4 }}>RATE</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <Knob value={0.2} size={50} />
+                      <div className="dcs-jack__label" style={{ marginTop: -4 }}>GLIDE</div>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                    <Knob value={0.2} size={50} />
-                    <div className="dcs-jack__label" style={{ marginTop: -4 }}>GLIDE</div>
-                  </div>
-                </div>
+                </fieldset>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginTop: 4 }}>
@@ -599,25 +602,27 @@ function SectionSkeuomorphic() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <Knob value={0.6} size={50} />
-                  <div className="dcs-jack__label">GATE TIME</div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <Jack id="gate-out" />
-                  <div className="dcs-jack__label">GATE OUT</div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <Jack id="cv-out" />
-                  <div className="dcs-jack__label">CV OUT</div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <LedMeter value={meter} segments={14} vertical />
-                  <div className="dcs-jack__label">LEVEL</div>
-                </div>
+                <fieldset className="dcs-silk">
+                  <legend className="dcs-silk__title">OUTPUT</legend>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <Knob value={0.6} size={50} />
+                      <div className="dcs-jack__label">GATE TIME</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <Jack id="gate-out" />
+                      <div className="dcs-jack__label">GATE OUT</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <Jack id="cv-out" />
+                      <div className="dcs-jack__label">CV OUT</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <LedMeter value={meter} segments={14} vertical />
+                      <div className="dcs-jack__label">LEVEL</div>
+                    </div>
+                  </div>
+                </fieldset>
               </div>
             </div>
 
@@ -699,6 +704,41 @@ function SectionSkeuomorphic() {
                   <Jack id="ref-vcf" label="VCF" />
                   <Jack id="ref-vca" label="VCA" />
                   <Jack id="ref-env" label="ENV" />
+                </div>
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div className="dw-caption" style={{ color: 'var(--dcs-text-mute)', marginBottom: 12 }}>Silkscreen group boxes</div>
+                <div className="dcs-hw dcs-hw--red" style={{ display: 'flex', flexWrap: 'wrap', gap: 18, padding: '22px 20px', position: 'relative' }}>
+                  <span className="dcs-hw__screw dcs-hw__screw--tl" />
+                  <span className="dcs-hw__screw dcs-hw__screw--tr" />
+                  <span className="dcs-hw__screw dcs-hw__screw--bl" />
+                  <span className="dcs-hw__screw dcs-hw__screw--br" />
+                  <fieldset className="dcs-silk">
+                    <legend className="dcs-silk__title">OSCILLATOR</legend>
+                    <div style={{ display: 'flex', gap: 14 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><Knob value={0.7} size={48} /><div className="dcs-jack__label">TUNE</div></div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><Knob value={0.35} size={48} /><div className="dcs-jack__label">SHAPE</div></div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><Knob value={0.5} size={48} /><div className="dcs-jack__label">PWM</div></div>
+                    </div>
+                  </fieldset>
+                  <fieldset className="dcs-silk">
+                    <legend className="dcs-silk__title">FILTER</legend>
+                    <div style={{ display: 'flex', gap: 14 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><Knob value={0.62} size={48} /><div className="dcs-jack__label">CUTOFF</div></div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><Knob value={0.28} size={48} /><div className="dcs-jack__label">RES</div></div>
+                    </div>
+                  </fieldset>
+                  <fieldset className="dcs-silk">
+                    <legend className="dcs-silk__title">DISPLAY</legend>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <Lcd value="120" size="md" />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                        <LedMeter value={meter} segments={14} vertical />
+                        <div className="dcs-jack__label">VU</div>
+                      </div>
+                    </div>
+                  </fieldset>
                 </div>
               </div>
             </div>

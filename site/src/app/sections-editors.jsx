@@ -741,6 +741,11 @@ function SectionCurve() {
 
 /* ─────────── Graph editor (node graph) ─────────── */
 const GRAPH_NODE_W = 132, GRAPH_HEAD = 24, GRAPH_ROW = 22, GRAPH_BODY_PAD = 6;
+const GRAPH_ZMIN = 0.4, GRAPH_ZMAX = 2.4;
+const GRAPH_PALETTE = ['#4d9fff', '#b48cff', '#f2b14a', '#4ed18a', '#ff7ab8', '#4ad5d5'];
+let graphSeq = 100;
+const nodeHeight = (n) => GRAPH_HEAD + GRAPH_BODY_PAD * 2 + (n.ins.length + n.outs.length) * GRAPH_ROW;
+
 function NodeGraph() {
   const [nodes, setNodes] = useStateE([
     { id: 'noise',  x: 16,  y: 30,  title: 'Noise',   icon: 'wave-noise', color: '#b48cff', ins: [],                 outs: ['fac'] },
@@ -749,81 +754,247 @@ function NodeGraph() {
     { id: 'gamma',  x: 470, y: 70,  title: 'Gamma',   icon: 'bolt',       color: '#4ed18a', ins: ['in'],             outs: ['out'] },
     { id: 'output', x: 660, y: 100, title: 'Output',  icon: 'render',     color: '#4d9fff', ins: ['color'],          outs: [] },
   ]);
+  const [wires, setWires] = useStateE([
+    { id: 'w1', fn: 'noise', fs: 'fac', tn: 'mix',    ts: 'a' },
+    { id: 'w2', fn: 'tex',   fs: 'rgb', tn: 'mix',    ts: 'b' },
+    { id: 'w3', fn: 'mix',   fs: 'rgb', tn: 'gamma',  ts: 'in' },
+    { id: 'w4', fn: 'gamma', fs: 'out', tn: 'output', ts: 'color' },
+  ]);
+  const [sel, setSel] = useStateE(null);          // { type:'node'|'wire', id }
+  const [view, setView] = useStateE({ z: 1, ox: 0, oy: 0 });
+  const [drag, setDrag] = useStateE(null);        // live connect: { fn, fs, x, y } (x,y in world)
   const wrapRef = useRefE(null);
-  const wires = [
-    ['noise', 'fac', 'mix', 'a'],
-    ['tex', 'rgb', 'mix', 'b'],
-    ['mix', 'rgb', 'gamma', 'in'],
-    ['gamma', 'out', 'output', 'color'],
-  ];
+
   const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
-  // Socket centers share the SAME pixel space as the SVG (no viewBox scaling),
-  // so wires always meet their sockets.
+  // World pixel space — the viewport <div> applies the pan/zoom transform, so
+  // node coords and socket centers share one space and wires always meet sockets.
   const socketY = (n, idx) => n.y + GRAPH_HEAD + GRAPH_BODY_PAD + idx * GRAPH_ROW + GRAPH_ROW / 2;
   const outPos = (n, name) => [n.x + GRAPH_NODE_W, socketY(n, n.ins.length + n.outs.indexOf(name))];
-  const inPos = (n, name) => [n.x, socketY(n, n.ins.indexOf(name))];
+  const inPos  = (n, name) => [n.x, socketY(n, n.ins.indexOf(name))];
+  const wirePath = (fx, fy, tx, ty) => { const mx = (fx + tx) / 2; return `M ${fx} ${fy} C ${mx} ${fy}, ${mx} ${ty}, ${tx} ${ty}`; };
+  const toWorld = (cx, cy) => {
+    const r = wrapRef.current.getBoundingClientRect();
+    return [(cx - r.left - view.ox) / view.z, (cy - r.top - view.oy) / view.z];
+  };
 
+  // ── Zoom (buttons + wheel) ───────────────────────────────────────────
+  const zoomAt = (factor, cx, cy) => setView(v => {
+    const z = Math.max(GRAPH_ZMIN, Math.min(GRAPH_ZMAX, v.z * factor));
+    const k = z / v.z;
+    return { z, ox: cx - (cx - v.ox) * k, oy: cy - (cy - v.oy) * k };
+  });
+  const zoomBtn = (factor) => () => {
+    const r = wrapRef.current.getBoundingClientRect();
+    zoomAt(factor, r.width / 2, r.height / 2);
+  };
+  const fit = () => {
+    if (!nodes.length || !wrapRef.current) return;
+    const r = wrapRef.current.getBoundingClientRect();
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+    for (const n of nodes) { a = Math.min(a, n.x); b = Math.min(b, n.y); c = Math.max(c, n.x + GRAPH_NODE_W); d = Math.max(d, n.y + nodeHeight(n)); }
+    const pad = 28, cw = r.width - pad * 2, ch = r.height - pad * 2;
+    const z = Math.max(GRAPH_ZMIN, Math.min(GRAPH_ZMAX, Math.min(cw / (c - a), ch / (d - b), 1.2)));
+    setView({ z, ox: pad + (cw - (c - a) * z) / 2 - a * z, oy: pad + (ch - (d - b) * z) / 2 - b * z });
+  };
+  useEffectE(() => {
+    const el = wrapRef.current; if (!el) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      zoomAt(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // ── Background: pan on drag, deselect on click ──────────────────────
+  const onBgDown = (e) => {
+    if (e.button !== 0 && e.button !== 1) return;
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY, ox0 = view.ox, oy0 = view.oy;
+    let moved = false;
+    const move = (ev) => {
+      if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 3) moved = true;
+      setView(v => ({ ...v, ox: ox0 + (ev.clientX - sx), oy: oy0 + (ev.clientY - sy) }));
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); if (!moved) setSel(null); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+
+  // ── Move a node by its header ───────────────────────────────────────
   const dragNode = (id) => (e) => {
     if (e.button !== 0) return;
-    e.preventDefault();
-    const n0 = byId[id];
-    const ox = e.clientX, oy = e.clientY, sx = n0.x, sy = n0.y;
+    e.stopPropagation(); e.preventDefault();
+    setSel({ type: 'node', id });
+    const n0 = byId[id], ox = e.clientX, oy = e.clientY, sx = n0.x, sy = n0.y, z = view.z;
     const move = (ev) => setNodes(ns => ns.map(n => n.id === id
-      ? { ...n, x: sx + (ev.clientX - ox), y: Math.max(0, sy + (ev.clientY - oy)) } : n));
+      ? { ...n, x: sx + (ev.clientX - ox) / z, y: Math.max(0, sy + (ev.clientY - oy) / z) } : n));
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   };
 
-  const Socket = ({ side }) => (
-    <div style={{
-      width: 9, height: 9, borderRadius: '50%', background: 'var(--dcs-accent)',
-      border: '2px solid var(--dcs-bg)', boxShadow: '0 0 0 1px var(--dcs-line-strong)',
-      [side === 'in' ? 'marginLeft' : 'marginRight']: -13, flex: '0 0 auto',
-    }} />
+  // ── Connect / disconnect wires by dragging sockets ──────────────────
+  const findInputAt = (cx, cy) => {
+    const r = wrapRef.current.getBoundingClientRect();
+    let best = null, bestD = 18;
+    for (const n of nodes) for (const s of n.ins) {
+      const [wx, wy] = inPos(n, s);
+      const d = Math.hypot(cx - (r.left + view.ox + wx * view.z), cy - (r.top + view.oy + wy * view.z));
+      if (d < bestD) { bestD = d; best = { nid: n.id, sock: s }; }
+    }
+    return best;
+  };
+  const addWire = (fn, fs, tn, ts) => {
+    if (fn === tn) return;
+    setWires(ws => [...ws.filter(w => !(w.tn === tn && w.ts === ts)), { id: 'w' + (graphSeq++), fn, fs, tn, ts }]);
+  };
+  const beginDrag = (fn, fs, e) => {
+    const move = (ev) => { const [x, y] = toWorld(ev.clientX, ev.clientY); setDrag({ fn, fs, x, y }); };
+    move(e);
+    const up = (ev) => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      const hit = findInputAt(ev.clientX, ev.clientY);
+      setDrag(null);
+      if (hit) addWire(fn, fs, hit.nid, hit.sock);
+    };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  const startConnect = (fn, fs) => (e) => { e.stopPropagation(); e.preventDefault(); beginDrag(fn, fs, e); };
+  const startFromInput = (tn, ts) => (e) => {
+    e.stopPropagation(); e.preventDefault();
+    const w = wires.find(x => x.tn === tn && x.ts === ts);
+    if (!w) return;                       // empty input — nothing to grab
+    setWires(ws => ws.filter(x => x.id !== w.id));
+    beginDrag(w.fn, w.fs, e);             // re-drag from the original source
+  };
+
+  // ── Add / delete ────────────────────────────────────────────────────
+  const addNode = () => {
+    const id = 'n' + (graphSeq++);
+    const r = wrapRef.current.getBoundingClientRect();
+    const x = Math.max(0, (r.width / 2 - view.ox) / view.z - GRAPH_NODE_W / 2);
+    const y = Math.max(0, (r.height / 2 - view.oy) / view.z - 30);
+    const color = GRAPH_PALETTE[nodes.length % GRAPH_PALETTE.length];
+    setNodes(ns => [...ns, { id, x, y, title: 'Node', icon: 'bolt', color, ins: ['in'], outs: ['out'] }]);
+    setSel({ type: 'node', id });
+  };
+  const deleteSel = () => {
+    if (!sel) return;
+    if (sel.type === 'node') {
+      setNodes(ns => ns.filter(n => n.id !== sel.id));
+      setWires(ws => ws.filter(w => w.fn !== sel.id && w.tn !== sel.id));
+    } else {
+      setWires(ws => ws.filter(w => w.id !== sel.id));
+    }
+    setSel(null);
+  };
+  const onKeyDown = (e) => {
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSel(); }
+    else if (e.key === 'Escape') setSel(null);
+  };
+
+  const Socket = ({ side, filled, onPointerDown }) => (
+    <div onPointerDown={onPointerDown}
+      title={side === 'out' ? 'drag to connect' : 'drag to rewire / detach'}
+      style={{
+        width: 10, height: 10, borderRadius: '50%',
+        background: filled ? 'var(--dcs-accent)' : 'var(--dcs-bg)',
+        border: '2px solid var(--dcs-bg)',
+        boxShadow: `0 0 0 1px ${filled ? 'var(--dcs-accent)' : 'var(--dcs-line-strong)'}`,
+        [side === 'in' ? 'marginLeft' : 'marginRight']: -14, flex: '0 0 auto', cursor: 'crosshair',
+      }} />
   );
 
+  const selWire = sel && sel.type === 'wire' ? sel.id : null;
+
   return (
-    <div ref={wrapRef} className="dcs-graph" style={{ height: 320, position: 'relative', overflow: 'hidden' }}>
+    <div ref={wrapRef} className="dcs-graph" tabIndex={0}
+      onPointerDown={onBgDown} onKeyDown={onKeyDown}
+      onPointerDownCapture={() => wrapRef.current && wrapRef.current.focus()}
+      style={{ height: 320, position: 'relative', overflow: 'hidden', outline: 'none' }}>
       <div className="dcs-graph__major" />
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-        {wires.map(([fn, fs, tn, ts], i) => {
-          const [fx, fy] = outPos(byId[fn], fs);
-          const [tx, ty] = inPos(byId[tn], ts);
-          const mx = (fx + tx) / 2;
-          return <path key={i} d={`M ${fx} ${fy} C ${mx} ${fy}, ${mx} ${ty}, ${tx} ${ty}`}
-                       fill="none" stroke={byId[fn].color} strokeWidth="2" strokeOpacity=".9" />;
+
+      {/* Pan/zoom viewport — pointer-events pass through empty space to the bg. */}
+      <div style={{ position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', pointerEvents: 'none',
+        transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.z})` }}>
+        <svg width="3000" height="2000" style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible', pointerEvents: 'none' }}>
+          {wires.map(w => {
+            const a = byId[w.fn], b = byId[w.tn];
+            if (!a || !b) return null;
+            const [fx, fy] = outPos(a, w.fs);
+            const [tx, ty] = inPos(b, w.ts);
+            const d = wirePath(fx, fy, tx, ty);
+            const on = w.id === selWire;
+            return (
+              <g key={w.id}>
+                <path d={d} fill="none" stroke="transparent" strokeWidth="12"
+                  style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+                  onPointerDown={(e) => { e.stopPropagation(); setSel({ type: 'wire', id: w.id }); }} />
+                <path d={d} fill="none" stroke={on ? '#fff' : a.color} strokeWidth={on ? 3 : 2}
+                  strokeOpacity={on ? 1 : 0.95} style={{ pointerEvents: 'none' }} />
+              </g>
+            );
+          })}
+          {drag && byId[drag.fn] && (() => {
+            const [fx, fy] = outPos(byId[drag.fn], drag.fs);
+            return <path d={wirePath(fx, fy, drag.x, drag.y)} fill="none" stroke="var(--dcs-accent)"
+              strokeWidth="2" strokeDasharray="4 3" strokeOpacity=".8" style={{ pointerEvents: 'none' }} />;
+          })()}
+        </svg>
+
+        {nodes.map(n => {
+          const conn = new Set(wires.filter(w => w.tn === n.id).map(w => w.ts));
+          const on = sel && sel.type === 'node' && sel.id === n.id;
+          return (
+            <div key={n.id}
+              onPointerDown={(e) => { e.stopPropagation(); setSel({ type: 'node', id: n.id }); }}
+              style={{
+                position: 'absolute', left: n.x, top: n.y, width: GRAPH_NODE_W,
+                background: 'var(--dcs-bg)',
+                border: `1px solid ${on ? 'var(--dcs-accent)' : 'var(--dcs-line)'}`,
+                borderRadius: 'var(--dcs-r-2)',
+                boxShadow: on ? '0 0 0 1px var(--dcs-accent), var(--dcs-shadow-2)' : 'var(--dcs-shadow-2)',
+                fontSize: 11, userSelect: 'none', pointerEvents: 'auto',
+              }}>
+              <div onPointerDown={dragNode(n.id)} style={{
+                height: GRAPH_HEAD, background: n.color, color: '#0a1220',
+                display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px',
+                fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: 10,
+                cursor: 'grab', borderRadius: 'var(--dcs-r-2) var(--dcs-r-2) 0 0',
+              }}>
+                <Icon name={n.icon} size="sm" /><span>{n.title}</span>
+              </div>
+              <div style={{ padding: `${GRAPH_BODY_PAD}px 0` }}>
+                {n.ins.map(s => (
+                  <div key={s} style={{ height: GRAPH_ROW, display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', color: 'var(--dcs-text-dim)' }}>
+                    <Socket side="in" filled={conn.has(s)} onPointerDown={startFromInput(n.id, s)} /><span>{s}</span>
+                  </div>
+                ))}
+                {n.outs.map(s => (
+                  <div key={s} style={{ height: GRAPH_ROW, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, padding: '0 8px', color: 'var(--dcs-text-dim)' }}>
+                    <span>{s}</span><Socket side="out" filled onPointerDown={startConnect(n.id, s)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
         })}
-      </svg>
-      {nodes.map(n => (
-        <div key={n.id} style={{
-          position: 'absolute', left: n.x, top: n.y, width: GRAPH_NODE_W,
-          background: 'var(--dcs-bg)', border: '1px solid var(--dcs-line)',
-          borderRadius: 'var(--dcs-r-2)', boxShadow: 'var(--dcs-shadow-2)',
-          fontSize: 11, userSelect: 'none',
-        }}>
-          <div onPointerDown={dragNode(n.id)} style={{
-            height: GRAPH_HEAD, background: n.color, color: '#0a1220',
-            display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px',
-            fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: 10,
-            cursor: 'grab', borderRadius: 'var(--dcs-r-2) var(--dcs-r-2) 0 0',
-          }}>
-            <Icon name={n.icon} size="sm" /><span>{n.title}</span>
-          </div>
-          <div style={{ padding: `${GRAPH_BODY_PAD}px 0` }}>
-            {n.ins.map(s => (
-              <div key={s} style={{ height: GRAPH_ROW, display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', color: 'var(--dcs-text-dim)' }}>
-                <Socket side="in" /><span>{s}</span>
-              </div>
-            ))}
-            {n.outs.map(s => (
-              <div key={s} style={{ height: GRAPH_ROW, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, padding: '0 8px', color: 'var(--dcs-text-dim)' }}>
-                <span>{s}</span><Socket side="out" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-      <div style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 10, fontFamily: 'var(--dcs-font-mono)', color: 'var(--dcs-text-mute)' }}>drag node headers to rewire layout</div>
+      </div>
+
+      {/* Floating toolbar — zoom, fit, add, delete (overlay, doesn't pan). */}
+      <Toolbar floating size="sm" style={{ position: 'absolute', top: 8, right: 8, zIndex: 5 }}>
+        <Button ghost sm icon iconLeft="zoom-out" title="Zoom out" onClick={zoomBtn(1 / 1.2)} />
+        <span style={{ fontSize: 10, fontFamily: 'var(--dcs-font-mono)', color: 'var(--dcs-text-mute)', minWidth: 32, textAlign: 'center' }}>{Math.round(view.z * 100)}%</span>
+        <Button ghost sm icon iconLeft="zoom-in" title="Zoom in" onClick={zoomBtn(1.2)} />
+        <Button ghost sm icon iconLeft="fit" title="Fit to view" onClick={fit} />
+        <ToolbarSep />
+        <Button ghost sm iconLeft="plus" title="Add node" onClick={addNode}>Node</Button>
+        <Button ghost sm icon iconLeft="trash" title="Delete selected" onClick={deleteSel} disabled={!sel} />
+      </Toolbar>
+
+      <div style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 10, fontFamily: 'var(--dcs-font-mono)', color: 'var(--dcs-text-mute)', pointerEvents: 'none' }}>
+        click to select · drag header to move · drag sockets to wire · wheel to zoom · ⌫ deletes
+      </div>
     </div>
   );
 }
@@ -836,15 +1007,11 @@ function SectionGraph() {
       <p className="dw-section__lead">
         For shader networks, compositors, animation rigs, audio routing. Colored title bars sort by
         kind without an icon legend; accent-color wires keep signal flow legible against the grid.
+        Select nodes and edges, drag sockets to connect or detach, add and delete, and zoom or pan
+        the canvas — all from the small JS model, no graph library.
       </p>
       <Demo frame="app">
-        <Panel title="Shader network · jane_skin.mat" icon="graph" pad={0}
-               tools={<>
-                 <Button ghost sm icon iconLeft="zoom-in" />
-                 <Button ghost sm icon iconLeft="zoom-out" />
-                 <Button ghost sm icon iconLeft="fit" />
-                 <Button ghost sm iconLeft="plus">Add node</Button>
-               </>}>
+        <Panel title="Shader network · jane_skin.mat" icon="graph" pad={0}>
           <NodeGraph />
         </Panel>
       </Demo>
