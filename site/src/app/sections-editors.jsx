@@ -32,9 +32,10 @@ function ColorWheel({ size = 220 }) {
 
   const cx = size / 2, cy = size / 2;
   const outerR = size / 2;
-  const ringW = 18;
+  const ringW = 26;
   const innerR = outerR - ringW;
   const triR = innerR - 6;
+  const innerPct = (innerR / outerR) * 100;
 
   // Triangle vertices: V1 = hue tip (rotates with h), V2 = white, V3 = black
   // hue=0 (red) at top; angles in SVG: 0° = right, 90° = down
@@ -107,23 +108,6 @@ function ColorWheel({ size = 220 }) {
     window.addEventListener('pointerup', up);
   };
 
-  // 60-segment hue ring (smooth)
-  const segments = 60;
-  const hueRing = Array.from({ length: segments }).map((_, i) => {
-    const a1 = (i / segments) * 360 - 90 - 3;
-    const a2 = ((i + 1) / segments) * 360 - 90 + 3;
-    const x1 = cx + outerR * Math.cos(a1 * Math.PI / 180);
-    const y1 = cy + outerR * Math.sin(a1 * Math.PI / 180);
-    const x2 = cx + outerR * Math.cos(a2 * Math.PI / 180);
-    const y2 = cy + outerR * Math.sin(a2 * Math.PI / 180);
-    const ix1 = cx + innerR * Math.cos(a1 * Math.PI / 180);
-    const iy1 = cy + innerR * Math.sin(a1 * Math.PI / 180);
-    const ix2 = cx + innerR * Math.cos(a2 * Math.PI / 180);
-    const iy2 = cy + innerR * Math.sin(a2 * Math.PI / 180);
-    const color = rgbHex(hsvToRgb((i + 0.5) / segments * 360, 1, 1));
-    return <path key={i} d={`M ${x1} ${y1} A ${outerR} ${outerR} 0 0 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 0 0 ${ix1} ${iy1} Z`} fill={color} />;
-  });
-
   // Hue indicator: a notch on the ring at the current hue
   const hueAng = (h - 90) * Math.PI / 180;
   const hueX1 = cx + (outerR + 2) * Math.cos(hueAng);
@@ -133,7 +117,15 @@ function ColorWheel({ size = 220 }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: size + 30 }}>
-      <svg ref={wrapRef} viewBox={`0 0 ${size} ${size}`} style={{ width: '100%', display: 'block', cursor: 'crosshair', touchAction: 'none' }} onPointerDown={handleDown}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '1' }}>
+      {/* Smooth hue ring (conic gradient masked to a donut) */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: '50%',
+        background: 'conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+        WebkitMaskImage: `radial-gradient(circle closest-side, transparent ${innerPct - 0.5}%, #000 ${innerPct}%)`,
+        maskImage: `radial-gradient(circle closest-side, transparent ${innerPct - 0.5}%, #000 ${innerPct}%)`,
+      }} />
+      <svg ref={wrapRef} viewBox={`0 0 ${size} ${size}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block', cursor: 'crosshair', touchAction: 'none' }} onPointerDown={handleDown}>
         <defs>
           <linearGradient id="cw-white" x1={V1[0]} y1={V1[1]} x2={V2[0]} y2={V2[1]} gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor={hueColor} stopOpacity="0" />
@@ -146,9 +138,6 @@ function ColorWheel({ size = 220 }) {
             <stop offset="100%" stopColor="#000" />
           </linearGradient>
         </defs>
-
-        {/* Hue ring */}
-        {hueRing}
 
         {/* Hue thumb (notch) */}
         <line x1={hueX1} y1={hueY1} x2={hueX2} y2={hueY2} stroke="#fff" strokeWidth="2.5" />
@@ -163,6 +152,7 @@ function ColorWheel({ size = 220 }) {
         <circle cx={cursorX} cy={cursorY} r="6" fill="none" stroke="#000" strokeWidth="2" />
         <circle cx={cursorX} cy={cursorY} r="6" fill="none" stroke="#fff" strokeWidth="1.25" />
       </svg>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr', gap: 4, alignItems: 'center' }}>
         <div style={{ width: 32, height: 32, borderRadius: 4, background: hex, border: '1px solid var(--dcs-line)' }} />
@@ -335,6 +325,59 @@ function ColorPicker({ value, onChange, compact }) {
   );
 }
 
+/* Channel-editor color field: a mini swatch at input height that opens a
+   small dropdown picker. */
+function ColorField({ initial = '#4d9fff' }) {
+  const [open, setOpen] = useStateE(false);
+  const ref = useRefE(null);
+  useDismiss(ref, open, () => setOpen(false));
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <div className="dcs-colorfield" onClick={() => setOpen(o => !o)}>
+        <span className="dcs-colorfield__chip" style={{ background: initial }} />
+        <span className="dcs-colorfield__hex">{initial.toUpperCase()}</span>
+        <Icon name="caret-up-down" size="sm" />
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30 }}>
+          <Panel raised pad="sm" style={{ boxShadow: 'var(--dcs-shadow-pop)' }}><ColorPicker compact /></Panel>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Scrub-color widget: drag ←→ hue, ↕ value, Ctrl+←→ saturation. */
+function ColorDrag() {
+  const [hsv, setHsv] = useStateE({ h: 210, s: 0.7, v: 0.85 });
+  const onDown = (e) => {
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY, s0 = { ...hsv };
+    const move = (ev) => {
+      const dx = ev.clientX - sx, dy = sy - ev.clientY;
+      const clamp = (n) => Math.max(0, Math.min(1, n));
+      let h = s0.h, s = s0.s;
+      const v = clamp(s0.v + dy / 200);
+      if (ev.ctrlKey || ev.metaKey) s = clamp(s0.s + dx / 200);
+      else { h = (s0.h + dx) % 360; if (h < 0) h += 360; }
+      setHsv({ h, s, v });
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  const hex = rgbHex(hsvToRgb(hsv.h, hsv.s, hsv.v));
+  return (
+    <div onPointerDown={onDown} title="drag: ←→ hue · ↕ value · Ctrl+←→ saturation"
+         style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'ew-resize', userSelect: 'none', touchAction: 'none' }}>
+      <span style={{ width: 28, height: 28, borderRadius: 4, background: hex, border: '1px solid var(--dcs-line)', boxShadow: 'var(--dcs-bevel-down)' }} />
+      <span className="dcs-mono" style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>
+        {hex.toUpperCase()}<br />
+        <span style={{ fontSize: 9, color: 'var(--dcs-text-mute)' }}>{Math.round(hsv.h)}° {Math.round(hsv.s * 100)} {Math.round(hsv.v * 100)}</span>
+      </span>
+    </div>
+  );
+}
+
 function SectionColorPicker() {
   const [open, setOpen] = useStateE(false);
   const swatches = [
@@ -382,7 +425,7 @@ function SectionColorPicker() {
       </Demo>
 
       <Demo frame="app" caption="Swatch button → popup">
-        <div className="dcs-col" style={{ gap: 10, position: 'relative' }}>
+        <div className="dcs-col" style={{ gap: 10, position: 'relative', paddingBottom: open ? 360 : 0 }}>
           <div className="dcs-row" style={{ gap: 12 }}>
             <div className="dcs-field" style={{ minWidth: 0 }}>
               <label className="dcs-field__label">Diffuse</label>
@@ -416,6 +459,25 @@ function SectionColorPicker() {
         </div>
       </Demo>
 
+      <Demo frame="app" caption="Channel-editor widgets — inline color field (dropdown) and a scrub-color chip">
+        <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap', paddingBottom: 200 }}>
+          <div className="dcs-col" style={{ gap: 8, minWidth: 200 }}>
+            <div className="dcs-field"><label className="dcs-field__label">Base</label><ColorField initial="#4d9fff" /></div>
+            <div className="dcs-field"><label className="dcs-field__label">Rim</label><ColorField initial="#ff7ab8" /></div>
+            <div className="dcs-field"><label className="dcs-field__label">Subsurf</label><ColorField initial="#ef6b6b" /></div>
+            <div style={{ fontSize: 11, color: 'var(--dcs-text-mute)' }}>Click a field for a dropdown picker.</div>
+          </div>
+          <div className="dcs-col" style={{ gap: 10 }}>
+            <ColorDrag />
+            <div style={{ fontSize: 11, color: 'var(--dcs-text-mute)', maxWidth: 200, lineHeight: 1.5 }}>
+              Drag the chip: <strong style={{ color: 'var(--dcs-text-dim)' }}>←→</strong> hue,
+              <strong style={{ color: 'var(--dcs-text-dim)' }}> ↕</strong> value,
+              <strong style={{ color: 'var(--dcs-text-dim)' }}> Ctrl+←→</strong> saturation.
+            </div>
+          </div>
+        </div>
+      </Demo>
+
       <Demo frame="app" caption="Palette well — pin colors per project">
         <Panel title="Palette · Project" icon="palette" pad="sm"
                tools={<><Button ghost sm icon iconLeft="plus" /><Button ghost sm icon iconLeft="eyedropper" /></>}>
@@ -442,7 +504,7 @@ function SectionColorPicker() {
 // Each point: { x, y, hx, hy } where (hx, hy) is the RIGHT-side tangent
 // half-vector in normalized 0..1 space. The left handle mirrors as (-hx, -hy)
 // so the curve stays smooth across the point.
-function CurveEditor({ height = 220, points: initial, showHandles = true }) {
+function CurveEditor({ height = 220, points: initial, showHandles = true, color = '#4d9fff' }) {
   // Migrate legacy points (with just .h scalar or none) → {x, y, hx, hy}
   const seed = React.useMemo(() => {
     const src = initial || [
@@ -536,16 +598,16 @@ function CurveEditor({ height = 220, points: initial, showHandles = true }) {
     return acc + ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${px(p1)} ${py(p1)}`;
   }, '');
 
-  const curveColor = '#e7e9ee';
+  const curveColor = color;       // curve + points take the channel/key color
   const tanColor = '#aab0bd';
-  const accent = '#4d9fff';
+  const accent = color;
 
   return (
     <div ref={wrapRef} className="dcs-graph" style={{ height, position: 'relative' }}>
       <div className="dcs-graph__major" />
       <svg ref={svgRef} width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-        <path d={`${path} L ${W} ${H} L 0 ${H} Z`} fill="var(--dcs-accent)" fillOpacity=".12" />
-        <path d={path} fill="none" stroke={curveColor} strokeWidth="1.5" />
+        <path d={`${path} L ${W} ${H} L 0 ${H} Z`} fill={color} fillOpacity=".12" />
+        <path d={path} fill="none" stroke={curveColor} strokeWidth="1.75" />
 
         {/* Tangent handles for the active point only — draggable in 2D, mirrored */}
         {showHandles && active !== null && active >= 0 && active < pts.length && (() => {
@@ -605,28 +667,29 @@ function SectionCurve() {
       <h2>Curve editor</h2>
       <p className="dw-section__lead">
         Drag control points to shape envelopes, color ramps, falloffs, or animation eases. The
-        curve fills against the accent at low opacity so the silhouette reads even at small sizes.
+        curve takes its channel/key color and fills against it at low opacity, so overlaid channels
+        stay legible — exactly like an animation graph editor (X red, Y green, Z blue).
       </p>
-      <Demo frame="app" caption="Drag any point to reshape the curve">
+      <Demo frame="app" caption="Drag any point or its tangent handles to reshape the curve">
         <Panel title="Envelope · Filter cutoff" icon="envelope" pad="sm"
                tools={<><ButtonGroup value="bez" options={[
                   { value: 'lin', label: 'Linear' },
                   { value: 'bez', label: 'Bezier' },
                   { value: 'step', label: 'Step' },
                ]} /></>}>
-          <CurveEditor />
+          <CurveEditor color="#4d9fff" />
         </Panel>
       </Demo>
 
-      <Demo frame="app" caption="A second instance — same component, different signal">
+      <Demo frame="app" caption="Each curve carries its channel's key color">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Panel title="Tonemap · Filmic" icon="curve" pad="sm">
-            <CurveEditor height={160} points={[
+          <Panel title="Location · X" icon="curve" pad="sm">
+            <CurveEditor height={160} color="#ef6b6b" points={[
               { x: 0, y: 0 }, { x: 0.18, y: 0.08 }, { x: 0.5, y: 0.45 }, { x: 0.8, y: 0.85 }, { x: 1, y: 0.97 }
             ]} />
           </Panel>
-          <Panel title="LFO · Sample &amp; Hold" icon="lfo" pad="sm">
-            <CurveEditor height={160} points={[
+          <Panel title="Location · Y" icon="curve" pad="sm">
+            <CurveEditor height={160} color="#4ed18a" points={[
               { x: 0, y: 0.5 }, { x: 0.2, y: 0.9 }, { x: 0.4, y: 0.15 }, { x: 0.6, y: 0.65 }, { x: 0.8, y: 0.25 }, { x: 1, y: 0.5 }
             ]} />
           </Panel>
@@ -637,69 +700,90 @@ function SectionCurve() {
 }
 
 /* ─────────── Graph editor (node graph) ─────────── */
+const GRAPH_NODE_W = 132, GRAPH_HEAD = 24, GRAPH_ROW = 22, GRAPH_BODY_PAD = 6;
 function NodeGraph() {
-  const nodes = [
-    { id: 'noise',  x: 30,  y: 30,  title: 'Noise',     icon: 'wave-noise', color: '#b48cff', outs: ['fac'] },
-    { id: 'tex',    x: 30,  y: 170, title: 'Texture',   icon: 'image',      color: '#f2b14a', outs: ['rgb'] },
-    { id: 'mix',    x: 240, y: 90,  title: 'Mix',       icon: 'array',      color: '#4d9fff', ins: ['a','b','fac'], outs: ['rgb'] },
-    { id: 'gamma',  x: 430, y: 70,  title: 'Gamma',     icon: 'bolt',       color: '#4ed18a', ins: ['in'], outs: ['out'] },
-    { id: 'output', x: 600, y: 90,  title: 'Output',    icon: 'render',     color: '#4d9fff', ins: ['color'] },
-  ];
-  // Sockets are positioned via percentages of node body — let's hardcode pixel positions for connections
-  const W = 720, H = 280;
+  const [nodes, setNodes] = useStateE([
+    { id: 'noise',  x: 16,  y: 30,  title: 'Noise',   icon: 'wave-noise', color: '#b48cff', ins: [],                 outs: ['fac'] },
+    { id: 'tex',    x: 16,  y: 176, title: 'Texture', icon: 'image',      color: '#f2b14a', ins: ['uv'],             outs: ['rgb'] },
+    { id: 'mix',    x: 250, y: 84,  title: 'Mix',     icon: 'array',      color: '#4d9fff', ins: ['a', 'b', 'fac'],  outs: ['rgb'] },
+    { id: 'gamma',  x: 470, y: 70,  title: 'Gamma',   icon: 'bolt',       color: '#4ed18a', ins: ['in'],             outs: ['out'] },
+    { id: 'output', x: 660, y: 100, title: 'Output',  icon: 'render',     color: '#4d9fff', ins: ['color'],          outs: [] },
+  ]);
+  const wrapRef = useRefE(null);
   const wires = [
-    { fx: 30+120, fy: 30+42,  tx: 240+8,  ty: 90+42 },   // noise.fac -> mix.a
-    { fx: 30+120, fy: 170+42, tx: 240+8,  ty: 90+62 },   // tex.rgb   -> mix.b
-    { fx: 240+120, fy: 90+42, tx: 430+8,  ty: 70+42 },   // mix.rgb -> gamma.in
-    { fx: 430+120, fy: 70+42, tx: 600+8,  ty: 90+42 },   // gamma.out -> output.color
+    ['noise', 'fac', 'mix', 'a'],
+    ['tex', 'rgb', 'mix', 'b'],
+    ['mix', 'rgb', 'gamma', 'in'],
+    ['gamma', 'out', 'output', 'color'],
   ];
+  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  // Socket centers share the SAME pixel space as the SVG (no viewBox scaling),
+  // so wires always meet their sockets.
+  const socketY = (n, idx) => n.y + GRAPH_HEAD + GRAPH_BODY_PAD + idx * GRAPH_ROW + GRAPH_ROW / 2;
+  const outPos = (n, name) => [n.x + GRAPH_NODE_W, socketY(n, n.ins.length + n.outs.indexOf(name))];
+  const inPos = (n, name) => [n.x, socketY(n, n.ins.indexOf(name))];
+
+  const dragNode = (id) => (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const n0 = byId[id];
+    const ox = e.clientX, oy = e.clientY, sx = n0.x, sy = n0.y;
+    const move = (ev) => setNodes(ns => ns.map(n => n.id === id
+      ? { ...n, x: sx + (ev.clientX - ox), y: Math.max(0, sy + (ev.clientY - oy)) } : n));
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+
+  const Socket = ({ side }) => (
+    <div style={{
+      width: 9, height: 9, borderRadius: '50%', background: 'var(--dcs-accent)',
+      border: '2px solid var(--dcs-bg)', boxShadow: '0 0 0 1px var(--dcs-line-strong)',
+      [side === 'in' ? 'marginLeft' : 'marginRight']: -13, flex: '0 0 auto',
+    }} />
+  );
+
   return (
-    <div className="dcs-graph" style={{ height: 320, position: 'relative', overflow: 'hidden' }}>
+    <div ref={wrapRef} className="dcs-graph" style={{ height: 320, position: 'relative', overflow: 'hidden' }}>
       <div className="dcs-graph__major" />
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid meet">
-        {wires.map((w, i) => {
-          const mx = (w.fx + w.tx) / 2;
-          return <path key={i} d={`M ${w.fx} ${w.fy} C ${mx} ${w.fy}, ${mx} ${w.ty}, ${w.tx} ${w.ty}`} fill="none" stroke="var(--dcs-accent)" strokeWidth="1.5" strokeOpacity=".85" />;
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+        {wires.map(([fn, fs, tn, ts], i) => {
+          const [fx, fy] = outPos(byId[fn], fs);
+          const [tx, ty] = inPos(byId[tn], ts);
+          const mx = (fx + tx) / 2;
+          return <path key={i} d={`M ${fx} ${fy} C ${mx} ${fy}, ${mx} ${ty}, ${tx} ${ty}`}
+                       fill="none" stroke={byId[fn].color} strokeWidth="2" strokeOpacity=".9" />;
         })}
       </svg>
       {nodes.map(n => (
         <div key={n.id} style={{
-          position: 'absolute', left: `${(n.x / W) * 100}%`, top: `${(n.y / H) * 100}%`,
-          width: 128,
-          background: 'var(--dcs-bg)',
-          border: '1px solid var(--dcs-line)',
-          borderRadius: 'var(--dcs-r-2)',
-          overflow: 'hidden',
-          fontSize: 11,
-          userSelect: 'none',
+          position: 'absolute', left: n.x, top: n.y, width: GRAPH_NODE_W,
+          background: 'var(--dcs-bg)', border: '1px solid var(--dcs-line)',
+          borderRadius: 'var(--dcs-r-2)', boxShadow: 'var(--dcs-shadow-2)',
+          fontSize: 11, userSelect: 'none',
         }}>
-          <div style={{
-            height: 22,
-            background: n.color,
-            color: '#0a1220',
+          <div onPointerDown={dragNode(n.id)} style={{
+            height: GRAPH_HEAD, background: n.color, color: '#0a1220',
             display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px',
-            fontWeight: 600, letterSpacing: '.04em',
-            textTransform: 'uppercase', fontSize: 10,
+            fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: 10,
+            cursor: 'grab', borderRadius: 'var(--dcs-r-2) var(--dcs-r-2) 0 0',
           }}>
-            <Icon name={n.icon} size="sm" />
-            <span>{n.title}</span>
+            <Icon name={n.icon} size="sm" /><span>{n.title}</span>
           </div>
-          <div style={{ padding: '6px 0' }}>
-            {n.ins?.map((s, i) => (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 8px', color: 'var(--dcs-text-dim)' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--dcs-accent)', marginLeft: -12 }} />
-                <span>{s}</span>
+          <div style={{ padding: `${GRAPH_BODY_PAD}px 0` }}>
+            {n.ins.map(s => (
+              <div key={s} style={{ height: GRAPH_ROW, display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', color: 'var(--dcs-text-dim)' }}>
+                <Socket side="in" /><span>{s}</span>
               </div>
             ))}
-            {n.outs?.map((s) => (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 8px', color: 'var(--dcs-text-dim)', justifyContent: 'flex-end' }}>
-                <span>{s}</span>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--dcs-accent)', marginRight: -12 }} />
+            {n.outs.map(s => (
+              <div key={s} style={{ height: GRAPH_ROW, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, padding: '0 8px', color: 'var(--dcs-text-dim)' }}>
+                <span>{s}</span><Socket side="out" />
               </div>
             ))}
           </div>
         </div>
       ))}
+      <div style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 10, fontFamily: 'var(--dcs-font-mono)', color: 'var(--dcs-text-mute)' }}>drag node headers to rewire layout</div>
     </div>
   );
 }
