@@ -370,14 +370,75 @@ function ColorChip({ hsv, setHsv, size }) {
   );
 }
 
+// Compact, bound SV picker for the color-field popover: SV square + a hue
+// slider + a mini swatch, driving the field's hsv directly.
+function MiniPicker({ hsv, set }) {
+  const sqRef = useRefE(null), hueRef = useRefE(null);
+  const clamp = (n) => Math.max(0, Math.min(1, n));
+  const hueColor = rgbHex(hsvToRgb(hsv.h, 1, 1));
+  const hex = rgbHex(hsvToRgb(hsv.h, hsv.s, hsv.v));
+  const dragSquare = (e) => {
+    e.preventDefault();
+    const rect = sqRef.current.getBoundingClientRect(), h0 = hsv.h;
+    const upd = (cx, cy) => set({ h: h0, s: clamp((cx - rect.left) / rect.width), v: 1 - clamp((cy - rect.top) / rect.height) });
+    upd(e.clientX, e.clientY);
+    const move = (ev) => upd(ev.clientX, ev.clientY);
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  const dragHue = (e) => {
+    e.preventDefault();
+    const rect = hueRef.current.getBoundingClientRect(), s0 = hsv.s, v0 = hsv.v;
+    const upd = (cx) => set({ h: clamp((cx - rect.left) / rect.width) * 360, s: s0, v: v0 });
+    upd(e.clientX);
+    const move = (ev) => upd(ev.clientX);
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  return (
+    <div style={{ width: 188, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div ref={sqRef} className="dcs-color-square" style={{ '--hue': hueColor, aspectRatio: '1.4 / 1' }} onPointerDown={dragSquare}>
+        <div className="dcs-color-square__cursor" style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%` }} />
+      </div>
+      <div ref={hueRef} className="dcs-hue-bar" onPointerDown={dragHue}>
+        <div className="dcs-hue-bar__cursor" style={{ left: `${(hsv.h / 360) * 100}%` }} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 22, height: 22, flex: '0 0 auto', borderRadius: 'var(--dcs-r-1)', background: hex, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.35)' }} />
+        <input className="dcs-input dcs-mono" value={hex.toUpperCase()} spellCheck={false}
+          onChange={(e) => { const h = hexToHsv(e.target.value); if (h) set(h); }}
+          style={{ flex: 1, minWidth: 0, height: 'var(--dcs-h-in)' }} />
+      </div>
+    </div>
+  );
+}
+
 // Channel color widget: chip (drag-scrub) + editable/copy-paste hex + dropdown
 // picker. `colorOnly` drops the hex for a compact swatch. Row height matches
 // the other channel widgets (var(--dcs-h-in)) so inspector rows align.
 function ColorField({ value = '#4d9fff', onChange, colorOnly }) {
   const [hsv, setHsv] = useStateE(() => hexToHsv(value) || { h: 210, s: 0.7, v: 0.85 });
   const [open, setOpen] = useStateE(false);
+  const [pop, setPop] = useStateE(null);          // fixed-position popover coords
   const ref = useRefE(null);
   useDismiss(ref, open, () => setOpen(false));
+  // True popover: fixed to the viewport so it overlays cleanly and never grows
+  // the panel's scroll; closes on scroll/resize like a menu.
+  useEffectE(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); };
+  }, [open]);
+  const toggle = () => {
+    if (open) { setOpen(false); return; }
+    const r = ref.current.getBoundingClientRect();
+    const PW = 204, PH = 232;
+    let top = r.bottom + 4; if (top + PH > window.innerHeight) top = Math.max(8, r.top - PH - 4);
+    let left = r.left; if (left + PW > window.innerWidth) left = Math.max(8, window.innerWidth - PW - 8);
+    setPop({ top, left }); setOpen(true);
+  };
   const set = (h) => { setHsv(h); if (onChange) onChange(rgbHex(hsvToRgb(h.h, h.s, h.v))); };
   const hex = rgbHex(hsvToRgb(hsv.h, hsv.s, hsv.v));
   const onHex = (e) => { const h = hexToHsv(e.target.value); if (h) set(h); };
@@ -388,10 +449,12 @@ function ColorField({ value = '#4d9fff', onChange, colorOnly }) {
         <input className="dcs-colorfield__hex" value={hex.toUpperCase()} spellCheck={false}
           onChange={onHex} onPointerDown={(e) => e.stopPropagation()} />
       )}
-      <span className="dcs-colorfield__caret" onClick={() => setOpen(o => !o)}><Icon name="chevron-down" size="sm" /></span>
-      {open && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30 }}>
-          <Panel raised pad="sm" style={{ boxShadow: 'var(--dcs-shadow-pop)' }}><ColorPicker compact /></Panel>
+      <span className="dcs-colorfield__caret" onClick={toggle}><Icon name="chevron-down" size="sm" /></span>
+      {open && pop && (
+        <div style={{ position: 'fixed', top: pop.top, left: pop.left, zIndex: 200 }}>
+          <Panel raised pad="sm" style={{ boxShadow: 'var(--dcs-shadow-pop)', width: 204 }}>
+            <MiniPicker hsv={hsv} set={set} />
+          </Panel>
         </div>
       )}
     </div>
