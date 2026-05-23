@@ -101,6 +101,13 @@ function addTabToTree(node, gid, tab, zone) {
   }
   return { ...node, children: node.children.map(c => addTabToTree(c, gid, tab, zone)) };
 }
+// Dock a panel against the whole workspace edge (root-level full-span split).
+function addRootEdge(tree, tab, zone) {
+  const leaf = normLayout({ type: 'tabs', tabs: [tab] });
+  const dir = (zone === 'left' || zone === 'right') ? 'row' : 'col';
+  const before = zone === 'left' || zone === 'top';
+  return { type: 'split', id: `dk${++DOCK_ID}`, dir, sizes: before ? [1, 3] : [3, 1], children: before ? [leaf, tree] : [tree, leaf] };
+}
 function resizeSplit(node, splitId, i, dpx, total) {
   if (node.type !== 'split') return node;
   if (node.id === splitId) {
@@ -132,6 +139,20 @@ const ZONE_BOX = {
   top: { left: 0, right: 0, top: 0, height: '50%' },
   bottom: { left: 0, right: 0, bottom: 0, height: '50%' },
 };
+// Outer-edge drop bands (perimeter of the whole workspace) and their previews.
+const EDGES = ['left', 'right', 'top', 'bottom'];
+const EDGE_BAND = {
+  left: { left: 0, top: 0, bottom: 0, width: 22 },
+  right: { right: 0, top: 0, bottom: 0, width: 22 },
+  top: { left: 0, right: 0, top: 0, height: 22 },
+  bottom: { left: 0, right: 0, bottom: 0, height: 22 },
+};
+const ROOT_PREVIEW = {
+  left: { left: 0, top: 0, bottom: 0, width: '28%' },
+  right: { right: 0, top: 0, bottom: 0, width: '28%' },
+  top: { left: 0, right: 0, top: 0, height: '28%' },
+  bottom: { left: 0, right: 0, bottom: 0, height: '28%' },
+};
 
 // Top-level so re-renders (e.g. 24fps animation) don't remount the subtree.
 function DockGroup({ node, ctx }) {
@@ -145,8 +166,8 @@ function DockGroup({ node, ctx }) {
         {node.tabs.map(tab => (
           <div key={tab} className="dcs-dockpane__tab" aria-selected={node.active === tab}
             draggable
-            onDragStart={(e) => { ctx.drag.current = { tab, fromId: node.id, count: node.tabs.length }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', tab); }}
-            onDragEnd={() => { ctx.drag.current = null; ctx.setHover(null); }}
+            onDragStart={(e) => { ctx.drag.current = { tab, fromId: node.id, count: node.tabs.length }; ctx.setDragging(true); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', tab); }}
+            onDragEnd={() => { ctx.drag.current = null; ctx.setHover(null); ctx.setDragging(false); }}
             onClick={() => ctx.activate(node.id, tab)}>
             {ctx.tabMeta(tab).icon && <Icon name={ctx.tabMeta(tab).icon} size="sm" />}
             <span>{ctx.tabMeta(tab).label}</span>
@@ -158,7 +179,7 @@ function DockGroup({ node, ctx }) {
         {ctx.renderContent(node.active)}
       </div>
       {ctx.hover && ctx.hover.gid === node.id && (
-        <div style={{ position: 'absolute', background: 'var(--dcs-accent-haze)', border: '1px solid var(--dcs-accent)', borderRadius: 3, pointerEvents: 'none', zIndex: 6, ...ZONE_BOX[ctx.hover.zone] }} />
+        <div style={{ position: 'absolute', background: 'var(--dcs-accent-haze)', border: '1px solid var(--dcs-accent)', borderRadius: 3, pointerEvents: 'none', zIndex: 6, transition: 'all 90ms ease', ...ZONE_BOX[ctx.hover.zone] }} />
       )}
     </div>
   );
@@ -184,23 +205,47 @@ function DockNode({ node, ctx }) {
 }
 function DockLayout({ initial, tabMeta, renderContent }) {
   const [root, setRoot] = useState(() => normLayout(initial));
-  const [hover, setHover] = useState(null); // { gid, zone }
+  const [hover, setHover] = useState(null);     // inner: { gid, zone }
+  const [dragging, setDragging] = useState(false);
+  const [edge, setEdge] = useState(null);       // outer root edge being hovered
   const drag = useRef(null);
   const ctx = {
-    drag, hover, setHover, tabMeta, renderContent,
+    drag, hover, setHover, setDragging, tabMeta, renderContent,
     activate: (gid, tab) => setRoot(r => setActiveInTree(r, gid, tab)),
     closeTab: (tab) => setRoot(r => removeTabFromTree(r, tab) || r),
     resize: (id, i, d, total) => setRoot(r => resizeSplit(r, id, i, d, total)),
     onDrop: (gid) => {
       const d = drag.current, h = hover;
-      drag.current = null; setHover(null);
+      drag.current = null; setHover(null); setDragging(false);
       if (!d || !h || h.gid !== gid) return;
       if (d.fromId === gid && (h.zone === 'center' || d.count <= 1)) return;
       const t = removeTabFromTree(root, d.tab);
       if (t) setRoot(addTabToTree(t, gid, d.tab, h.zone));
     },
   };
-  return <div className="dcs-dock" style={{ flex: 1, minWidth: 0, minHeight: 0 }}><DockNode node={root} ctx={ctx} /></div>;
+  const onRootDrop = (zone) => {
+    const d = drag.current;
+    drag.current = null; setEdge(null); setHover(null); setDragging(false);
+    if (!d) return;
+    const t = removeTabFromTree(root, d.tab);
+    if (t) setRoot(addRootEdge(t, d.tab, zone));
+  };
+  return (
+    <div className="dcs-dock" style={{ position: 'relative', flex: 1, minWidth: 0, minHeight: 0 }}>
+      <DockNode node={root} ctx={ctx} />
+      {/* Outer-edge drop bands — dock a full-span panel against the workspace edge. */}
+      {dragging && EDGES.map(z => (
+        <div key={z}
+          onDragOver={(e) => { e.preventDefault(); if (hover) setHover(null); if (edge !== z) setEdge(z); }}
+          onDragLeave={() => setEdge(e => (e === z ? null : e))}
+          onDrop={(e) => { e.preventDefault(); onRootDrop(z); }}
+          style={{ position: 'absolute', zIndex: 8, ...EDGE_BAND[z] }} />
+      ))}
+      {dragging && edge && (
+        <div style={{ position: 'absolute', pointerEvents: 'none', zIndex: 7, background: 'var(--dcs-accent-haze)', border: '2px solid var(--dcs-accent)', borderRadius: 4, transition: 'all 90ms ease', ...ROOT_PREVIEW[edge] }} />
+      )}
+    </div>
+  );
 }
 
 /* ─────────── Panel ─────────── */

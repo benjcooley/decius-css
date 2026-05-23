@@ -1359,68 +1359,51 @@
   overflow: hidden;
 }
 
-.dcs-list__item {
+/* Lists and trees are the same primitive — identical row metrics, hover, and
+   selection. A tree row just adds depth indent + a chevron. Both are
+   density-driven (height = --dcs-h), so sm/md/lg read clearly and match. */
+.dcs-list__item,
+.dcs-tree__row {
   display: flex;
   align-items: center;
-  gap: var(--dcs-s-3);
-  padding: 0 var(--dcs-s-3);
-  height: var(--dcs-h-sm);
+  height: var(--dcs-h);
   font-size: var(--dcs-fs-sm);
   color: var(--dcs-text-dim);
-  border-bottom: 1px solid var(--dcs-line-soft);
   cursor: default;
   -webkit-user-select: none;
      -moz-user-select: none;
           user-select: none;
+}
+
+.dcs-list__item {
+  gap: var(--dcs-s-3);
+  padding: 0 var(--dcs-s-4);
+  border-bottom: 1px solid var(--dcs-line-soft);
 }
 
 .dcs-list__item:last-child {
   border-bottom: none;
 }
 
-.dcs-list__item:hover {
-  background: var(--dcs-surface-1);
-  color: var(--dcs-text);
-}
-
-.dcs-list__item[aria-selected=true] {
-  background: var(--dcs-accent-dim);
-  color: var(--dcs-text);
-  border-bottom-color: var(--dcs-accent-lo);
-}
-
-.dcs-list__item[aria-selected=true]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 2px;
-  height: 100%;
-  background: var(--dcs-accent);
-}
-
 .dcs-tree {
-  font-size: var(--dcs-fs-sm);
   -webkit-user-select: none;
      -moz-user-select: none;
           user-select: none;
 }
 
 .dcs-tree__row {
-  display: flex;
-  align-items: center;
   gap: 2px;
-  height: var(--dcs-h-sm);
-  padding-left: calc(var(--depth, 0) * 14px);
-  color: var(--dcs-text-dim);
-  cursor: default;
-  padding-right: var(--dcs-s-3);
+  padding-left: calc(var(--dcs-s-2) + var(--depth, 0) * 14px);
+  padding-right: var(--dcs-s-4);
 }
 
+.dcs-list__item:hover,
 .dcs-tree__row:hover {
   background: var(--dcs-surface-1);
   color: var(--dcs-text);
 }
 
+.dcs-list__item[aria-selected=true],
 .dcs-tree__row[aria-selected=true] {
   background: var(--dcs-accent-dim);
   color: var(--dcs-text);
@@ -2091,6 +2074,11 @@
 
 .dcs-foldout__body {
   padding: var(--dcs-s-1) var(--dcs-s-5) var(--dcs-s-5) var(--dcs-s-5);
+}
+
+/* Collapsed: hide the body (the chevron un-rotates separately). */
+.dcs-foldout--collapsed > .dcs-foldout__body {
+  display: none;
 }
 
 /* ============================================================

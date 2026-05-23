@@ -20,6 +20,14 @@ function SectionLists() {
     { id: 9, name: 'Marble_4k.exr',   val: '4k · linear', icon: 'image' },
     { id: 10, name: 'Brass_worn.mat', val: 'PBR', icon: 'palette' },
     { id: 11, name: 'crowd_walk.anim', val: '240f', icon: 'curve' },
+    { id: 12, name: 'Velvet_red.mat', val: 'PBR', icon: 'palette' },
+    { id: 13, name: 'city_dusk.hdr',  val: '8k · HDR', icon: 'image' },
+    { id: 14, name: 'eric_rig.fbx',   val: '52 bones', icon: 'bone' },
+    { id: 15, name: 'Smoke_sim.vdb',  val: 'volume', icon: 'cube' },
+    { id: 16, name: 'Tiles_4k.png',   val: '4k · sRGB', icon: 'texture' },
+    { id: 17, name: 'idle_loop.anim', val: '120f', icon: 'curve' },
+    { id: 18, name: 'Chrome.mat',     val: 'PBR · metal', icon: 'palette' },
+    { id: 19, name: 'Bark_disp.exr',  val: '2k · linear', icon: 'image' },
   ];
   const shown = items.filter(it => it.name.toLowerCase().includes(q.toLowerCase()));
   return (

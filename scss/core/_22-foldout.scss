@@ -48,3 +48,5 @@
 .dcs-foldout__body {
   padding: var(--dcs-s-1) var(--dcs-s-5) var(--dcs-s-5) var(--dcs-s-5);
 }
+/* Collapsed: hide the body (the chevron un-rotates separately). */
+.dcs-foldout--collapsed > .dcs-foldout__body { display: none; }
