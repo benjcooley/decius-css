@@ -1,4 +1,4 @@
-/*! decius-css v0.4.0 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.4.1 | MIT License | https://github.com/benjcooley/decius-css */
 var decius = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -591,7 +591,7 @@ var decius = (() => {
     return decius;
   }
   var decius = {
-    version: "0.4.0",
+    version: "0.4.1",
     init,
     toast,
     modal: { open: openModal, close: (id) => {

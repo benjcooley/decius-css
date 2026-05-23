@@ -4,6 +4,13 @@ All notable changes to decius.css are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] — 2026-05-23
+
+### Fixed
+- Dark native scrollbars/controls leaked into light host pages: `color-scheme: dark`
+  was on `:root`. It's now scoped to `.dcs`, and the `decius-web` theme declares
+  `color-scheme: light`. `.dcs` regions stay dark; the host keeps its own scheme.
+
 ## [0.4.0] — "Mus" — 2026-05-23
 
 First public release.
@@ -29,4 +36,5 @@ First public release.
 - Documentation site (Vite + React) with live, themeable component demos.
 - CI (build + lint + smoke test) and GitHub Pages deploy.
 
+[0.4.1]: https://github.com/benjcooley/decius-css/releases/tag/v0.4.1
 [0.4.0]: https://github.com/benjcooley/decius-css/releases/tag/v0.4.0
