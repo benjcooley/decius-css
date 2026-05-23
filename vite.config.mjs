@@ -5,7 +5,8 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = dirname(fileURLToPath(import.meta.url));
-const appDir = resolve(repoRoot, 'site', 'src', 'app');
+const appDir = resolve(repoRoot, 'site', 'src', 'app');     // docs content
+const reactDir = resolve(repoRoot, 'react');                 // React component layer
 const distDir = resolve(repoRoot, 'dist');
 const dlDir = resolve(repoRoot, 'site', 'public', 'dl');
 
@@ -17,12 +18,15 @@ function syncDownloads() {
   cpSync(distDir, dlDir, { recursive: true });
 }
 
-// The docs app is authored as classic shared-scope scripts (each file reads
-// global React/peers and exports via Object.assign(window, …)). We preserve
-// that model by concatenating them, in dependency order, into one module that
-// Vite/React compiles — no per-file ESM refactor needed.
-const APP_ORDER = [
-  'icons', 'dcs', 'tweaks-panel',
+// Two layers, one compiled module:
+//   react/  — the reusable React component library (icons, components)
+//   site/src/app/ — the docs content (tweaks panel, sections, app shell)
+// Both are authored as classic shared-scope scripts (read global React, export
+// via Object.assign(window, …)); we concatenate them in dependency order so
+// Vite/React compiles one module — no per-file ESM refactor needed.
+const LIB_ORDER = ['icons', 'components'];               // from react/
+const DOCS_ORDER = [
+  'tweaks-panel',
   'sections-foundations', 'sections-components', 'sections-layout',
   'sections-data', 'sections-feedback', 'sections-overlays', 'sections-editors',
   'sections-apps', 'sections-skeuomorphic', 'sections-intro',
@@ -33,9 +37,11 @@ function generateEntry() {
   const header =
     "import React from 'react';\n" +
     "import { createRoot } from 'react-dom/client';\n\n";
-  const body = APP_ORDER
-    .map((n) => `/* ===== ${n}.jsx ===== */\n` + readFileSync(resolve(appDir, `${n}.jsx`), 'utf8'))
-    .join('\n\n');
+  const part = (dir, n) => `/* ===== ${n}.jsx ===== */\n` + readFileSync(resolve(dir, `${n}.jsx`), 'utf8');
+  const body = [
+    ...LIB_ORDER.map((n) => part(reactDir, n)),
+    ...DOCS_ORDER.map((n) => part(appDir, n)),
+  ].join('\n\n');
   writeFileSync(resolve(appDir, '..', 'app.gen.jsx'), header + body);
 }
 
@@ -45,8 +51,10 @@ function deciusEntryPlugin() {
     buildStart() { generateEntry(); syncDownloads(); },
     configureServer(server) {
       server.watcher.add(appDir);
+      server.watcher.add(reactDir);
       server.watcher.on('change', (file) => {
-        if (file.replace(/\\/g, '/').includes('/site/src/app/')) {
+        const f = file.replace(/\\/g, '/');
+        if (f.includes('/site/src/app/') || f.includes('/react/')) {
           generateEntry();
           server.ws.send({ type: 'full-reload' });
         }

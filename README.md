@@ -132,6 +132,14 @@ Everything is built into `dist/`:
 | `dist/fonts/*.woff2` | Self-hosted text webfonts (latin + latin-ext). |
 | `dist/decius-css.zip` | Everything (css + js + fonts) in one archive. |
 
+## Three layers
+
+decius is deliberately split into three independent layers — keep them separate:
+
+1. **CSS** (`scss/` → `dist/css`) — the framework itself. The source of truth; everything is styled here, scoped to `.dcs`.
+2. **Vanilla runtime** (`js/` → `dist/js/decius.js`) — zero-dependency `decius.js`: data-attribute behaviors (modals, menus, popovers, tabs, toasts, collapse, drag controls, splitter resize). No framework required.
+3. **React components** (`react/`) — a richer reference layer (incl. the full drag-to-dock `DockLayout`) that wraps the same CSS. App-level concerns that don't belong in the tiny runtime; **not published yet**. On [affineui](https://github.com/benjcooley/affineui), the host provides this natively.
+
 ## Repository layout
 
 ```
@@ -141,12 +149,13 @@ scss/            Sass source (Bootstrap-style partials → dist/css)
 icons/
   svg/           per-icon SOURCE svgs (the icon font is built from these)
   icons.json     icon catalog manifest
-js/src/          vanilla component runtime (decius.js) source
+js/src/          vanilla component runtime (decius.js) source — LAYER 2
+react/           React component layer (Icon, DockLayout, …) — LAYER 3, not published
 fonts/           vendored self-hosted text webfonts + OFL licenses
 examples/        standalone, framework-only usage examples (kitchen-sink.html)
 scripts/         build pipeline (css, icon font, fonts, js, bundle, zip)
   outline_icons.py   stroke→fill outliner (Shapely) used by the icon-font build
-site/            the documentation site (Vite + React)
+site/            the documentation site (Vite) — docs content; imports react/ + dist/
 dist/            built artifacts (committed, CDN-served)
 design/          original design deliverable (provenance)
 ```
