@@ -66,11 +66,6 @@ function SectionPanels() {
 }
 
 function SectionDock() {
-  const [leftTab, setLeftTab] = useStateL('hier');
-  const [centerTab, setCenterTab] = useStateL('scene');
-  const [rightTab, setRightTab] = useStateL('inspector');
-  const [bottomTab, setBottomTab] = useStateL('console');
-
   const [pos, setPos] = useStateL({ x: 1.428, y: -0.952, z: 3.000 });
   const [rough, setRough] = useStateL(0.42);
   const [metallic, setMetallic] = useStateL(0.08);
@@ -78,285 +73,248 @@ function SectionDock() {
   const [shadow, setShadow] = useStateL(true);
   const [shading, setShading] = useStateL('shaded');
   const [tool, setTool] = useStateL('select');
+  const [last, setLast] = useStateL('—');
+
+  const DOCK_MENUS = {
+    File: [
+      { label: 'New Scene', icon: 'file', shortcut: '⌘N' },
+      { label: 'Open…', icon: 'folder-open', shortcut: '⌘O' },
+      { sep: true },
+      { label: 'Save', icon: 'save', shortcut: '⌘S' },
+      { label: 'Export As', icon: 'export', sub: [{ label: 'glTF' }, { label: 'USD' }, { label: 'FBX' }] },
+      { sep: true },
+      { label: 'Quit', icon: 'close', danger: true },
+    ],
+    Edit: [
+      { label: 'Undo', icon: 'undo', shortcut: '⌘Z' }, { label: 'Redo', icon: 'redo', shortcut: '⇧⌘Z' },
+      { sep: true }, { label: 'Cut', icon: 'cut' }, { label: 'Copy', icon: 'copy' }, { label: 'Paste', icon: 'paste' },
+    ],
+    View: [
+      { label: 'Wireframe', check: wire }, { label: 'Show grid', check: true }, { label: 'Gizmos', check: true },
+      { sep: true }, { label: 'Frame selected', icon: 'fit', shortcut: 'F' }, { label: 'Fullscreen', icon: 'fullscreen', shortcut: 'F11' },
+    ],
+    Mesh: [{ label: 'Extrude', icon: 'extrude' }, { label: 'Subdivide', icon: 'subdivide' }, { label: 'Mirror', icon: 'mirror' }, { label: 'Array', icon: 'array' }],
+    Render: [{ label: 'Render image', icon: 'render', shortcut: 'F12' }, { label: 'Render animation', icon: 'play' }],
+    Help: [{ label: 'Documentation', icon: 'help' }, { label: 'About modeler', icon: 'info' }],
+  };
+
+  const TAB_META = {
+    hier: { label: 'Hierarchy', icon: 'layers' }, proj: { label: 'Project', icon: 'folder' },
+    scene: { label: 'Scene', icon: 'cube' }, game: { label: 'Game', icon: 'play' }, uv: { label: 'UV Editor', icon: 'uv' },
+    console: { label: 'Console', icon: 'cpu' }, animation: { label: 'Animation', icon: 'curve' }, timeline: { label: 'Timeline', icon: 'timeline' },
+    inspector: { label: 'Inspector', icon: 'cog' }, lighting: { label: 'Lighting', icon: 'light' },
+  };
+
+  const Viewport = () => (
+    <div className="dcs-viewport" style={{ position: 'absolute', inset: 0 }}>
+      <svg viewBox="-100 -60 200 120" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <defs>
+          <pattern id="dl-grid" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="scale(1.5, 0.5)">
+            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth=".25" />
+          </pattern>
+        </defs>
+        <rect x="-100" y="0" width="200" height="60" fill="url(#dl-grid)" />
+        <line x1="-100" y1="0" x2="100" y2="0" stroke="rgba(255,255,255,.15)" strokeWidth=".4" />
+        <g transform="translate(-6 -8) rotate(18)" filter="drop-shadow(0 4px 12px rgba(0,0,0,.5))">
+          {wire ? (
+            <path d="M-20-20 L20-20 L25-15 L25 15 L-16 22 L-20 12 Z M-20-20 L0 0 L20-20 M-20 12 L0 0 L25 15" fill="none" stroke="#4d9fff" strokeWidth=".4" />
+          ) : (
+            <>
+              <path d="M-20-20 L20-20 L25-15 L25 15 L-16 22 L-20 12 Z" fill="rgba(77,159,255,.22)" stroke="#4d9fff" strokeWidth=".4" />
+              <path d="M-20-20 L25-15 L25 15 L-16 22 Z" fill="rgba(77,159,255,.10)" stroke="rgba(77,159,255,.35)" strokeWidth=".3" />
+            </>
+          )}
+        </g>
+      </svg>
+      <div className="dcs-viewport__overlay dcs-viewport__overlay--tl">
+        <div className="dcs-viewport__floater">
+          <Button sm icon iconLeft="select" pressed={tool === 'select'} onClick={() => setTool('select')} />
+          <Button sm icon iconLeft="move" pressed={tool === 'move'} onClick={() => setTool('move')} />
+          <Button sm icon iconLeft="rotate" pressed={tool === 'rotate'} onClick={() => setTool('rotate')} />
+          <Button sm icon iconLeft="scale-corners" pressed={tool === 'scale'} onClick={() => setTool('scale')} />
+        </div>
+        <div className="dcs-viewport__floater">
+          <Button sm icon iconLeft="view-wire" pressed={shading === 'wire'} onClick={() => { setShading('wire'); setWire(true); }} />
+          <Button sm icon iconLeft="view-solid" pressed={shading === 'shaded'} onClick={() => { setShading('shaded'); setWire(false); }} />
+          <Button sm icon iconLeft="view-tex" pressed={shading === 'tex'} onClick={() => { setShading('tex'); setWire(false); }} />
+        </div>
+      </div>
+      <div className="dcs-viewport__overlay dcs-viewport__overlay--tr">
+        <span className="dcs-badge dcs-badge--accent">PERSPECTIVE</span>
+        <span className="dcs-badge dcs-badge--soft">F 048 / 240</span>
+      </div>
+      <div className="dcs-viewport__overlay dcs-viewport__overlay--br">
+        <div style={{ fontFamily: 'var(--dcs-font-num)', fontVariantNumeric: 'tabular-nums', fontSize: 10, color: 'rgba(255,255,255,.6)', textAlign: 'right', lineHeight: 1.5 }}>
+          <div>jane_body · 64,201 tri</div>
+          <div style={{ color: 'var(--dcs-accent)' }}>60 fps · 4.1 ms</div>
+        </div>
+      </div>
+      <div className="dcs-viewport__overlay dcs-viewport__overlay--bl">
+        <div className="dcs-viewport__floater">
+          <Button sm icon iconLeft="magnet" pressed />
+          <Button sm icon iconLeft="snap-grid" />
+          <Button sm icon iconLeft="gizmo" pressed />
+        </div>
+      </div>
+    </div>
+  );
+
+  const Outliner = () => (
+    <Tree
+      expanded={new Set(['scene', 'env', 'chars'])}
+      selected="cube"
+      nodes={[{
+        id: 'scene', label: 'Scene_Intro', icon: 'globe', meta: '37', children: [
+          { id: 'env', label: 'Environment', icon: 'folder-open', children: [
+            { id: 'sky', label: 'Sky_4k.hdr', icon: 'image' }, { id: 'sun', label: 'Sun.001', icon: 'light' }, { id: 'fog', label: 'VolumeFog', icon: 'cube' },
+          ] },
+          { id: 'chars', label: 'Characters', icon: 'folder-open', children: [
+            { id: 'cube', label: 'jane_body', icon: 'mesh', meta: '64k' }, { id: 'rig', label: 'jane_rig', icon: 'bone' }, { id: 'mat', label: 'jane_skin', icon: 'palette' },
+          ] },
+          { id: 'cam', label: 'Camera.001', icon: 'camera' },
+        ]
+      }]}
+    />
+  );
+
+  const InspectorView = () => (
+    <Foldouts>
+      <Foldout title="Transform" icon="move" tools={<Button ghost sm icon iconLeft="key" />}>
+        <div className="dcs-props">
+          {[['X', '#ef6b6b', pos.x, 'x'], ['Y', '#4ed18a', pos.y, 'y'], ['Z', '#4d9fff', pos.z, 'z']].map(([k, c, v, key]) => (
+            <div key={k} className="dcs-field">
+              <span className="dcs-field__label" style={{ flex: '0 0 16px', color: c, fontFamily: 'var(--dcs-font-num)', fontSize: 11 }}>{k}</span>
+              <Combo value={v} onChange={nv => setPos(p => ({ ...p, [key]: nv }))} min={-10} max={10} step={0.001} format={n => n.toFixed(3)} />
+            </div>
+          ))}
+        </div>
+      </Foldout>
+      <Foldout title="Material" icon="palette" meta="Lambert.001">
+        <div className="dcs-props">
+          <div className="dcs-field"><span className="dcs-field__label">Albedo</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#4d9fff' }} /><span>#4D9FFF</span></div></div>
+          <div className="dcs-field"><span className="dcs-field__label">Rough</span><Slider value={rough} onChange={setRough} /></div>
+          <div className="dcs-field"><span className="dcs-field__label">Metallic</span><Slider value={metallic} onChange={setMetallic} /></div>
+        </div>
+      </Foldout>
+      <Foldout title="Display" icon="eye">
+        <div className="dcs-props">
+          <div className="dcs-field"><span className="dcs-field__label">Wireframe</span><Switch checked={wire} onChange={setWire} /></div>
+          <div className="dcs-field"><span className="dcs-field__label">Cast shadow</span><Switch checked={shadow} onChange={setShadow} /></div>
+        </div>
+      </Foldout>
+      <Foldout title="Modifiers" icon="bolt" defaultOpen={false} meta="3" />
+    </Foldouts>
+  );
+
+  const LightingView = () => (
+    <Foldouts>
+      <Foldout title="Ambient" icon="globe">
+        <div className="dcs-props">
+          <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#7c8492' }} /><span>#7C8492</span></div></div>
+          <div className="dcs-field"><span className="dcs-field__label">Intensity</span><Slider value={0.4} /></div>
+        </div>
+      </Foldout>
+      <Foldout title="Sun" icon="light">
+        <div className="dcs-props">
+          <div className="dcs-field"><span className="dcs-field__label">Exposure</span><Slider value={0.6} /></div>
+          <div className="dcs-field"><span className="dcs-field__label">Soft shadows</span><Switch checked /></div>
+        </div>
+      </Foldout>
+    </Foldouts>
+  );
+
+  const ConsoleView = () => (
+    <div style={{ padding: 'var(--dcs-s-3) var(--dcs-s-5)', fontFamily: 'var(--dcs-font-mono)', fontSize: 11, lineHeight: 1.7 }}>
+      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-ok)' }}>[ok]</span> Scene cached · 312 MB</div>
+      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-accent)' }}>[info]</span> 4 modifiers evaluated · 4.1 ms</div>
+      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-warn)' }}>[warn]</span> jane_body has 12 n-gons</div>
+      <div style={{ color: 'var(--dcs-text)' }}><span style={{ color: 'var(--dcs-accent)' }}>›</span> <span style={{ width: 6, height: 12, background: 'var(--dcs-accent)', display: 'inline-block', verticalAlign: 'middle', animation: 'dcs-blink 1s steps(1) infinite' }} /></div>
+    </div>
+  );
+
+  const Dopesheet = () => (
+    <div style={{ padding: 8 }}>
+      <div style={{ height: 100, position: 'relative', background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3 }}>
+        {Array.from({ length: 13 }).map((_, i) => (
+          <div key={i} style={{ position: 'absolute', left: `${(i / 12) * 100}%`, top: 0, bottom: 0, width: 1, background: i % 4 === 0 ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)' }} />
+        ))}
+        {[12, 24, 48, 64, 96, 128, 160].map(f => (
+          <div key={f} style={{ position: 'absolute', left: `${(f / 240) * 100}%`, top: '50%', width: 8, height: 8, marginLeft: -4, marginTop: -4, background: 'var(--dcs-accent)', transform: 'rotate(45deg)' }} />
+        ))}
+        <div style={{ position: 'absolute', left: '20%', top: 0, bottom: 0, width: 2, background: 'var(--dcs-accent-hi)' }} />
+      </div>
+    </div>
+  );
+
+  const ProjectList = () => (
+    <div className="dcs-tree" style={{ padding: '4px 0' }}>
+      {[['Assets', 'folder-open'], ['Materials', 'palette'], ['Textures', 'texture'], ['Models', 'mesh'], ['Sounds', 'volume'], ['Scripts', 'cpu']].map(([n, ic], i) => (
+        <div key={n} className="dcs-tree__row" aria-selected={i === 2}>
+          <span style={{ width: 14 }} /><Icon name={ic} className="dcs-tree__icon" /><span className="dcs-tree__label">{n}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  const Placeholder = (label, icon) => (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--dcs-text-mute)' }}>
+      <Icon name={icon} size="xl" /><span style={{ fontSize: 12 }}>{label}</span>
+    </div>
+  );
+
+  const renderContent = (id) => {
+    switch (id) {
+      case 'hier': return <Outliner />;
+      case 'proj': return <ProjectList />;
+      case 'scene': return <div style={{ position: 'relative', height: '100%', minHeight: 200 }}><Viewport /></div>;
+      case 'game': return Placeholder('Game view', 'play');
+      case 'uv': return Placeholder('UV editor', 'uv');
+      case 'console': return <ConsoleView />;
+      case 'animation': return <Dopesheet />;
+      case 'timeline': return Placeholder('Timeline tracks', 'timeline');
+      case 'inspector': return <InspectorView />;
+      case 'lighting': return <LightingView />;
+      default: return null;
+    }
+  };
+
+  const layout = {
+    type: 'split', dir: 'row', sizes: [1, 2.6, 1.2], children: [
+      { type: 'tabs', tabs: ['hier', 'proj'] },
+      { type: 'split', dir: 'col', sizes: [2.4, 1], children: [
+        { type: 'tabs', tabs: ['scene', 'game', 'uv'] },
+        { type: 'tabs', tabs: ['console', 'animation', 'timeline'] },
+      ] },
+      { type: 'tabs', tabs: ['inspector', 'lighting'] },
+    ],
+  };
 
   return (
     <section className="dw-section" id="dock">
       <div className="dw-section__eyebrow">Layout · 03</div>
       <h2>Dock panels</h2>
       <p className="dw-section__lead">
-        Compose panels into a workspace by stacking <code>dcs-dock</code> containers separated by
-        1px line seams. Each dock pane carries a tab strip so multiple views share one slot —
-        Unity-style — with X close affordances on hover. The seams between panes become hot when
-        hovered for drag-resize.
+        A real docking workspace. <strong style={{ color: 'var(--dw-text)' }}>Grab any tab and drag it</strong> —
+        drop on a pane's <em>center</em> to add it as a tab, or on an <em>edge</em> (left / right / top / bottom)
+        to dock a new split. Drag the seams to resize, and the menu bar drops real menus.
       </p>
-
-      <Demo frame="app" inset caption="A full app shell. Click tabs to switch views. Hover a tab to close it. Drag seams to resize.">
-        <div style={{ display: 'flex', flexDirection: 'column', height: 540 }}>
+      <Demo frame="app" inset noDensity caption="Drag tabs to dock · drag seams to resize · click the menus">
+        <div style={{ display: 'flex', flexDirection: 'column', height: 580 }}>
           <MenuBar
             brand={{ icon: 'decius', label: 'modeler' }}
-            items={['File', 'Edit', 'View', 'Mesh', 'Animation', 'Render', 'Window', 'Help']}
-            meta={<>
-              <span>Scene_Intro_v014.dcs</span>
-              <span className="dcs-badge dcs-badge--accent">MODIFIED</span>
-            </>}
+            items={['File', 'Edit', 'View', 'Mesh', 'Render', 'Help']}
+            menus={DOCK_MENUS}
+            onPick={(m, v) => setLast(`${m} › ${v}`)}
+            meta={<><span>Scene_Intro_v014.dcs</span><span className="dcs-badge dcs-badge--accent">MODIFIED</span></>}
           />
-          <div className="dcs-dock" style={{ flex: 1, minHeight: 0 }}>
-            {/* Left dock */}
-            <div style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <DockPane
-                tabs={[
-                  { value: 'hier', label: 'Hierarchy', icon: 'layers' },
-                  { value: 'proj', label: 'Project', icon: 'folder' },
-                ]}
-                value={leftTab}
-                onChange={setLeftTab}
-                tools={<Button ghost sm icon iconLeft="search" />}
-              >
-                {leftTab === 'hier' ? (
-                  <Tree
-                    expanded={new Set(['scene', 'env', 'chars'])}
-                   
-                    selected="cube"
-                   
-                    nodes={[{
-                      id: 'scene', label: 'Scene_Intro', icon: 'globe', meta: '37',
-                      children: [
-                        { id: 'env', label: 'Environment', icon: 'folder-open', children: [
-                          { id: 'sky', label: 'Sky_4k.hdr', icon: 'image' },
-                          { id: 'fog', label: 'VolumeFog', icon: 'cube' },
-                          { id: 'sun', label: 'Sun.001', icon: 'light' },
-                        ]},
-                        { id: 'chars', label: 'Characters', icon: 'folder-open', children: [
-                          { id: 'cube', label: 'jane_body', icon: 'mesh', meta: '64k' },
-                          { id: 'rig', label: 'jane_rig', icon: 'bone' },
-                          { id: 'mat', label: 'jane_skin', icon: 'palette' },
-                        ]},
-                        { id: 'cam', label: 'Camera.001', icon: 'camera' },
-                      ]
-                    }]}
-                  />
-                ) : (
-                  <div className="dcs-tree" style={{ padding: '4px 0' }}>
-                    {[
-                      { name: 'Assets', icon: 'folder-open' },
-                      { name: 'Materials', icon: 'palette' },
-                      { name: 'Textures', icon: 'texture' },
-                      { name: 'Models', icon: 'mesh' },
-                      { name: 'Sounds', icon: 'volume' },
-                      { name: 'Scripts', icon: 'cpu' },
-                    ].map((n, i) => (
-                      <div key={n.name} className="dcs-tree__row" aria-selected={i === 2}>
-                        <span style={{ width: 14 }} />
-                        <Icon name={n.icon} className="dcs-tree__icon" />
-                        <span className="dcs-tree__label">{n.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </DockPane>
-            </div>
-            <div className="dcs-splitter" />
-
-            {/* Center column: viewport + bottom console */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
-              <DockPane
-                tabs={[
-                  { value: 'scene', label: 'Scene', icon: 'cube' },
-                  { value: 'game', label: 'Game', icon: 'play' },
-                  { value: 'uv', label: 'UV Editor', icon: 'uv' },
-                ]}
-                value={centerTab}
-                onChange={setCenterTab}
-                tools={<>
-                  <Button ghost sm icon iconLeft="fit" />
-                  <Button ghost sm icon iconLeft="fullscreen" />
-                </>}
-              >
-                <div className="dcs-viewport">
-                  <svg viewBox="-100 -60 200 120" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-                    <defs>
-                      <pattern id="dock-grid-v2" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="skewX(0) scale(1.5, 0.5)">
-                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth=".25" />
-                      </pattern>
-                    </defs>
-                    <rect x="-100" y="0" width="200" height="60" fill="url(#dock-grid-v2)" />
-                    <line x1="-100" y1="0" x2="100" y2="0" stroke="rgba(255,255,255,.15)" strokeWidth=".4" />
-                    <g transform="translate(-10 -8) rotate(18)" filter="drop-shadow(0 4px 12px rgba(0,0,0,.5))">
-                      {wire ? (
-                        <>
-                          <path d="M-20-20 L20-20 L25-15 L25 15 L-16 22 L-20 12 Z" fill="none" stroke="#4d9fff" strokeWidth=".5"/>
-                          <path d="M-20-20 L25-15 L25 15 L-16 22" fill="none" stroke="#4d9fff" strokeOpacity=".5" strokeWidth=".3"/>
-                          <path d="M-20-20 L0 0 L20-20 M-20 12 L0 0 L25 15" fill="none" stroke="#4d9fff" strokeOpacity=".3" strokeWidth=".2"/>
-                        </>
-                      ) : (
-                        <>
-                          <path d="M-20-20 L20-20 L25-15 L25 15 L-16 22 L-20 12 Z" fill="rgba(77,159,255,.22)" stroke="#4d9fff" strokeWidth=".4" />
-                          <path d="M-20-20 L25-15 L25 15 L-16 22 Z" fill="rgba(77,159,255,.10)" stroke="rgba(77,159,255,.35)" strokeWidth=".3" />
-                        </>
-                      )}
-                    </g>
-                  </svg>
-
-                  {/* Floating tool ribbon — top-left */}
-                  <div className="dcs-viewport__overlay dcs-viewport__overlay--tl">
-                    <div className="dcs-viewport__floater">
-                      <Button sm icon iconLeft="select" pressed={tool === 'select'} onClick={() => setTool('select')} />
-                      <Button sm icon iconLeft="move" pressed={tool === 'move'} onClick={() => setTool('move')} />
-                      <Button sm icon iconLeft="rotate" pressed={tool === 'rotate'} onClick={() => setTool('rotate')} />
-                      <Button sm icon iconLeft="scale-corners" pressed={tool === 'scale'} onClick={() => setTool('scale')} />
-                    </div>
-                    <div className="dcs-viewport__floater">
-                      <Button sm icon iconLeft="view-wire" pressed={shading === 'wire'} onClick={() => { setShading('wire'); setWire(true); }} />
-                      <Button sm icon iconLeft="view-solid" pressed={shading === 'shaded'} onClick={() => { setShading('shaded'); setWire(false); }} />
-                      <Button sm icon iconLeft="view-tex" pressed={shading === 'tex'} onClick={() => { setShading('tex'); setWire(false); }} />
-                      <Button sm icon iconLeft="view-lit" pressed={shading === 'lit'} onClick={() => { setShading('lit'); setWire(false); }} />
-                    </div>
-                  </div>
-
-                  {/* HUD */}
-                  <div className="dcs-viewport__overlay dcs-viewport__overlay--tr">
-                    <span className="dcs-badge dcs-badge--accent">PERSPECTIVE</span>
-                    <span className="dcs-badge dcs-badge--soft">F 048 / 240</span>
-                  </div>
-
-                  {/* Right-side gizmos */}
-                  <div className="dcs-viewport__overlay dcs-viewport__overlay--br">
-                    <div style={{ fontFamily: 'var(--dcs-font-num)', fontVariantNumeric: 'tabular-nums', fontSize: 10, color: 'rgba(255,255,255,.6)', textAlign: 'right', lineHeight: 1.5 }}>
-                      <div>jane_body · 64,201 tri</div>
-                      <div style={{ color: 'var(--dcs-accent)' }}>60 fps · 4.1 ms</div>
-                    </div>
-                  </div>
-
-                  {/* Snap/pivot overlay — bottom-left */}
-                  <div className="dcs-viewport__overlay dcs-viewport__overlay--bl">
-                    <div className="dcs-viewport__floater">
-                      <Button sm icon iconLeft="magnet" pressed />
-                      <Button sm icon iconLeft="snap-grid" />
-                      <Button sm icon iconLeft="gizmo" pressed />
-                    </div>
-                  </div>
-                </div>
-              </DockPane>
-
-              <div className="dcs-splitter" />
-
-              <div style={{ flex: '0 0 130px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <DockPane
-                  tabs={[
-                    { value: 'console', label: 'Console', icon: 'cpu' },
-                    { value: 'animation', label: 'Animation', icon: 'curve' },
-                    { value: 'timeline', label: 'Timeline', icon: 'timeline' },
-                  ]}
-                  value={bottomTab}
-                  onChange={setBottomTab}
-                  tools={<>
-                    <Button ghost sm icon iconLeft="trash" />
-                    <Button ghost sm icon iconLeft="more-h" />
-                  </>}
-                >
-                  {bottomTab === 'console' && (
-                    <div style={{ padding: 'var(--dcs-s-3) var(--dcs-s-5)', fontFamily: 'var(--dcs-font-mono)', fontSize: 11, lineHeight: 1.6 }}>
-                      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-ok)' }}>[ok]</span> Scene cached · 312 MB</div>
-                      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-accent)' }}>[info]</span> 4 modifiers evaluated · 4.1 ms</div>
-                      <div style={{ color: 'var(--dcs-text-mute)' }}><span style={{ color: 'var(--dcs-warn)' }}>[warn]</span> jane_body has 12 n-gons</div>
-                      <div style={{ color: 'var(--dcs-text)' }}>
-                        <span style={{ color: 'var(--dcs-accent)' }}>›</span>{' '}<span style={{ width: 6, height: 12, background: 'var(--dcs-accent)', display: 'inline-block', animation: 'dcs-blink 1s steps(1) infinite', verticalAlign: 'middle' }} />
-                      </div>
-                    </div>
-                  )}
-                  {bottomTab === 'animation' && (
-                    <div style={{ padding: 8 }}>
-                      <div style={{ height: 100, position: 'relative', background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3 }}>
-                        {Array.from({ length: 13 }).map((_, i) => (
-                          <div key={i} style={{ position: 'absolute', left: `${(i / 12) * 100}%`, top: 0, bottom: 0, width: 1, background: i % 4 === 0 ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)' }} />
-                        ))}
-                        {[12, 24, 48, 64, 96, 128, 160].map(f => (
-                          <div key={f} style={{ position: 'absolute', left: `${(f / 240) * 100}%`, top: '50%', width: 8, height: 8, marginLeft: -4, marginTop: -4, background: 'var(--dcs-accent)', transform: 'rotate(45deg)' }} />
-                        ))}
-                        <div style={{ position: 'absolute', left: '20%', top: 0, bottom: 0, width: 2, background: 'var(--dcs-accent-hi)' }} />
-                      </div>
-                    </div>
-                  )}
-                  {bottomTab === 'timeline' && (
-                    <div style={{ padding: 'var(--dcs-s-5)', fontFamily: 'var(--dcs-font-num)', fontVariantNumeric: 'tabular-nums', fontSize: 12, color: 'var(--dcs-text-dim)' }}>
-                      Timeline tracks would render here…
-                    </div>
-                  )}
-                </DockPane>
-              </div>
-            </div>
-
-            <div className="dcs-splitter" />
-
-            {/* Right dock — Inspector with foldouts */}
-            <div style={{ flex: '0 0 260px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <DockPane
-                tabs={[
-                  { value: 'inspector', label: 'Inspector', icon: 'cog' },
-                  { value: 'lighting', label: 'Lighting', icon: 'light' },
-                ]}
-                value={rightTab}
-                onChange={setRightTab}
-                tools={<Button ghost sm icon iconLeft="pin" />}
-              >
-                {rightTab === 'inspector' ? (
-                  <Foldouts>
-                    <Foldout title="Transform" icon="move" tools={<Button ghost sm icon iconLeft="key" />}>
-                      <div className="dcs-props">
-                        {[['X', '#ef6b6b', pos.x, 'x'], ['Y', '#4ed18a', pos.y, 'y'], ['Z', '#4d9fff', pos.z, 'z']].map(([k, c, v, key]) => (
-                          <div key={k} className="dcs-field">
-                            <span className="dcs-field__label" style={{ flex: '0 0 16px', color: c, fontFamily: 'var(--dcs-font-num)', fontVariantNumeric: 'tabular-nums', fontSize: 11 }}>{k}</span>
-                            <Combo value={v} onChange={nv => setPos(p => ({ ...p, [key]: nv }))} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} />
-                          </div>
-                        ))}
-                      </div>
-                    </Foldout>
-                    <Foldout title="Material" icon="palette" meta="Lambert.001">
-                      <div className="dcs-props">
-                        <div className="dcs-field">
-                          <span className="dcs-field__label">Albedo</span>
-                          <div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#4d9fff' }} /><span>#4D9FFF</span></div>
-                        </div>
-                        <div className="dcs-field">
-                          <span className="dcs-field__label">Rough</span>
-                          <Slider value={rough} onChange={setRough} />
-                        </div>
-                        <div className="dcs-field">
-                          <span className="dcs-field__label">Metallic</span>
-                          <Slider value={metallic} onChange={setMetallic} />
-                        </div>
-                      </div>
-                    </Foldout>
-                    <Foldout title="Display" icon="eye">
-                      <div className="dcs-props">
-                        <div className="dcs-field"><span className="dcs-field__label">Wireframe</span><Switch checked={wire} onChange={setWire} /></div>
-                        <div className="dcs-field"><span className="dcs-field__label">Cast shadow</span><Switch checked={shadow} onChange={setShadow} /></div>
-                        <div className="dcs-field"><span className="dcs-field__label">In viewport</span><Switch checked /></div>
-                      </div>
-                    </Foldout>
-                    <Foldout title="Modifiers" icon="bolt" defaultOpen={false} meta="3" />
-                    <Foldout title="Subdivision" icon="subdivide" defaultOpen={false} meta="L2" />
-                    <Foldout title="UV Maps" icon="uv" defaultOpen={false} meta="1" />
-                  </Foldouts>
-                ) : (
-                  <Foldouts>
-                    <Foldout title="Ambient" icon="globe">
-                      <div className="dcs-props">
-                        <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#7c8492' }} /><span>#7C8492</span></div></div>
-                        <div className="dcs-field"><span className="dcs-field__label">Intensity</span><Slider value={0.4} /></div>
-                      </div>
-                    </Foldout>
-                    <Foldout title="Sun" icon="light">
-                      <div className="dcs-props">
-                        <div className="dcs-field"><span className="dcs-field__label">Color</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#fff1d5' }} /><span>#FFF1D5</span></div></div>
-                        <div className="dcs-field"><span className="dcs-field__label">Exposure</span><Slider value={0.6} /></div>
-                        <div className="dcs-field"><span className="dcs-field__label">Soft</span><Switch checked /></div>
-                      </div>
-                    </Foldout>
-                  </Foldouts>
-                )}
-              </DockPane>
-            </div>
+          <DockLayout initial={layout} tabMeta={(id) => TAB_META[id]} renderContent={renderContent} />
+          <div className="dcs-statusbar">
+            <span className="dcs-statusbar__item dcs-statusbar__item--ok"><Icon name="check-circle" size="sm" /> Ready</span>
+            <span className="dcs-statusbar__item">menu: {last}</span>
+            <span className="dcs-statusbar__spacer" />
+            <span className="dcs-statusbar__item">jane_body · 64,201 tri</span>
+            <span className="dcs-statusbar__sep" />
+            <span className="dcs-statusbar__item dcs-statusbar__item--accent">60 fps</span>
           </div>
         </div>
       </Demo>

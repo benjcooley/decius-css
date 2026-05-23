@@ -779,7 +779,8 @@
   position: relative;
 }
 
-.dcs-dock--v > .dcs-splitter {
+.dcs-dock--v > .dcs-splitter,
+.dcs-splitter--h {
   cursor: row-resize;
   flex-basis: 1px;
 }
@@ -796,14 +797,16 @@
   z-index: 2;
 }
 
-.dcs-dock--v > .dcs-splitter::before {
+.dcs-dock--v > .dcs-splitter::before,
+.dcs-splitter--h::before {
   left: 0;
   right: 0;
   top: -3px;
   bottom: -3px;
 }
 
-.dcs-splitter:hover::before {
+.dcs-splitter:hover::before,
+.dcs-splitter--active::before {
   background: var(--dcs-accent);
 }
 
@@ -3062,7 +3065,7 @@
 .dcs-menubar {
   display: flex;
   align-items: stretch;
-  height: var(--dcs-h-sm);
+  height: var(--dcs-h-lg);
   background: var(--dcs-surface-1);
   border-bottom: 1px solid var(--dcs-line);
   padding: 0 var(--dcs-s-3);

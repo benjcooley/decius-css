@@ -1,38 +1,9 @@
 /* sections-overlays.jsx — new components (menus, popovers, toasts) and the
    vanilla decius.js runtime docs. Demos use the real framework classes. */
 const { useState: useStateO, useRef: useRefO, useEffect: useEffectO } = React;
-
-// Outside-click + Esc dismissal scoped to a wrapper ref.
-function useDismiss(ref, open, close) {
-  useEffectO(() => {
-    if (!open) return;
-    const down = (e) => { if (ref.current && !ref.current.contains(e.target)) close(); };
-    const key = (e) => { if (e.key === 'Escape') close(); };
-    document.addEventListener('pointerdown', down);
-    document.addEventListener('keydown', key);
-    return () => { document.removeEventListener('pointerdown', down); document.removeEventListener('keydown', key); };
-  }, [open]);
-}
+// useDismiss + MenuList now live in dcs.jsx (shared with MenuBar/DockLayout).
 
 /* ─────────── Menus ─────────── */
-function MenuList({ items, onPick }) {
-  return items.map((it, i) => it.sep ? <div key={i} className="dcs-menu__sep" /> : (
-    <div
-      key={i}
-      className={`dcs-menu__item${it.danger ? ' dcs-menu__item--danger' : ''}${it.sub ? ' dcs-menu__item--has-sub' : ''}`}
-      onClick={(e) => { if (it.sub) { e.stopPropagation(); return; } onPick && onPick(it.label); }}
-    >
-      {it.check
-        ? <span className="dcs-menu__check"><Icon name="check" size="sm" /></span>
-        : <span className="dcs-menu__icon">{it.icon && <Icon name={it.icon} size="sm" />}</span>}
-      <span className="dcs-menu__label-text">{it.label}</span>
-      {it.shortcut && <span className="dcs-menu__shortcut">{it.shortcut}</span>}
-      {it.sub && <span className="dcs-menu__caret"><Icon name="chevron-right" size="sm" /></span>}
-      {it.sub && <div className="dcs-menu dcs-menu__sub"><MenuList items={it.sub} onPick={onPick} /></div>}
-    </div>
-  ));
-}
-
 const MENUS = {
   File: [
     { label: 'New', icon: 'file', shortcut: '⌘N' },

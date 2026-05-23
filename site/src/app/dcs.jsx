@@ -16,6 +16,194 @@ function useControl(value, onChange) {
   return onChange ? [value, onChange] : [internal, setInternal];
 }
 
+// Outside-click + Esc dismissal, scoped to a wrapper ref.
+function useDismiss(ref, open, close) {
+  useEffect(() => {
+    if (!open) return;
+    const down = (e) => { if (ref.current && !ref.current.contains(e.target)) close(); };
+    const key = (e) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('pointerdown', down);
+    document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('pointerdown', down); document.removeEventListener('keydown', key); };
+  }, [open]);
+}
+
+// Renders the items of a .dcs-menu (icons, shortcuts, checks, danger, separators, submenus).
+function MenuList({ items, onPick }) {
+  return items.map((it, i) => it.sep ? <div key={i} className="dcs-menu__sep" /> : (
+    <div
+      key={i}
+      className={`dcs-menu__item${it.danger ? ' dcs-menu__item--danger' : ''}${it.sub ? ' dcs-menu__item--has-sub' : ''}`}
+      onClick={(e) => { if (it.sub) { e.stopPropagation(); return; } onPick && onPick(it.label); }}
+    >
+      {it.check
+        ? <span className="dcs-menu__check"><Icon name="check" size="sm" /></span>
+        : <span className="dcs-menu__icon">{it.icon && <Icon name={it.icon} size="sm" />}</span>}
+      <span className="dcs-menu__label-text">{it.label}</span>
+      {it.shortcut && <span className="dcs-menu__shortcut">{it.shortcut}</span>}
+      {it.sub && <span className="dcs-menu__caret"><Icon name="chevron-right" size="sm" /></span>}
+      {it.sub && <div className="dcs-menu dcs-menu__sub"><MenuList items={it.sub} onPick={onPick} /></div>}
+    </div>
+  ));
+}
+
+// Drag-resize seam. Calls onDelta(px) incrementally while dragging.
+function Splitter({ horizontal, onDelta }) {
+  const [active, setActive] = useState(false);
+  const onDown = (e) => {
+    e.preventDefault();
+    setActive(true);
+    const axis = horizontal ? 'clientY' : 'clientX';
+    let last = e[axis];
+    const move = (ev) => { const d = ev[axis] - last; last = ev[axis]; if (d) onDelta(d); };
+    const up = () => { setActive(false); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return <div className={`dcs-splitter${horizontal ? ' dcs-splitter--h' : ''}${active ? ' dcs-splitter--active' : ''}`} onPointerDown={onDown} />;
+}
+
+/* ─────────── Docking layout (real grab-and-dock) ───────────
+   Binary-tree layout of split/tabs nodes. Tabs drag between groups; dropping
+   on a group's center adds a tab, dropping on an edge splits that group
+   (left/right → row, top/bottom → column). Splitters resize. */
+let DOCK_ID = 0;
+function normLayout(node) {
+  const id = `dk${++DOCK_ID}`;
+  if (node.type === 'tabs') return { type: 'tabs', id, tabs: [...node.tabs], active: node.active || node.tabs[0] };
+  return { type: 'split', id, dir: node.dir, sizes: node.sizes ? [...node.sizes] : node.children.map(() => 1), children: node.children.map(normLayout) };
+}
+function setActiveInTree(node, gid, tab) {
+  if (node.type === 'tabs') return node.id === gid ? { ...node, active: tab } : node;
+  return { ...node, children: node.children.map(c => setActiveInTree(c, gid, tab)) };
+}
+function removeTabFromTree(node, tab) {
+  if (node.type === 'tabs') {
+    if (!node.tabs.includes(tab)) return node;
+    const tabs = node.tabs.filter(t => t !== tab);
+    if (!tabs.length) return null;
+    return { ...node, tabs, active: node.active === tab ? tabs[0] : node.active };
+  }
+  const kids = [], sizes = [];
+  node.children.forEach((c, i) => { const r = removeTabFromTree(c, tab); if (r !== null) { kids.push(r); sizes.push(node.sizes[i]); } });
+  if (kids.length === 0) return null;
+  if (kids.length === 1) return kids[0];
+  return { ...node, children: kids, sizes };
+}
+function addTabToTree(node, gid, tab, zone) {
+  if (node.type === 'tabs') {
+    if (node.id !== gid) return node;
+    if (zone === 'center') return { ...node, tabs: [...node.tabs, tab], active: tab };
+    const leaf = normLayout({ type: 'tabs', tabs: [tab] });
+    const dir = (zone === 'left' || zone === 'right') ? 'row' : 'col';
+    const before = zone === 'left' || zone === 'top';
+    return { type: 'split', id: `dk${++DOCK_ID}`, dir, sizes: [1, 1], children: before ? [leaf, node] : [node, leaf] };
+  }
+  return { ...node, children: node.children.map(c => addTabToTree(c, gid, tab, zone)) };
+}
+function resizeSplit(node, splitId, i, dpx, total) {
+  if (node.type !== 'split') return node;
+  if (node.id === splitId) {
+    const sizes = [...node.sizes];
+    const sum = sizes.reduce((a, b) => a + b, 0);
+    const dw = dpx * (sum / Math.max(1, total));
+    const min = sum * 0.07;
+    let a = sizes[i] + dw, b = sizes[i + 1] - dw;
+    if (a < min) { b -= (min - a); a = min; }
+    if (b < min) { a -= (min - b); b = min; }
+    sizes[i] = a; sizes[i + 1] = b;
+    return { ...node, sizes };
+  }
+  return { ...node, children: node.children.map(c => resizeSplit(c, splitId, i, dpx, total)) };
+}
+function dockZone(e, rect) {
+  const x = (e.clientX - rect.left) / rect.width, y = (e.clientY - rect.top) / rect.height;
+  const m = 0.3;
+  if (y < m && y <= x && y <= 1 - x) return 'top';
+  if (y > 1 - m && (1 - y) <= x && (1 - y) <= 1 - x) return 'bottom';
+  if (x < m) return 'left';
+  if (x > 1 - m) return 'right';
+  return 'center';
+}
+const ZONE_BOX = {
+  center: { inset: 6 },
+  left: { left: 0, top: 0, bottom: 0, width: '50%' },
+  right: { right: 0, top: 0, bottom: 0, width: '50%' },
+  top: { left: 0, right: 0, top: 0, height: '50%' },
+  bottom: { left: 0, right: 0, bottom: 0, height: '50%' },
+};
+
+function DockLayout({ initial, tabMeta, renderContent }) {
+  const [root, setRoot] = useState(() => normLayout(initial));
+  const [hover, setHover] = useState(null); // { gid, zone }
+  const drag = useRef(null);
+
+  const activate = (gid, tab) => setRoot(r => setActiveInTree(r, gid, tab));
+  const closeTab = (tab) => setRoot(r => removeTabFromTree(r, tab) || r);
+  const onDrop = (gid) => {
+    const d = drag.current, h = hover;
+    drag.current = null; setHover(null);
+    if (!d || !h || h.gid !== gid) return;
+    if (d.fromId === gid && (h.zone === 'center' || d.count <= 1)) return;
+    let t = removeTabFromTree(root, d.tab);
+    if (t) setRoot(addTabToTree(t, gid, d.tab, h.zone));
+  };
+
+  function Group({ node }) {
+    const ref = useRef(null);
+    const meta = tabMeta;
+    return (
+      <div className="dcs-dockpane" ref={ref}
+        style={{ position: 'relative', flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+        onDragOver={(e) => { if (!drag.current) return; e.preventDefault(); setHover({ gid: node.id, zone: dockZone(e, ref.current.getBoundingClientRect()) }); }}
+        onDrop={(e) => { e.preventDefault(); onDrop(node.id); }}>
+        <div className="dcs-dockpane__tabs">
+          {node.tabs.map(tab => (
+            <div key={tab} className="dcs-dockpane__tab" aria-selected={node.active === tab}
+              draggable
+              onDragStart={(e) => { drag.current = { tab, fromId: node.id, count: node.tabs.length }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', tab); }}
+              onDragEnd={() => { drag.current = null; setHover(null); }}
+              onClick={() => activate(node.id, tab)}>
+              {meta(tab).icon && <Icon name={meta(tab).icon} size="sm" />}
+              <span>{meta(tab).label}</span>
+              <div className="dcs-dockpane__tab-close" onClick={(e) => { e.stopPropagation(); closeTab(tab); }}><Icon name="close" size="sm" /></div>
+            </div>
+          ))}
+        </div>
+        <div className="dcs-dockpane__body" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          {renderContent(node.active)}
+        </div>
+        {hover && hover.gid === node.id && (
+          <div style={{ position: 'absolute', background: 'var(--dcs-accent-haze)', border: '1px solid var(--dcs-accent)', borderRadius: 3, pointerEvents: 'none', zIndex: 6, ...ZONE_BOX[hover.zone] }} />
+        )}
+      </div>
+    );
+  }
+
+  function Node({ node }) {
+    if (node.type === 'tabs') return <Group node={node} />;
+    const ref = useRef(null);
+    return (
+      <div ref={ref} style={{ display: 'flex', flexDirection: node.dir === 'row' ? 'row' : 'column', flex: 1, minWidth: 0, minHeight: 0 }}>
+        {node.children.map((c, i) => (
+          <React.Fragment key={c.id}>
+            <div style={{ flex: `${node.sizes[i]} 1 0`, display: 'flex', minWidth: 0, minHeight: 0 }}><Node node={c} /></div>
+            {i < node.children.length - 1 && (
+              <Splitter horizontal={node.dir === 'col'} onDelta={(d) => {
+                const el = ref.current;
+                resize(node.id, i, d, node.dir === 'row' ? el.clientWidth : el.clientHeight);
+              }} />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+  const resize = (splitId, i, dpx, total) => setRoot(r => resizeSplit(r, splitId, i, dpx, total));
+
+  return <div className="dcs-dock" style={{ flex: 1, minWidth: 0, minHeight: 0 }}><Node node={root} /></div>;
+}
+
 /* ─────────── Panel ─────────── */
 function Panel({ title, icon, tools, footer, raised, flat, bordered, closeable, onClose, headerActive, pad, children, style, className = '' }) {
   const [closed, setClosed] = useState(false);
@@ -527,18 +715,37 @@ function DockPane({ tabs, value, onChange, onClose, tools, children }) {
 }
 
 /* ─────────── MenuBar ─────────── */
-function MenuBar({ brand, items, meta }) {
+function MenuBar({ brand, items, menus, meta, onPick }) {
+  const [open, setOpen] = useState(null);
+  const ref = useRef(null);
+  useDismiss(ref, open !== null, () => setOpen(null));
   return (
-    <div className="dcs-menubar">
+    <div className="dcs-menubar" ref={ref}>
       {brand && (
         <div className="dcs-menubar__brand">
           {brand.icon && <Icon name={brand.icon} />}
           <span>{brand.label}</span>
         </div>
       )}
-      {items && items.map(m => (
-        <button key={m} className="dcs-menubar__item">{m}</button>
-      ))}
+      {items && items.map(m => {
+        const def = menus && menus[m];
+        return (
+          <div key={m} style={{ position: 'relative', display: 'flex' }}>
+            <button
+              className="dcs-menubar__item"
+              aria-expanded={open === m}
+              style={open === m ? { background: 'var(--dcs-surface-2)', color: 'var(--dcs-text)' } : null}
+              onClick={() => def && setOpen(o => (o === m ? null : m))}
+              onMouseEnter={() => def && setOpen(o => (o !== null ? m : o))}
+            >{m}</button>
+            {def && open === m && (
+              <div className="dcs-menu" style={{ position: 'absolute', top: '100%', left: 0, marginTop: 1 }}>
+                <MenuList items={def} onPick={(v) => { onPick && onPick(m, v); setOpen(null); }} />
+              </div>
+            )}
+          </div>
+        );
+      })}
       <div className="dcs-menubar__spacer" />
       {meta && <div className="dcs-menubar__meta">{meta}</div>}
     </div>
@@ -600,4 +807,5 @@ Object.assign(window, {
   Panel, SubPanel, Foldout, Foldouts, Button, ButtonGroup, Slider, Fader, Knob, Combo,
   Check, Switch, Tabs, Toolbar, ToolbarSep, Tree, Swatch, DockPane, MenuBar,
   Card, CardGrid, CardList,
+  useDismiss, MenuList, Splitter, DockLayout,
 });
