@@ -67,9 +67,9 @@ const NAV = [
   ]},
 ];
 
-function Sidebar({ active, onJump }) {
+function Sidebar({ active, onJump, open }) {
   return (
-    <aside className="dw-sidebar">
+    <aside className={`dw-sidebar${open ? ' dw-sidebar--open' : ''}`}>
       {NAV.map(group => (
         <div key={group.group}>
           <div className="dw-sidebar__group">{group.group}</div>
@@ -86,15 +86,16 @@ function Sidebar({ active, onJump }) {
   );
 }
 
-function TopBar() {
+function TopBar({ onMenu }) {
   return (
     <header className="dw-top">
+      <button className="dw-hamburger" onClick={onMenu} aria-label="Toggle navigation"><Icon name="menu" /></button>
       <a href="#top" className="dw-brand">
         <span className="dw-brand__mark">
           <Icon name="decius" size="lg" />
         </span>
         <span>decius<span style={{ color: 'var(--dw-accent-lo)' }}>.css</span></span>
-        <span className="dw-brand__version">v0.4.0 Mus</span>
+        <span className="dw-brand__version">v0.5.0 Mus</span>
       </a>
       <nav className="dw-nav">
         <a href="#install" className="active">Docs</a>
@@ -191,6 +192,7 @@ function Tweaks() {
 
 function App() {
   const [active, setActive] = useStateApp('top');
+  const [navOpen, setNavOpen] = useStateApp(false);
   useEffectApp(() => {
     // Sync hash → active
     const sync = () => {
@@ -218,6 +220,7 @@ function App() {
 
   const jump = (id) => {
     setActive(id);
+    setNavOpen(false);   // close the mobile drawer on navigate
     const el = document.getElementById(id);
     if (el) {
       const y = el.getBoundingClientRect().top + window.scrollY - 72;
@@ -228,8 +231,9 @@ function App() {
 
   return (
     <div className="dw-page">
-      <TopBar />
-      <Sidebar active={active} onJump={jump} />
+      <TopBar onMenu={() => setNavOpen(o => !o)} />
+      <Sidebar active={active} onJump={jump} open={navOpen} />
+      {navOpen && <div className="dw-scrim" onClick={() => setNavOpen(false)} />}
       <main className="dw-main">
         <SectionHero />
         <SectionWhy />
@@ -289,7 +293,7 @@ function App() {
             <span className="dw-brand__mark" style={{ width: 24, height: 24 }}><Icon name="decius" /></span>
             decius.css
           </span>
-          <span>v0.4.0 "Mus" · MIT</span>
+          <span>v0.5.0 "Mus" · MIT</span>
           <span style={{ flex: 1 }} />
           <a href="#install">Install</a>
           <a href="#colors">Tokens</a>

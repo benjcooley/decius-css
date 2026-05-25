@@ -144,3 +144,47 @@
   max-width: 64ch;
   line-height: 1.55;
 }
+
+/* Hamburger (mobile only) toggles the sidebar drawer; scrim dims behind it. */
+.dw-hamburger {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 34px; height: 34px; margin-left: -6px;
+  background: transparent; border: 1px solid transparent; border-radius: 8px;
+  color: var(--dw-text-dim); cursor: pointer;
+}
+.dw-hamburger:hover { background: var(--dw-bg-soft); color: var(--dw-text); }
+.dw-scrim { display: none; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 860px) {
+  .dw-page { grid-template-columns: 1fr; }
+  .dw-top { gap: 10px; padding: 0 14px; }
+  .dw-hamburger { display: inline-flex; }
+  .dw-nav { display: none; }
+  .dw-brand__version { display: none; }
+
+  /* Sidebar becomes an off-canvas drawer. */
+  .dw-sidebar {
+    position: fixed; top: 56px; left: 0; bottom: 0;
+    width: 272px; max-height: none; z-index: 45;
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    box-shadow: 0 16px 48px rgba(16, 24, 40, .28);
+  }
+  .dw-sidebar--open { transform: none; }
+  .dw-scrim {
+    display: block; position: fixed; inset: 56px 0 0 0;
+    background: rgba(16, 22, 34, .42); z-index: 44;
+  }
+
+  .dw-main { padding: 28px 18px 80px; }
+  .dw-section { margin-bottom: 56px; }
+  .dw-section__lead { font-size: 16px; }
+  /* (Demo horizontal-scroll lives in _02-cards.scss so it lands after the
+     base .dw-demo overflow:hidden and actually wins.) */
+}
+
+@media (max-width: 560px) {
+  .dw-main h2 { font-size: 24px; }
+}

@@ -1,4 +1,4 @@
-/*! decius-css v0.4.1 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.5.0 | MIT License | https://github.com/benjcooley/decius-css */
 @charset "UTF-8";
 /* ============================================================
    decius-web.css — web extensions for the decius docs site
@@ -121,6 +121,51 @@ pre {
   line-height: 1.6;
   margin: 0;
   border: 1px solid #1c2230;
+}
+
+/* Code block wrapper + copy button */
+.dw-code {
+  position: relative;
+}
+
+.dw-code + .dw-code {
+  margin-top: 10px;
+} /* gap between back-to-back code blocks */
+.dw-code__copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 9px;
+  font-family: var(--dw-font);
+  font-size: 11px;
+  font-weight: 500;
+  color: #b7bdca;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.dw-code:hover .dw-code__copy,
+.dw-code__copy:focus-visible {
+  opacity: 1;
+}
+
+.dw-code__copy:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.dw-code__copy svg {
+  width: 13px;
+  height: 13px;
 }
 
 pre .tk-c {
@@ -359,6 +404,88 @@ hr {
   line-height: 1.55;
 }
 
+/* Hamburger (mobile only) toggles the sidebar drawer; scrim dims behind it. */
+.dw-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-left: -6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--dw-text-dim);
+  cursor: pointer;
+}
+
+.dw-hamburger:hover {
+  background: var(--dw-bg-soft);
+  color: var(--dw-text);
+}
+
+.dw-scrim {
+  display: none;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 860px) {
+  .dw-page {
+    grid-template-columns: 1fr;
+  }
+  .dw-top {
+    gap: 10px;
+    padding: 0 14px;
+  }
+  .dw-hamburger {
+    display: inline-flex;
+  }
+  .dw-nav {
+    display: none;
+  }
+  .dw-brand__version {
+    display: none;
+  }
+  /* Sidebar becomes an off-canvas drawer. */
+  .dw-sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 272px;
+    max-height: none;
+    z-index: 45;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 16px 48px rgba(16, 24, 40, 0.28);
+  }
+  .dw-sidebar--open {
+    transform: none;
+  }
+  .dw-scrim {
+    display: block;
+    position: fixed;
+    inset: 56px 0 0 0;
+    background: rgba(16, 22, 34, 0.42);
+    z-index: 44;
+  }
+  .dw-main {
+    padding: 28px 18px 80px;
+  }
+  .dw-section {
+    margin-bottom: 56px;
+  }
+  .dw-section__lead {
+    font-size: 16px;
+  }
+  /* (Demo horizontal-scroll lives in _02-cards.scss so it lands after the
+     base .dw-demo overflow:hidden and actually wins.) */
+}
+@media (max-width: 560px) {
+  .dw-main h2 {
+    font-size: 24px;
+  }
+}
 /* ---------- Cards ---------- */
 .dw-card {
   background: var(--dw-bg);
@@ -415,6 +542,31 @@ hr {
   padding: 0;
 }
 
+/* On small screens, let demos scroll horizontally rather than collapse/clip.
+   Must sit AFTER the base `overflow: hidden` above so it wins. Demos that can
+   shrink to fit (e.g. the node graph) simply do; complex demos hold their
+   layout via the Demo `minw` prop / inline min-width and scroll. An
+   always-visible scrollbar makes the affordance obvious (overlay scrollbars
+   otherwise stay hidden until you scroll). */
+@media (max-width: 860px) {
+  .dw-demo {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dw-demo::-webkit-scrollbar {
+    height: 10px;
+  }
+  .dw-demo::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .dw-demo::-webkit-scrollbar-thumb {
+    background: var(--dw-text-mute);
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+}
 .dw-demo__caption {
   margin-top: 10px;
   font-size: 12px;
@@ -564,6 +716,9 @@ hr {
   background: var(--dw-accent);
 }
 
+.dw-hero > * {
+  min-width: 0;
+} /* let columns shrink so wide deck/text never force page overflow */
 .dw-hero h1 {
   max-width: 18ch;
 }
@@ -581,6 +736,7 @@ hr {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap; /* wrap to a second row rather than cram/overflow */
 }
 
 .dw-cta {
@@ -618,6 +774,27 @@ hr {
   background: var(--dw-bg-soft);
 }
 
+/* Narrow / sidebar-present widths: stack the hero CTAs as full-width buttons
+   instead of a cramped, wrapping row. Kicks in well before phone widths
+   because the sidebar eats horizontal room. The MIT pill stays a small chip,
+   and the verbose download sub-label drops. */
+@media (max-width: 1000px) {
+  .dw-hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .dw-hero__actions .dw-cta {
+    width: 100%;
+    justify-content: center;
+  }
+  .dw-hero__actions .dw-pill {
+    align-self: flex-start;
+  }
+  .dw-cta__sub {
+    display: none;
+  }
+}
 /* Featured stage — large dark embed */
 .dw-stage {
   background: var(--dcs-bg-app, #1f222a);

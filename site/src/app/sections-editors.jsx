@@ -478,7 +478,7 @@ function SectionColorPicker() {
         that appears next to swatch buttons; tight chip widgets for inspectors and palette wells.
       </p>
 
-      <Demo frame="app" caption="HSV wheel — outer ring for hue, inner triangle for saturation/value">
+      <Demo frame="app" minw={640} caption="HSV wheel — outer ring for hue, inner triangle for saturation/value">
         <div className="dcs-row" style={{ gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <Panel title="Material ▸ HSV" icon="palette" pad="sm">
             <ColorWheel size={240} />
@@ -489,7 +489,7 @@ function SectionColorPicker() {
         </div>
       </Demo>
 
-      <Demo frame="app" caption="Large embedded — for material / shader panels">
+      <Demo frame="app" minw={620} caption="Large embedded — for material / shader panels">
         <div className="dcs-row" style={{ gap: 16, alignItems: 'flex-start' }}>
           <Panel title="Material · Lambert" icon="palette">
             <ColorPicker />
@@ -508,7 +508,7 @@ function SectionColorPicker() {
         </div>
       </Demo>
 
-      <Demo frame="app" caption="Swatch button → popup">
+      <Demo frame="app" minw={520} caption="Swatch button → popup">
         <div className="dcs-col" style={{ gap: 10, position: 'relative', paddingBottom: open ? 360 : 0 }}>
           <div className="dcs-row" style={{ gap: 12 }}>
             <div className="dcs-field" style={{ minWidth: 0 }}>
@@ -543,7 +543,7 @@ function SectionColorPicker() {
         </div>
       </Demo>
 
-      <Demo frame="app" caption="Channel widgets — every inspector control shares one row height, so a textbox, value editor, color chip, dropdown, toggle/checkbox and a multiple-choice group all stack with even prompt → widget metrics.">
+      <Demo frame="app" minw={540} caption="Channel widgets — every inspector control shares one row height, so a textbox, value editor, color chip, dropdown, toggle/checkbox and a multiple-choice group all stack with even prompt → widget metrics.">
         <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap', paddingBottom: 260 }}>
           {/* Stacked in an inspector — every row is the same height (var(--dcs-h-in)):
               prompt on the left, widget on the right. They "just stack" uniformly. */}
@@ -554,7 +554,11 @@ function SectionColorPicker() {
               <div className="dcs-field"><span className="dcs-field__label">Base</span><ColorField value="#4d9fff" /></div>
               <div className="dcs-field"><span className="dcs-field__label">Rim</span><ColorField value="#ff7ab8" /></div>
               <div className="dcs-field"><span className="dcs-field__label">Blend</span>
-                <select className="dcs-select"><option>Normal</option><option>Add</option><option>Multiply</option><option>Screen</option></select>
+                <Select value="normal" options={[
+                  { value: 'normal', label: 'Normal' }, { value: 'add', label: 'Add' },
+                  { value: 'mul', label: 'Multiply' }, { value: 'screen', label: 'Screen' },
+                  { value: 'overlay', label: 'Overlay' }, { value: 'sub', label: 'Subtract' },
+                ]} />
               </div>
               <div className="dcs-field"><span className="dcs-field__label">Shading</span>
                 <ButtonGroup value="pbr" options={[{ value: 'flat', label: 'Flat' }, { value: 'pbr', label: 'PBR' }, { value: 'toon', label: 'Toon' }]} />
@@ -572,11 +576,13 @@ function SectionColorPicker() {
             </div>
             <div style={{ fontSize: 12, color: 'var(--dcs-text-dim)', lineHeight: 1.6, maxWidth: 220 }}>
               Each row is one channel widget at a uniform height —
-              <strong style={{ color: 'var(--dw-text)' }}> textbox, value editor, color chip, dropdown, toggle / checkbox</strong>,
+              <strong style={{ color: 'var(--dw-text)' }}> textbox, value editor, color chip, enum dropdown, toggle / checkbox</strong>,
               and a <strong style={{ color: 'var(--dw-text)' }}>multiple-choice</strong> group — so they line up when stacked.
+              The <strong style={{ color: 'var(--dw-text)' }}>Blend</strong> enum opens a popover list (the full form);
+              the <strong style={{ color: 'var(--dw-text)' }}>Shading</strong> group is the same kind of choice as inline buttons —
+              the shorthand for when the options fit.
               The color chip <strong style={{ color: 'var(--dw-text)' }}>scrubs</strong> on drag
-              (←→ hue, ↕ value, Ctrl saturation); its hex is a real field you can
-              <strong style={{ color: 'var(--dw-text)' }}> copy &amp; paste</strong>, and the chevron opens the full picker.
+              (←→ hue, ↕ value, Ctrl saturation); its hex is copy/pasteable, and the chevron opens the full picker.
             </div>
           </div>
         </div>
@@ -1109,7 +1115,7 @@ function SectionTexture() {
         A grid browser with kind/resolution badges, a sidebar of categories, and an inspector for
         the active asset. Tiles use a square aspect with a 1px line keyline.
       </p>
-      <Demo frame="app" inset>
+      <Demo frame="app" inset minw={640}>
         <Panel title="Asset browser · /work/intro/textures" icon="texture" pad={0}
                tools={<><Button ghost sm icon iconLeft="search" /><Button ghost sm icon iconLeft="grid" pressed /><Button ghost sm icon iconLeft="menu" /></>}>
           <div style={{ display: 'flex', minHeight: 360 }}>

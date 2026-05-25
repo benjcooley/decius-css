@@ -205,7 +205,7 @@ function SectionDock() {
           </div>
         </div>
       </div>
-      <Demo frame="app" inset noDensity caption="Drag tabs to dock · drag seams to resize · click the menus">
+      <Demo frame="app" inset noDensity minw={760} caption="Drag tabs to dock · drag seams to resize · click the menus">
         <div style={{ display: 'flex', flexDirection: 'column', height: 470 }}>
           <MenuBar
             brand={{ icon: 'decius', label: 'workspace' }}

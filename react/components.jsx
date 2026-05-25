@@ -403,6 +403,60 @@ function ButtonGroup({ value, onChange, options }) {
   );
 }
 
+/* Enum dropdown — the full "choose one of N" selector for when the options
+   won't fit as a segmented button-group. Trigger styled like a select; the
+   option list is a .dcs-menu popover (fixed, so it never grows a panel's
+   scroll), with the current value checked. options: ['a',…] or
+   [{value,label,icon}]. */
+function Select({ value, onChange, options = [], placeholder = 'Select…', width }) {
+  const [cur, set] = useControl(value, onChange);
+  const [open, setOpen] = useState(false);
+  const [pop, setPop] = useState(null);
+  const ref = useRef(null);
+  useDismiss(ref, open, () => setOpen(false));
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); };
+  }, [open]);
+  const opts = options.map(o => (typeof o === 'string' ? { value: o, label: o } : o));
+  const sel = opts.find(o => o.value === cur);
+  const toggle = () => {
+    if (open) { setOpen(false); return; }
+    const r = ref.current.getBoundingClientRect();
+    const ph = Math.min(opts.length * 28 + 8, 280);
+    let top = r.bottom + 2; if (top + ph > window.innerHeight) top = Math.max(8, r.top - ph - 2);
+    setPop({ top, left: r.left, width: r.width }); setOpen(true);
+  };
+  const pick = (o) => { set(o.value); setOpen(false); };
+  return (
+    <div ref={ref} className={`dcs-select dcs-select--btn${open ? ' dcs-select--open' : ''}`}
+      role="combobox" aria-expanded={open} tabIndex={0}
+      style={width ? { width } : undefined} onClick={toggle}>
+      {sel && sel.icon && <Icon name={sel.icon} size="sm" />}
+      <span className="dcs-select__label">{sel ? sel.label : placeholder}</span>
+      <Icon className="dcs-select__caret" name="chevron-down" size="sm" />
+      {open && pop && (
+        <div className="dcs-menu" onClick={(e) => e.stopPropagation()}
+          style={{ top: pop.top, left: pop.left, minWidth: pop.width }}>
+          {opts.map(o => (
+            <div key={o.value} role="option" aria-selected={o.value === cur}
+              className={`dcs-menu__item${o.value === cur ? ' dcs-menu__item--active' : ''}`}
+              onClick={() => pick(o)}>
+              {o.icon
+                ? <span className="dcs-menu__icon"><Icon name={o.icon} size="sm" /></span>
+                : <span className="dcs-menu__check">{o.value === cur && <Icon name="check" size="sm" />}</span>}
+              <span className="dcs-menu__label-text">{o.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─────────── Pointer-drag helper (internal: sliders/faders/knobs) ─────────── */
 function usePointerDrag(onDrag, opts = {}) {
   const ref = useRef({ active: false, startX: 0, startY: 0, startVal: 0 });
@@ -1052,7 +1106,7 @@ function CardList({ children, style }) {
 
 Object.assign(window, {
   Panel, SubPanel, Foldout, Foldouts, Button, ButtonGroup, Slider, Fader, Knob, Combo,
-  Check, Switch, Tabs, Toolbar, ToolbarSep, Tree, treeMove, treeInsert, Swatch, DockPane, MenuBar,
+  Check, Switch, Select, Tabs, Toolbar, ToolbarSep, Tree, treeMove, treeInsert, Swatch, DockPane, MenuBar,
   Card, CardGrid, CardList,
   useDismiss, MenuList, Splitter, DockLayout,
   DndProvider, DndContext, useDrag, useDrop, useDndPayload, Draggable, DropZone,

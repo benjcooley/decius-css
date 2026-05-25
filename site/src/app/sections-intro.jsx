@@ -6,8 +6,37 @@ const { useState: useStateH, useEffect: useEffectH } = React;
 function HeroDeck() {
   // Animated little knob array that fills out the hero — alive but not noisy
   const [t, setT] = useStateH(0);
+  const [sweepX, setSweepX] = useStateH(null);   // sweep position, or null between notes
   useEffectH(() => {
-    const id = setInterval(() => setT(v => v + 0.02), 50);
+    // 60fps tick: knobs/wave drift continuously; the sweep only fires when a
+    // "note" plays. A little sequencer fires notes in musical bursts — a few
+    // pulses, a rest, a run of 3–4, a rest — like a real pattern.
+    const STEP = 460, SWEEP = 400;   // ms per sequencer step / per sweep pass
+    const genPhrase = () => {
+      const out = [];
+      const bursts = 2 + Math.floor(Math.random() * 3);          // 2–4 bursts
+      for (let b = 0; b < bursts; b++) {
+        const on = Math.random() < 0.62 ? 1 : 2 + Math.floor(Math.random() * 2);  // mostly 1, sometimes 2–3
+        for (let i = on; i > 0; i--) out.push(true);
+        for (let i = 4 + Math.floor(Math.random() * 9); i > 0; i--) out.push(false);  // 4–12 rests
+      }
+      return out;
+    };
+    let phrase = genPhrase(), pi = 0, nextStep = performance.now(), noteStart = null;
+    const id = setInterval(() => {
+      const now = performance.now();
+      setT(v => v + 0.0064);
+      if (now >= nextStep) {
+        if (pi >= phrase.length) { phrase = genPhrase(); pi = 0; }
+        if (phrase[pi++]) noteStart = now;     // a note hits → trigger one pass
+        nextStep = now + STEP;
+      }
+      if (noteStart !== null) {
+        const prog = (now - noteStart) / SWEEP;
+        if (prog >= 1) { noteStart = null; setSweepX(null); }
+        else setSweepX(prog * 610 - 70);       // -70 (off-left) → 540 (off-right)
+      }
+    }, 16);
     return () => clearInterval(id);
   }, []);
 
@@ -32,7 +61,8 @@ function HeroDeck() {
           {/* Left: viewport-y card with knob rack */}
           <Panel title="Filter Bank ▸ Lowpass" icon="filter-lp" headerActive
                  tools={<><Button ghost sm icon iconLeft="bolt" /><Button ghost sm icon iconLeft="more-h" /></>}>
-            <div style={{ display: 'flex', justifyContent: 'space-around', padding: '14px 6px 18px', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 6px 16px', gap: 8, flexShrink: 0 }}>
               <Knob value={ring(0, 0)}     size={56} label="CUT"   format={v => `${Math.round(v * 22050)}`} />
               <Knob value={ring(1, 1.2)}   size={56} label="RES"   format={v => `${(v*100).toFixed(0)}%`} />
               <Knob value={ring(2, 0.4)}   size={56} label="DRIVE" format={v => `${(v*24).toFixed(1)}`} />
@@ -40,7 +70,15 @@ function HeroDeck() {
               <Knob value={ring(4, 1.7)}   size={56} label="LFO"   bipolar format={v => `${((v-0.5)*100).toFixed(0)}`} />
             </div>
 
-            <div style={{ height: 84, marginTop: 6, position: 'relative' }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', flexShrink: 0 }}>
+              <ButtonGroup value="lp" options={[{ value: 'lp', label: 'LP' }, { value: 'hp', label: 'HP' }, { value: 'bp', label: 'BP' }, { value: 'nt', label: 'Nt' }]} />
+              <ButtonGroup value="24" options={[{ value: '12', label: '12' }, { value: '24', label: '24' }]} />
+              <span style={{ flex: 1 }} />
+              <Switch checked />
+              <span style={{ fontSize: 10, color: 'var(--dcs-text-mute)', letterSpacing: '.06em' }}>KEY&nbsp;TRK</span>
+            </div>
+
+            <div style={{ flex: 2, minHeight: 78, position: 'relative' }}>
               <svg viewBox="0 0 400 80" preserveAspectRatio="none" style={{ width: '100%', height: '100%', background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3 }}>
                 <defs>
                   <linearGradient id="hero-fill" x1="0" x2="0" y1="0" y2="1">
@@ -67,6 +105,95 @@ function HeroDeck() {
                 })()}
               </svg>
               <div style={{ position: 'absolute', top: 6, left: 8, fontFamily: 'var(--dcs-font-mono)', fontSize: 9, color: 'var(--dcs-text-mute)' }}>FREQ RESP</div>
+            </div>
+
+            {/* Oscilloscope — flexes to fill whatever height the panel has left,
+                so the column never shows dead space against the taller side. */}
+            <div style={{ flex: 3, minHeight: 56, marginTop: 8, position: 'relative' }}>
+              <svg viewBox="0 0 400 100" preserveAspectRatio="none" style={{ width: '100%', height: '100%', background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3 }}>
+                {(() => {
+                  const amp = 16 + 22 * ring(2, 0.4);   // driven by DRIVE
+                  let wave = 'M 0 50 ';
+                  for (let x = 0; x <= 400; x += 3) {
+                    const ph = (x / 400) * Math.PI * 6;
+                    const y = 50 + Math.sin(ph + t) * amp + Math.sin(ph * 2.4 + t * 1.6) * (amp * 0.32);
+                    wave += `L ${x} ${y.toFixed(1)} `;
+                  }
+                  let grid = '';
+                  for (let x = 0; x <= 400; x += 50) grid += `M ${x} 0 L ${x} 100 `;
+                  [25, 50, 75].forEach(y => { grid += `M 0 ${y} L 400 ${y} `; });
+                  // Vital-style playback sweep: a soft-edged head with a long
+                  // logarithmic tail rides L→R; a blurred copy makes the trace
+                  // and the grid glow as it passes.
+                  // Vital/radar playback sweep: the bar is the leading edge; the
+                  // whole effect (bg wash + glowing trace/grid) trails BEHIND it
+                  // and is clipped at the bar, so ahead is just the faded base
+                  // wave. Additive (screen) so it only brightens.
+                  // The sweep only renders while a note is playing (sweepX set
+                  // by the sequencer); otherwise just the faded base trace + grid.
+                  return <>
+                    {sweepX !== null && (
+                      <>
+                        <defs>
+                          <clipPath id="scope-clip"><rect x="0" y="0" width={Math.max(0, sweepX)} height="100" /></clipPath>
+                          {/* background wash — logarithmic white→blue→fade behind the bar */}
+                          <linearGradient id="scope-bg" gradientUnits="userSpaceOnUse" x1={sweepX - 230} y1="0" x2={sweepX} y2="0">
+                            <stop offset="0" stopColor="var(--dcs-accent)" stopOpacity="0" />
+                            <stop offset="0.45" stopColor="var(--dcs-accent)" stopOpacity=".12" />
+                            <stop offset="0.78" stopColor="var(--dcs-accent)" stopOpacity=".36" />
+                            <stop offset="0.93" stopColor="#4d9fff" stopOpacity=".62" />
+                            <stop offset="0.99" stopColor="#bfe0ff" stopOpacity=".85" />
+                            <stop offset="1" stopColor="#f2f8ff" stopOpacity=".95" />
+                          </linearGradient>
+                          {/* foreground highlight — grid + wave bloom over the wash */}
+                          <linearGradient id="scope-sweep" gradientUnits="userSpaceOnUse" x1={sweepX - 175} y1="0" x2={sweepX} y2="0">
+                            <stop offset="0" stopColor="var(--dcs-accent)" stopOpacity="0" />
+                            <stop offset="0.5" stopColor="var(--dcs-accent)" stopOpacity=".5" />
+                            <stop offset="0.82" stopColor="#bfe0ff" stopOpacity=".95" />
+                            <stop offset="0.96" stopColor="#eaf4ff" stopOpacity="1" />
+                            <stop offset="1" stopColor="#ffffff" stopOpacity="1" />
+                          </linearGradient>
+                          <filter id="scope-glow" x="-5%" y="-80%" width="110%" height="260%">
+                            <feGaussianBlur stdDeviation="4" />
+                          </filter>
+                        </defs>
+                        <rect x="0" y="0" width="400" height="100" fill="url(#scope-bg)" clipPath="url(#scope-clip)" style={{ mixBlendMode: 'screen' }} />
+                      </>
+                    )}
+                    {/* normal-brightness grid + wave — the faded outline, everywhere */}
+                    <path d={grid} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth=".5" />
+                    <path d={wave} fill="none" stroke="var(--dcs-accent)" strokeWidth="1.4" strokeOpacity=".75" />
+                    {sweepX !== null && (
+                      <>
+                        {/* additive bloom on grid + wave, clipped to behind the bar */}
+                        <g clipPath="url(#scope-clip)" style={{ mixBlendMode: 'screen' }}>
+                          <g filter="url(#scope-glow)">
+                            <path d={grid} fill="none" stroke="url(#scope-sweep)" strokeWidth="1.8" />
+                            <path d={wave} fill="none" stroke="url(#scope-sweep)" strokeWidth="4.5" />
+                          </g>
+                          <path d={grid} fill="none" stroke="url(#scope-sweep)" strokeWidth=".7" />
+                          <path d={wave} fill="none" stroke="url(#scope-sweep)" strokeWidth="1.8" />
+                        </g>
+                        {/* leading-edge sweep bar */}
+                        <line x1={sweepX} y1="0" x2={sweepX} y2="100" stroke="#eaf4ff" strokeWidth="1" strokeOpacity=".9" style={{ mixBlendMode: 'screen' }} />
+                      </>
+                    )}
+                  </>;
+                })()}
+              </svg>
+              <div style={{ position: 'absolute', top: 6, left: 8, fontFamily: 'var(--dcs-font-mono)', fontSize: 9, color: 'var(--dcs-text-mute)' }}>SCOPE</div>
+              {/* lights golden whenever the sequencer fires a note */}
+              <div style={{
+                position: 'absolute', top: 6, right: 6,
+                padding: '3px 9px', display: 'flex', alignItems: 'center',
+                borderRadius: 999, fontFamily: 'var(--dcs-font-mono)', fontSize: 9,
+                fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase',
+                background: sweepX !== null ? '#f4c84e' : 'rgba(255,255,255,.05)',
+                color: sweepX !== null ? '#1c1606' : 'var(--dcs-text-mute)',
+                border: `1px solid ${sweepX !== null ? 'transparent' : 'var(--dcs-line)'}`,
+                transition: 'background .08s, color .08s',
+              }}>play</div>
+            </div>
             </div>
           </Panel>
 
@@ -110,10 +237,12 @@ function HeroDeck() {
             { l: 'sustain', v: ring(7, 1.1) },
             { l: 'release', v: ring(8, 1.6) },
           ].map(s => (
-            <div key={s.l} className="dcs-field" style={{ background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3, padding: '4px 6px', gap: 4 }}>
-              <span style={{ fontSize: 10, color: 'var(--dcs-text-mute)', textTransform: 'uppercase', letterSpacing: '.06em', minWidth: 0 }}>{s.l}</span>
+            <div key={s.l} style={{ display: 'flex', flexDirection: 'column', gap: 4, background: 'var(--dcs-well)', border: '1px solid var(--dcs-line)', borderRadius: 3, padding: '5px 7px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: 10, color: 'var(--dcs-text-mute)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{s.l}</span>
+                <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-accent)' }}>{Math.round(s.v * 100)}</span>
+              </div>
               <Slider value={s.v} />
-              <span className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-accent)', minWidth: 30, textAlign: 'right' }}>{Math.round(s.v * 100)}</span>
             </div>
           ))}
         </div>
@@ -147,7 +276,7 @@ function SectionHero() {
       </a>
       <div className="dw-hero">
         <div>
-          <div className="dw-hero__eyebrow">decius.css · v0.4.0 "Mus"</div>
+          <div className="dw-hero__eyebrow">decius.css · v0.5.0 "Mus"</div>
           <h1>The CSS framework for things that aren't websites.</h1>
           <p className="lede">
             A complete component system for digital content creation tools, synths, video editors, and
@@ -157,7 +286,7 @@ function SectionHero() {
           </p>
           <div className="dw-hero__actions">
             <a className="dw-cta dw-cta--primary dw-cta--lg" href={`${import.meta.env.BASE_URL}dl/decius-css.zip`} download>
-              <Icon name="import" size="sm" /> Download decius <span style={{ opacity: .7, fontWeight: 400 }}>· .zip · css + js + fonts</span>
+              <Icon name="import" size="sm" /> Download decius <span className="dw-cta__sub" style={{ opacity: .7, fontWeight: 400 }}>· .zip · css + js + fonts</span>
             </a>
             <a className="dw-cta dw-cta--ghost" href="#install">
               <Icon name="rocket" size="sm" /> Get started
@@ -232,7 +361,7 @@ function SectionInstall() {
       <div className="dw-subhead"><h3>From a CDN</h3><div className="dw-subhead__meta">Zero build</div></div>
       <CodeBlock lang="html" code={`<!-- everything: self-hosted fonts + icon font + framework -->
 <link rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/decius-css@0.4/dist/css/decius.bundle.min.css">`} />
+  href="https://cdn.jsdelivr.net/npm/decius-css@0.5/dist/css/decius.bundle.min.css">`} />
 
       <div className="dw-subhead"><h3>Or from npm</h3><div className="dw-subhead__meta">Bundler / Sass</div></div>
       <CodeBlock lang="bash" code={`npm install decius-css`} />

@@ -20,8 +20,11 @@
 .dcs-alert--danger .dcs-alert__icon { color: var(--dcs-danger); }
 .dcs-alert__body { flex: 1; }
 .dcs-alert__title { color: var(--dcs-text); font-weight: 500; margin-bottom: 2px; }
-.dcs-alert code,
-.dcs-alert__msg code {
+/* Amber-on-dark code chips suit the dark DCC theme — scope them to the .dcs
+   context so alerts reused as light docs callouts fall back to the page's
+   own (softer) inline-code style instead. */
+.dcs .dcs-alert code,
+.dcs .dcs-alert__msg code {
   font-family: var(--dcs-font-mono);
   font-size: .92em;
   padding: 1px 6px;

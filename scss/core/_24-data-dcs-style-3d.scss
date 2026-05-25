@@ -21,7 +21,13 @@
 [data-dcs-style="3d"] .dcs-btn[aria-pressed="true"] { box-shadow: var(--dcs-bevel-down); }
 
 [data-dcs-style="3d"] .dcs-btn-group .dcs-btn { box-shadow: none; background: transparent; }
-[data-dcs-style="3d"] .dcs-btn-group .dcs-btn[aria-pressed="true"] { box-shadow: var(--dcs-shadow-1); }
+/* Selected segment keeps the solid key colour (like flat) + a little depth. */
+[data-dcs-style="3d"] .dcs-btn-group .dcs-btn[aria-pressed="true"] {
+  background: var(--dcs-accent);
+  color: #0a1220;
+  box-shadow: var(--dcs-shadow-1);
+}
+[data-dcs-style="3d"] .dcs-btn-group .dcs-btn[aria-pressed="true"]:hover { background: var(--dcs-accent-hi); }
 
 [data-dcs-style="3d"] .dcs-input,
 [data-dcs-style="3d"] .dcs-select,
@@ -34,13 +40,16 @@
   box-shadow: var(--dcs-bevel-down), 0 0 0 2px var(--dcs-accent-haze);
 }
 
-/* Combo — beveled inset display in 3D mode (no fill bar, no chevrons) */
+/* Combo — beveled inset display in 3D mode. Works like the flat version
+   (the value fill stays, so the level reads at a glance) with a synth glow. */
 [data-dcs-style="3d"] .dcs-combo {
   box-shadow: var(--dcs-bevel-down);
   background: var(--dcs-well);
 }
 [data-dcs-style="3d"] .dcs-combo__fill {
-  display: none;
+  height: 3px;
+  opacity: 1;
+  box-shadow: 0 0 6px var(--dcs-accent-haze);
 }
 [data-dcs-style="3d"] .dcs-combo__btn {
   display: none;

@@ -481,6 +481,7 @@ function SectionSkeuomorphic() {
   const [activeStep, setActiveStep] = useStateSK(0);
   const [numSteps, setNumSteps] = useStateSK(8);
   const [meter, setMeter] = useStateSK(0.5);
+  const [stepVals, setStepVals] = useStateSK(() => Array.from({ length: 8 }, (_, i) => 0.3 + ((i * 7) % 30) / 100));
 
   useEffectSK(() => {
     if (!playing) return;
@@ -507,7 +508,7 @@ function SectionSkeuomorphic() {
       </p>
 
       <div className="dw-demo dw-demo--app" style={{ padding: 28, marginBottom: 32 }}>
-        <div className="dcs" data-dcs-demo>
+        <div className="dcs" data-dcs-demo data-dcs-style="3d" style={{ minWidth: 720 }}>
           <PatchBoard>
             <div className="dcs-hw dcs-hw--red" style={{ padding: '36px 24px 24px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <span className="dcs-hw__screw dcs-hw__screw--tl" />
@@ -590,14 +591,10 @@ function SectionSkeuomorphic() {
                       </LitButton>
                     ))}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6, marginTop: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6, marginTop: 10, justifyItems: 'center' }}>
                     {steps.slice(0, 8).map((_, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'center' }}>
-                        <div style={{ width: 22, position: 'relative', height: 60 }}>
-                          <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: 'rgba(0,0,0,.4)', transform: 'translateX(-50%)' }} />
-                          <div style={{ position: 'absolute', left: '50%', top: `${20 + (i * 7) % 30}%`, transform: 'translateX(-50%)', width: 12, height: 5, background: 'linear-gradient(180deg, #d8dade, #8a8d94)', border: '1px solid #14161c', borderRadius: 2, cursor: 'ns-resize' }} />
-                        </div>
-                      </div>
+                      <Fader key={i} value={stepVals[i]} height={88}
+                        onChange={v => setStepVals(s => s.map((x, j) => j === i ? v : x))} />
                     ))}
                   </div>
                 </div>
@@ -650,7 +647,7 @@ function SectionSkeuomorphic() {
       {/* Component reference grid */}
       <h3 style={{ marginTop: 40, marginBottom: 12 }}>Components</h3>
       <div className="dw-demo dw-demo--app" style={{ padding: 28, marginBottom: 32 }}>
-        <div className="dcs" data-dcs-demo>
+        <div className="dcs" data-dcs-demo style={{ minWidth: 700 }}>
           <PatchBoard>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 28, color: 'var(--dcs-text)' }}>
               <div>

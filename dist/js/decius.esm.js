@@ -1,4 +1,4 @@
-/*! decius-css v0.4.1 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.5.0 | MIT License | https://github.com/benjcooley/decius-css */
 
 // js/src/decius.js
 var $ = (sel, root = document) => root.querySelector(sel);
@@ -666,7 +666,7 @@ function init(root = document) {
   return decius;
 }
 var decius = {
-  version: "0.4.1",
+  version: "0.5.0",
   init,
   toast,
   modal: { open: openModal, close: (id) => {

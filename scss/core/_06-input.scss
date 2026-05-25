@@ -23,6 +23,23 @@
 }
 .dcs-input--num { font-family: var(--dcs-font-num); font-variant-numeric: tabular-nums lining-nums; text-align: right; }
 
+/* Enum dropdown trigger — a select-styled button that opens a .dcs-menu of
+   options. The full form of a "choose one of N" enum; the segmented
+   button-group is its shorthand for when the options fit inline. */
+.dcs-select--btn {
+  gap: var(--dcs-s-2);
+  cursor: pointer; user-select: none;
+  color: var(--dcs-text);
+}
+.dcs-select--btn .dcs-select__label {
+  flex: 1; min-width: 0; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dcs-select--btn .dcs-select__caret { flex: 0 0 auto; color: var(--dcs-text-mute); margin-right: calc(var(--dcs-s-1) * -1); }
+.dcs-select--btn:hover { border-color: var(--dcs-line-strong); }
+.dcs-select--btn.dcs-select--open { border-color: var(--dcs-accent); box-shadow: 0 0 0 2px var(--dcs-accent-haze); }
+.dcs-select--btn.dcs-select--open .dcs-select__caret { color: var(--dcs-accent); }
+
 .dcs-field {
   display: flex; align-items: center; gap: var(--dcs-s-3);
   min-height: var(--dcs-h);

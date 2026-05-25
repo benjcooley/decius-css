@@ -207,7 +207,7 @@ function SampleDCC() {
   };
 
   return (
-    <div className="dcs" data-dcs-density="compact" style={{ background: 'var(--dcs-bg-app)', height: 660, display: 'flex', flexDirection: 'column' }}>
+    <div className="dcs" data-dcs-density="compact" style={{ background: 'var(--dcs-bg-app)', height: 660, minWidth: 880, display: 'flex', flexDirection: 'column' }}>
       <MenuBar
         brand={{ icon: 'decius', label: 'modeler' }}
         items={['File', 'Edit', 'View', 'Mesh', 'Animation', 'Render', 'Window', 'Help']}
@@ -302,7 +302,7 @@ function SampleSynth() {
   );
 
   return (
-    <div className="dcs" data-dcs-style="3d" style={{ background: 'var(--dcs-bg-app)', padding: 12 }}>
+    <div className="dcs" data-dcs-style="3d" style={{ background: 'var(--dcs-bg-app)', padding: 12, minWidth: 820 }}>
       {/* Brand header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
@@ -319,7 +319,7 @@ function SampleSynth() {
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-.01em' }}>decius synthesis</div>
-          <div className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-text-mute)' }}>polyphonic dual-osc · subtractive · v0.4</div>
+          <div className="dcs-mono" style={{ fontSize: 10, color: 'var(--dcs-text-mute)' }}>polyphonic dual-osc · subtractive · v0.5</div>
         </div>
         <span style={{ flex: 1 }} />
         <div className="dcs-row" style={{ gap: 8 }}>

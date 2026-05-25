@@ -42,6 +42,22 @@
 }
 .dw-demo--inset { padding: 0; }
 
+/* On small screens, let demos scroll horizontally rather than collapse/clip.
+   Must sit AFTER the base `overflow: hidden` above so it wins. Demos that can
+   shrink to fit (e.g. the node graph) simply do; complex demos hold their
+   layout via the Demo `minw` prop / inline min-width and scroll. An
+   always-visible scrollbar makes the affordance obvious (overlay scrollbars
+   otherwise stay hidden until you scroll). */
+@media (max-width: 860px) {
+  .dw-demo { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+  .dw-demo::-webkit-scrollbar { height: 10px; }
+  .dw-demo::-webkit-scrollbar-track { background: rgba(0, 0, 0, .05); }
+  .dw-demo::-webkit-scrollbar-thumb {
+    background: var(--dw-text-mute); border-radius: 5px;
+    border: 2px solid transparent; background-clip: padding-box;
+  }
+}
+
 .dw-demo__caption {
   margin-top: 10px;
   font-size: 12px;
@@ -146,6 +162,7 @@
 .dw-hero__eyebrow::before {
   content: ""; width: 24px; height: 1px; background: var(--dw-accent);
 }
+.dw-hero > * { min-width: 0; }   /* let columns shrink so wide deck/text never force page overflow */
 .dw-hero h1 { max-width: 18ch; }
 .dw-hero p.lede {
   margin-top: 18px;
@@ -157,6 +174,7 @@
 .dw-hero__actions {
   margin-top: 28px;
   display: flex; gap: 12px; align-items: center;
+  flex-wrap: wrap;   /* wrap to a second row rather than cram/overflow */
 }
 .dw-cta {
   display: inline-flex; align-items: center; gap: 8px;
@@ -181,6 +199,17 @@
   border-color: var(--dw-line);
 }
 .dw-cta--ghost:hover { border-color: #c8cdd6; background: var(--dw-bg-soft); }
+
+/* Narrow / sidebar-present widths: stack the hero CTAs as full-width buttons
+   instead of a cramped, wrapping row. Kicks in well before phone widths
+   because the sidebar eats horizontal room. The MIT pill stays a small chip,
+   and the verbose download sub-label drops. */
+@media (max-width: 1000px) {
+  .dw-hero__actions { flex-direction: column; align-items: stretch; gap: 10px; }
+  .dw-hero__actions .dw-cta { width: 100%; justify-content: center; }
+  .dw-hero__actions .dw-pill { align-self: flex-start; }
+  .dw-cta__sub { display: none; }
+}
 
 /* Featured stage — large dark embed */
 .dw-stage {

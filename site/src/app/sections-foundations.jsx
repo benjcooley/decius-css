@@ -3,7 +3,7 @@
 */
 const { useState: useStateF } = React;
 
-function Demo({ children, caption, checker, inset, defaultStyle = 'flat', defaultDensity, noDensity, frame = 'panel' }) {
+function Demo({ children, caption, checker, inset, defaultStyle = 'flat', defaultDensity, noDensity, frame = 'panel', minw }) {
   const [mode, setMode] = useStateF(defaultStyle);
   const [density, setDensity] = useStateF(defaultDensity);
   // When density/style is unset, let the global Tweaks cascade through.
@@ -13,10 +13,13 @@ function Demo({ children, caption, checker, inset, defaultStyle = 'flat', defaul
   };
   if (density) demoAttrs['data-dcs-density'] = density;
   if (mode === '3d') demoAttrs['data-dcs-style'] = '3d';
+  // `minw` keeps multi-pane demos at their natural width on small screens —
+  // the demo box scrolls horizontally (see .dw-demo on mobile) instead of
+  // the panes collapsing into a single cramped column.
   return (
     <div style={{ marginBottom: 32 }}>
       <div className={`dw-demo dw-demo--${frame}${checker ? ' dw-demo--checker' : ''}${inset ? ' dw-demo--inset' : ''}`}>
-        <div className="dcs" {...demoAttrs}>{children}</div>
+        <div className="dcs" {...demoAttrs} style={minw ? { minWidth: minw } : undefined}>{children}</div>
       </div>
       <div className="dw-demo__caption" style={{ flexWrap: 'wrap' }}>
         <DemoToggle label="Style" value={mode} onChange={setMode} options={[
@@ -57,10 +60,20 @@ function DemoToggle({ label, value, onChange, options }) {
 
 function CodeBlock({ lang, code }) {
   const html = highlight(code, lang || 'css');
+  const [copied, setCopied] = useStateF(false);
+  const copy = () => {
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 1400); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done).catch(() => {});
+    } else { done(); }
+  };
   return (
-    <pre>
-      <code dangerouslySetInnerHTML={{ __html: html }} />
-    </pre>
+    <div className="dw-code">
+      <button className="dw-code__copy" onClick={copy} aria-label="Copy code to clipboard">
+        <Icon name={copied ? 'check' : 'copy'} size="sm" /> {copied ? 'Copied' : 'Copy'}
+      </button>
+      <pre><code dangerouslySetInnerHTML={{ __html: html }} /></pre>
+    </div>
   );
 }
 
@@ -80,8 +93,10 @@ function highlight(code, lang) {
          .replace(/(#[0-9a-f]{3,8})\b/gi, '<span class="tk-s">$1</span>')
          .replace(/\b(\d+(\.\d+)?(px|rem|em|%|deg|s|ms)?)\b/g, '<span class="tk-n">$1</span>');
   } else if (lang === 'js' || lang === 'jsx') {
-    s = s.replace(/(\/\/[^\n]*)/g, '<span class="tk-c">$1</span>')
-         .replace(/\b(const|let|var|function|return|if|else|for|import|from|export|new|class)\b/g, '<span class="tk-k">$1</span>')
+    // Keyword pass first, THEN wrap comments — otherwise the keyword regex
+    // matches "class" inside an inserted <span class="tk-c"> and corrupts it.
+    s = s.replace(/\b(const|let|var|function|return|if|else|for|import|from|export|new|class)\b/g, '<span class="tk-k">$1</span>')
+         .replace(/(\/\/[^\n]*)/g, '<span class="tk-c">$1</span>')
          .replace(/&quot;([^&]*?)&quot;/g, '<span class="tk-s">&quot;$1&quot;</span>')
          .replace(/\b(\d+(\.\d+)?)\b/g, '<span class="tk-n">$1</span>');
   }
