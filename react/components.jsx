@@ -617,15 +617,19 @@ function Knob({ value, onChange, min = 0, max = 1, size = 56, label, bipolar, fo
   );
 }
 
-/* ─────────── Combo (ZBrush-style number/slider) ─────────── */
-function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, width = 140, sm, lg }) {
+/* ─────────── Combo (ZBrush-style number/slider) ───────────
+   `unbounded` — drop the min/max range entirely. The combo becomes a
+   pure scrubber (no fill bar, no clamping). Use this for values that
+   have no natural range — XYZ positions, free numeric inputs. Drag
+   speed becomes `step` per pixel (so step=0.001 → 1px = 0.001). */
+function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, width = 140, sm, lg, unbounded }) {
   const [cur, set] = useControl(value, onChange);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef(null);
   const containerRef = useRef(null);
-  const v = Math.max(min, Math.min(max, cur));
-  const pct = ((v - min) / (max - min)) * 100;
+  const v = unbounded ? cur : Math.max(min, Math.min(max, cur));
+  const pct = unbounded ? 0 : ((v - min) / (max - min)) * 100;
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -646,8 +650,9 @@ function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, 
       const dx = ev.clientX - startX;
       if (Math.abs(dx) > 3) dragged = true;
       const scale = ev.shiftKey ? 4 : 1;
-      const delta = (dx / rect.width) * range * scale;
-      let nv = Math.max(min, Math.min(max, startVal + delta));
+      // Unbounded: step-per-pixel scrub (no range to normalize against).
+      const delta = unbounded ? dx * (step || 0.01) * scale : (dx / rect.width) * range * scale;
+      let nv = unbounded ? startVal + delta : Math.max(min, Math.min(max, startVal + delta));
       if (step) nv = Math.round(nv / step) * step;
       set(nv);
     };
@@ -665,23 +670,25 @@ function Combo({ value, onChange, min = 0, max = 1, step = 0.01, label, format, 
 
   const commit = () => {
     const parsed = parseFloat(draft);
-    if (!Number.isNaN(parsed)) set(Math.max(min, Math.min(max, parsed)));
+    if (!Number.isNaN(parsed)) set(unbounded ? parsed : Math.max(min, Math.min(max, parsed)));
     setEditing(false);
   };
 
-  const cls = ['dcs-combo', editing && 'dcs-combo--editing', sm && 'dcs-combo--sm', lg && 'dcs-combo--lg'].filter(Boolean).join(' ');
+  const cls = ['dcs-combo', editing && 'dcs-combo--editing', sm && 'dcs-combo--sm', lg && 'dcs-combo--lg', unbounded && 'dcs-combo--unbounded'].filter(Boolean).join(' ');
+  const dec = () => set(unbounded ? v - (step || 0.01) : Math.max(min, v - (step || 0.01)));
+  const inc = () => set(unbounded ? v + (step || 0.01) : Math.min(max, v + (step || 0.01)));
   return (
     <div ref={containerRef}
          className={cls}
          style={{ width, '--fill': `${pct}%` }}
          onPointerDown={handleDown}>
-      <div className="dcs-combo__fill" />
-      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); set(Math.max(min, v - (step || 0.01))); }}>
+      {!unbounded && <div className="dcs-combo__fill" />}
+      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); dec(); }}>
         <Icon name="chevron-left" size="sm" />
       </div>
       {label && <div className="dcs-combo__label">{label}</div>}
       <div className="dcs-combo__value">{format ? format(v) : v.toFixed(2)}</div>
-      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); set(Math.min(max, v + (step || 0.01))); }}>
+      <div className="dcs-combo__btn" onPointerDown={(e) => { e.stopPropagation(); inc(); }}>
         <Icon name="chevron-right" size="sm" />
       </div>
       {editing && (

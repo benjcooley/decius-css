@@ -325,7 +325,7 @@ function SectionBadges() {
             <span className="dcs-badge dcs-badge--ok dcs-badge--dot">READY</span>
             <span className="dcs-badge dcs-badge--warn dcs-badge--dot">CLIPPING</span>
             <span className="dcs-badge dcs-badge--danger dcs-badge--dot">FAULT</span>
-            <span className="dcs-badge dcs-badge--accent">v0.5.0</span>
+            <span className="dcs-badge dcs-badge--accent">v0.5.1</span>
           </div>
           <div className="dcs-row" style={{ gap: 6, alignItems: 'center' }}>
             <span style={{ fontSize: 12, color: 'var(--dcs-text-dim)' }}>Snap to grid</span>

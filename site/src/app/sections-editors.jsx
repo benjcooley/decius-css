@@ -1199,4 +1199,4 @@ function SectionTexture() {
   );
 }
 
-Object.assign(window, { SectionColorPicker, SectionCurve, SectionGraph, SectionTexture, CurveEditor, NodeGraph, ColorPicker });
+Object.assign(window, { SectionColorPicker, SectionCurve, SectionGraph, SectionTexture, CurveEditor, NodeGraph, ColorPicker, ColorField });

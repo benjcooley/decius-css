@@ -16,10 +16,10 @@ function SectionPanels() {
       <Demo frame="app" caption="The standard panel, raised variant, and a closeable one with an X in the header">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           <Panel title="Properties" icon="cog">
-            <div className="dcs-col" style={{ gap: 6 }}>
+            <div className="dcs-props">
               <div className="dcs-field"><label className="dcs-field__label">Name</label><input className="dcs-input" defaultValue="Cube.003" /></div>
-              <div className="dcs-field"><label className="dcs-field__label">Mass</label><Combo value={1.000} min={0} max={100} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
-              <div className="dcs-field"><label className="dcs-field__label">Friction</label><Combo value={0.500} min={0} max={1} step={0.001} format={v => v.toFixed(3)} width="100%" /></div>
+              <div className="dcs-field"><label className="dcs-field__label">Mass</label><Combo value={1.000} min={0} max={100} step={0.001} format={v => v.toFixed(3)} /></div>
+              <div className="dcs-field"><label className="dcs-field__label">Friction</label><Combo value={0.500} min={0} max={1} step={0.001} format={v => v.toFixed(3)} /></div>
             </div>
           </Panel>
           <Panel raised title="Material" icon="palette" headerActive
@@ -53,9 +53,9 @@ function SectionPanels() {
             ]}
           />
           <div style={{ padding: 16 }}>
-            <div className="dcs-col" style={{ gap: 8 }}>
-              <div className="dcs-field"><label className="dcs-field__label">FPS</label><Combo value={24} min={1} max={120} step={1} format={v => `${v}`} width={100} /></div>
-              <div className="dcs-field"><label className="dcs-field__label">Length</label><Combo value={240} min={1} max={9999} step={1} format={v => `${v} frames`} width={140} /></div>
+            <div className="dcs-props">
+              <div className="dcs-field"><label className="dcs-field__label">FPS</label><Combo value={24} min={1} max={120} step={1} format={v => `${v}`} /></div>
+              <div className="dcs-field"><label className="dcs-field__label">Length</label><Combo value={240} min={1} max={9999} step={1} format={v => `${v} frames`} /></div>
               <div className="dcs-field"><label className="dcs-field__label">Loop</label><Switch checked /></div>
             </div>
           </div>
@@ -123,8 +123,10 @@ function SectionDock() {
         <Knob value={gain} onChange={setGain} size={48} label="GAIN" format={v => `${(v * 100).toFixed(0)}`} />
         <Knob value={rough} onChange={setRough} size={48} label="MIX" bipolar format={v => `${((v - 0.5) * 200).toFixed(0)}`} />
       </div>
-      <div className="dcs-field"><span className="dcs-field__label">Level</span><Slider value={gain} onChange={setGain} /></div>
-      <div className="dcs-field"><span className="dcs-field__label">Size</span><Combo value={rough} onChange={setRough} min={0} max={1} step={0.01} format={v => v.toFixed(2)} /></div>
+      <div className="dcs-props">
+        <div className="dcs-field"><span className="dcs-field__label">Level</span><Slider value={gain} onChange={setGain} /></div>
+        <div className="dcs-field"><span className="dcs-field__label">Size</span><Combo value={rough} onChange={setRough} min={0} max={1} step={0.01} format={v => v.toFixed(2)} /></div>
+      </div>
       <ButtonGroup value={mode} onChange={setMode} options={[{ value: 'move', icon: 'move', label: 'Move' }, { value: 'rotate', icon: 'rotate', label: 'Rot' }, { value: 'scale', icon: 'scale-corners', label: 'Scale' }]} />
       <div className="dcs-row" style={{ gap: 16 }}>
         <Check checked={visible} onChange={setVisible}>Enabled</Check>
@@ -153,7 +155,7 @@ function SectionDock() {
       <div className="dcs-field"><span className="dcs-field__label">Name</span><input className="dcs-input" defaultValue="Node B" /></div>
       <div className="dcs-field"><span className="dcs-field__label">Opacity</span><Slider value={opacity} onChange={setOpacity} /><span className="dcs-mono" style={{ width: 34, textAlign: 'right' }}>{Math.round(opacity * 100)}</span></div>
       <div className="dcs-field"><span className="dcs-field__label">Rough</span><Combo value={rough} onChange={setRough} min={0} max={1} step={0.01} format={v => v.toFixed(2)} /></div>
-      <div className="dcs-field" style={{ justifyContent: 'space-between' }}><span className="dcs-field__label">Visible</span><Switch checked={visible} onChange={setVisible} /></div>
+      <div className="dcs-field"><span className="dcs-field__label">Visible</span><Switch checked={visible} onChange={setVisible} /></div>
       <div className="dcs-field"><span className="dcs-field__label">Blend</span><ButtonGroup value={blend} onChange={setBlend} options={[{ value: 'normal', label: 'Norm' }, { value: 'add', label: 'Add' }, { value: 'mul', label: 'Mul' }]} /></div>
       <div className="dcs-field"><span className="dcs-field__label">Tint</span><div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#4d9fff' }} /><span>#4D9FFF</span></div></div>
     </div>
@@ -306,10 +308,10 @@ function SectionFoldouts() {
               </Foldouts>
             </div>
           </Panel>
-          <div style={{ fontSize: 13, color: 'var(--dw-text-dim)', lineHeight: 1.65, paddingTop: 6 }}>
-            <p><strong style={{ color: 'var(--dw-text)' }}>Foldout vs SubPanel.</strong> Both collapse. The visual difference is rhythm.</p>
-            <p><strong style={{ color: 'var(--dw-text)' }}>Foldouts</strong> are soft, lighter-bg cards with margins — they feel like grouped properties. Use for inspectors with many heterogeneous sections (Blender's N-panel, Unity's Inspector).</p>
-            <p><strong style={{ color: 'var(--dw-text)' }}>Subpanels</strong> are full-width seams in a stack — they feel like rigid rows. Use when controls are dense and visual chunking matters more than soft separation (Maya's Channel Box, Houdini's parameter editor).</p>
+          <div className="dw-note" style={{ paddingTop: 6 }}>
+            <p><strong>Foldout vs SubPanel.</strong> Both collapse. The visual difference is rhythm.</p>
+            <p><strong>Foldouts</strong> are soft, lighter-bg cards with margins — they feel like grouped properties. Use for inspectors with many heterogeneous sections (Blender's N-panel, Unity's Inspector).</p>
+            <p><strong>Subpanels</strong> are full-width seams in a stack — they feel like rigid rows. Use when controls are dense and visual chunking matters more than soft separation (Maya's Channel Box, Houdini's parameter editor).</p>
           </div>
         </div>
       </Demo>
@@ -373,59 +375,46 @@ function SectionSubpanels() {
           <Panel title="Inspector ▸ jane_body" icon="cog" pad={0}
                  tools={<><Button ghost sm icon iconLeft="pin" /><Button ghost sm icon iconLeft="more-h" /></>}>
             <SubPanel title="Transform" icon="move">
-              <div className="dcs-col" style={{ gap: 3 }}>
-                <div className="dcs-field" style={{ gap: 6 }}>
-                  <span style={{ fontSize: 10, color: 'var(--dcs-danger)', width: 12, fontFamily: 'var(--dcs-font-mono)' }}>X</span>
-                  <Combo value={1.428} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
+              <div className="dcs-props" style={{ '--dcs-props-label-w': '14px' }}>
+                <div className="dcs-field">
+                  <span className="dcs-field__label" style={{ fontSize: 10, color: 'var(--dcs-danger)', fontFamily: 'var(--dcs-font-mono)' }}>X</span>
+                  <Combo value={1.428} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} />
                 </div>
-                <div className="dcs-field" style={{ gap: 6 }}>
-                  <span style={{ fontSize: 10, color: 'var(--dcs-ok)', width: 12, fontFamily: 'var(--dcs-font-mono)' }}>Y</span>
-                  <Combo value={-0.952} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
+                <div className="dcs-field">
+                  <span className="dcs-field__label" style={{ fontSize: 10, color: 'var(--dcs-ok)', fontFamily: 'var(--dcs-font-mono)' }}>Y</span>
+                  <Combo value={-0.952} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} />
                 </div>
-                <div className="dcs-field" style={{ gap: 6 }}>
-                  <span style={{ fontSize: 10, color: 'var(--dcs-accent)', width: 12, fontFamily: 'var(--dcs-font-mono)' }}>Z</span>
-                  <Combo value={3.000} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} width="100%" />
+                <div className="dcs-field">
+                  <span className="dcs-field__label" style={{ fontSize: 10, color: 'var(--dcs-accent)', fontFamily: 'var(--dcs-font-mono)' }}>Z</span>
+                  <Combo value={3.000} min={-10} max={10} step={0.001} format={v => v.toFixed(3)} />
                 </div>
               </div>
             </SubPanel>
             <SubPanel title="Display" icon="eye">
-              <div className="dcs-col" style={{ gap: 4 }}>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Wireframe</span>
-                  <Switch checked={false} />
-                </div>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Smooth shade</span>
-                  <Switch checked />
-                </div>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Cast shadow</span>
-                  <Switch checked />
-                </div>
+              <div className="dcs-props">
+                <div className="dcs-field"><span className="dcs-field__label">Wireframe</span><Switch checked={false} /></div>
+                <div className="dcs-field"><span className="dcs-field__label">Smooth shade</span><Switch checked /></div>
+                <div className="dcs-field"><span className="dcs-field__label">Cast shadow</span><Switch checked /></div>
               </div>
             </SubPanel>
             <SubPanel title="Material" icon="palette" defaultOpen={false}>
-              <div className="dcs-col" style={{ gap: 6 }}>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Albedo</span>
+              <div className="dcs-props">
+                <div className="dcs-field">
+                  <span className="dcs-field__label">Albedo</span>
                   <div className="dcs-swatch"><div className="dcs-swatch__chip" style={{ '--c': '#4d9fff' }} /><span>#4D9FFF</span></div>
                 </div>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Roughness</span>
-                  <Slider value={0.42} />
-                </div>
+                <div className="dcs-field"><span className="dcs-field__label">Roughness</span><Slider value={0.42} /></div>
               </div>
             </SubPanel>
             <SubPanel title="Constraints" icon="link" defaultOpen={false}>
-              <div className="dcs-col" style={{ gap: 4 }}>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}><span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Lock X</span><Switch checked={false} /></div>
-                <div className="dcs-field" style={{ justifyContent: 'space-between' }}><span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Track to</span><Combo value={0} min={0} max={4} step={1} format={() => 'Cam.001'} width={90} /></div>
+              <div className="dcs-props">
+                <div className="dcs-field"><span className="dcs-field__label">Lock X</span><Switch checked={false} /></div>
+                <div className="dcs-field"><span className="dcs-field__label">Track to</span><Combo value={0} min={0} max={4} step={1} format={() => 'Cam.001'} /></div>
               </div>
             </SubPanel>
             <SubPanel title="Subdivision" icon="subdivide" defaultOpen={false}>
-              <div className="dcs-field" style={{ justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: 'var(--dcs-text-dim)' }}>Level</span>
-                <Combo value={2} min={0} max={6} step={1} format={v => `${v}×`} width={70} />
+              <div className="dcs-props">
+                <div className="dcs-field"><span className="dcs-field__label">Level</span><Combo value={2} min={0} max={6} step={1} format={v => `${v}×`} /></div>
               </div>
             </SubPanel>
           </Panel>

@@ -3,6 +3,7 @@ node_modules/
 
 # docs site build output
 _site/
+site/dist/
 
 # generated docs entry (concatenated app, produced by vite.config)
 site/src/app.gen.jsx

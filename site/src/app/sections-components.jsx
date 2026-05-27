@@ -118,7 +118,16 @@ function SectionButtons() {
 
 function SectionInputs() {
   const [name, setName] = useStateC('untitled.dcs');
-  const [num, setNum] = useStateC(440);
+  const [freq, setFreq] = useStateC(440);
+  const [pos, setPos] = useStateC({ x: 1.428, y: -0.952, z: 3.000 });
+  const [color, setColor] = useStateC('#4d9fff');
+  const [renderer, setRenderer] = useStateC('cyc');
+  const [quality, setQuality] = useStateC('high');
+  const [vol, setVol] = useStateC(0.62);
+  const [bake, setBake] = useStateC(true);
+  const [live, setLive] = useStateC(true);
+  const [mode, setMode] = useStateC('form'); // 'form' | 'props'
+  const wrapClass = mode === 'props' ? 'dcs-props' : 'dcs-form';
   return (
     <section className="dw-section" id="inputs">
       <div className="dw-section__eyebrow">Components · 02</div>
@@ -127,27 +136,108 @@ function SectionInputs() {
         Sunken inputs with mono numerics by default. The well shadow signals "type here" without
         a placeholder label fight.
       </p>
-      <Demo>
-        <div className="dcs-col" style={{ maxWidth: 380, gap: 10 }}>
-          <div className="dcs-field">
-            <label className="dcs-field__label">Project</label>
-            <input className="dcs-input" value={name} onChange={e => setName(e.target.value)} />
+
+      <p className="dw-section__lead" style={{ marginTop: 24 }}>
+        Wrap a stack of <code>.dcs-field</code> rows in one of two layouts.
+        Use <code>.dcs-form</code> for <strong>dialog boxes and modal-like panels</strong> — labels
+        right-justified, controls at their natural width, bare buttons self-centered, with an optional
+        <code>.dcs-form__actions</code> footer for grouped buttons. Use <code>.dcs-props</code> for
+        <strong> property inspectors and channel editors</strong> — labels left-justified, controls
+        (including bare buttons) stretched to fill the row so a tall stack reads as even, same-size
+        channel rows. Toggle the mode to see the same content rearrange.
+      </p>
+
+      <Demo frame="app" caption={mode === 'form' ? '.dcs-form — dialog/modal, labels right, controls natural width' : '.dcs-props — inspector, labels left, channels stretch'}>
+        <div className="dcs-col" style={{ gap: 16 }}>
+          <div className="dcs-btn-group" role="tablist" style={{ alignSelf: 'flex-start' }}>
+            <button className={`dcs-btn ${mode === 'form' ? 'dcs-btn--primary' : ''}`}
+                    onClick={() => setMode('form')} role="tab" aria-selected={mode === 'form'}>
+              .dcs-form
+            </button>
+            <button className={`dcs-btn ${mode === 'props' ? 'dcs-btn--primary' : ''}`}
+                    onClick={() => setMode('props')} role="tab" aria-selected={mode === 'props'}>
+              .dcs-props
+            </button>
           </div>
-          <div className="dcs-field">
-            <label className="dcs-field__label">Frequency</label>
-            <input className="dcs-input dcs-input--num" value={num.toFixed(2)} onChange={e => setNum(parseFloat(e.target.value) || 0)} />
+
+          <div className={wrapClass} style={{ maxWidth: 460 }}>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Project</label>
+              <input className="dcs-input" value={name} onChange={e => setName(e.target.value)} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Notes</label>
+              <textarea className="dcs-textarea" defaultValue="// safe to render — caches warm" />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Frequency</label>
+              <Combo value={freq} onChange={setFreq} min={20} max={20000} step={0.1} format={v => `${v.toFixed(1)} Hz`} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Position</label>
+              <Combo unbounded value={pos.x} onChange={v => setPos(p => ({ ...p, x: v }))} step={0.001} label="X" format={v => v.toFixed(3)} />
+              <Combo unbounded value={pos.y} onChange={v => setPos(p => ({ ...p, y: v }))} step={0.001} label="Y" format={v => v.toFixed(3)} />
+              <Combo unbounded value={pos.z} onChange={v => setPos(p => ({ ...p, z: v }))} step={0.001} label="Z" format={v => v.toFixed(3)} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Color</label>
+              <ColorField value={color} onChange={setColor} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Renderer</label>
+              <Select value={renderer} onChange={setRenderer} options={[
+                { value: 'cyc', label: 'Cycles · Pathtraced', icon: 'render' },
+                { value: 'eev', label: 'Eevee · Realtime',    icon: 'play' },
+                { value: 'wf',  label: 'Wireframe only',      icon: 'view-wire' },
+              ]} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Quality</label>
+              <ButtonGroup value={quality} onChange={setQuality} options={[
+                { value: 'low',  label: 'Low'  },
+                { value: 'med',  label: 'Med'  },
+                { value: 'high', label: 'High' },
+                { value: 'ult',  label: 'Ult'  },
+              ]} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Volume</label>
+              <Slider value={vol} onChange={setVol} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Auto-bake</label>
+              <Check checked={bake} onChange={setBake} />
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Live preview</label>
+              <Switch checked={live} onChange={setLive} />
+            </div>
+
+            {/* Full-width text labels — no prompt, span the row. Use .dcs-note
+                for lightweight info/warning text, or drop a .dcs-alert into
+                the stack for the heavier "alert panel" treatment. */}
+            <div className="dcs-note">Disk is 92% full — cleanup recommended.</div>
+
+            <div className="dcs-alert dcs-alert--warn">
+              <div className="dcs-alert__icon"><Icon name="alert" /></div>
+              <div className="dcs-alert__body">You have 3 uncommitted files — save or stash before switching projects.</div>
+            </div>
+            {/* Bare button — in .dcs-props it stretches as a channel widget;
+                in .dcs-form it keeps natural size and self-centers. */}
+            <button className="dcs-btn dcs-btn--primary">Apply</button>
+
+            {/* Paired buttons — `.dcs-btn-row` centers them in .dcs-form
+                and splits them evenly across the channel column in
+                .dcs-props. */}
+            <div className="dcs-btn-row">
+              <button className="dcs-btn">Cancel</button>
+              <button className="dcs-btn dcs-btn--primary">Close</button>
+            </div>
           </div>
-          <div className="dcs-field">
-            <label className="dcs-field__label">Comment</label>
-            <textarea className="dcs-textarea" rows={3} defaultValue="// safe to render — caches warm" />
-          </div>
-          <div className="dcs-field">
-            <label className="dcs-field__label">Mode</label>
-            <select className="dcs-select" defaultValue="cyc">
-              <option value="cyc">Cycles · Pathtraced</option>
-              <option value="eev">Eevee · Realtime</option>
-              <option value="wf">Wireframe only</option>
-            </select>
+
+          <div className="dw-note" style={{ paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.08)' }}>
+            <p>Standalone <code>&lt;Check&gt;</code> with text — outside a form/props stack — defaults to check-left, text-right:</p>
+            <Check checked={bake} onChange={setBake}>Bundle textures with project</Check>
           </div>
         </div>
       </Demo>

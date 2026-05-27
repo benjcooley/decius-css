@@ -1,4 +1,4 @@
-/*! decius-css v0.5.0 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.5.1 | MIT License | https://github.com/benjcooley/decius-css */
 @charset "UTF-8";
 /* ============================================================
    decius-web.css — web extensions for the decius docs site
@@ -540,6 +540,51 @@ hr {
 
 .dw-demo--inset {
   padding: 0;
+}
+
+/* ── Inline notes inside a demo card ──────────────────────────────
+   `.dw-note` is the standard small-print description used inside
+   demos (and elsewhere). On the light docs page it reads as dim grey;
+   inside a dark `.dw-demo--app`/`--panel` it switches to the dark
+   palette so the text stays legible against the panel background.
+   Inline `<code>` is similarly re-skinned for the dark context. */
+.dw-note {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--dw-text-dim);
+}
+
+.dw-note strong {
+  color: var(--dw-text);
+  font-weight: 600;
+}
+
+.dw-note p {
+  margin: 0 0 0.6em;
+  color: inherit;
+}
+
+.dw-note p:last-child {
+  margin-bottom: 0;
+}
+
+.dw-demo--app .dw-note,
+.dw-demo--panel .dw-note {
+  color: var(--dcs-text-dim);
+}
+
+.dw-demo--app .dw-note strong,
+.dw-demo--panel .dw-note strong {
+  color: var(--dcs-text);
+}
+
+/* Inline <code> inside a dark demo — light bg/dark text would flash
+   against the panel; use a translucent dark chip with accent text. */
+.dw-demo--app :not(pre) > code,
+.dw-demo--panel :not(pre) > code {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--dcs-accent-hi, #8fc1ff);
 }
 
 /* On small screens, let demos scroll horizontally rather than collapse/clip.

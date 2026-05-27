@@ -1,4 +1,4 @@
-/*! decius-css v0.5.0 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.5.1 | MIT License | https://github.com/benjcooley/decius-css */
 @charset "UTF-8";
 /* ============================================================
    decius.css — DCC interface framework
@@ -17,7 +17,10 @@
   --dcs-surface-2: #3c424f; /* raised x2 / hover */
   --dcs-surface-3: #474e5d; /* hot / pressed */
   --dcs-surface-4: #555d6e;
-  --dcs-well: #20232b; /* sunken inputs */
+  --dcs-well: #181b22; /* sunken inputs — kept reliably below both
+    bg-app (#1f222a) and bg (#2a2e38) so a
+    widget always reads one shade darker than
+    whatever panel surface it lands on. */
   --dcs-rail: #181a21; /* deepest separator */
   /* Borders */
   --dcs-line: #14161c; /* hard, dark separator */
@@ -213,7 +216,7 @@
   --dcs-surface-1: #404654;
   --dcs-surface-2: #4a5161;
   --dcs-surface-3: #555d6e;
-  --dcs-well: #2a2e38;
+  --dcs-well: #22252e; /* darker than lighter-mode bg-app */
 }
 
 /* ------------------------------------------------------------
@@ -716,6 +719,11 @@
   color: var(--dcs-accent);
 }
 
+/* ── Field row primitive ──────────────────────────────────────────
+   `.dcs-field` is one label-plus-control row. On its own it's just a
+   flex row — to get even, opinionated spacing across many rows, wrap
+   them in one of the two form layouts below: `.dcs-form` (general) or
+   `.dcs-props` (inspector). */
 .dcs-field {
   display: flex;
   align-items: center;
@@ -739,21 +747,106 @@
   flex: 1;
 }
 
-/* ── Channel-widget contract ──────────────────────────────────────
-   An inspector is a vertical stack of `.dcs-field` rows inside
-   `.dcs-props`. Each row is locked to --dcs-h-in tall, so the whole
-   stack reads as even, same-size rows — that's the one rule that makes
-   an inspector look tidy.
+/* ── Form layouts: .dcs-form vs .dcs-props ─────────────────────────
+   Two selectors decide how a stack of `.dcs-field` rows looks. Pick
+   one based on context — they are mutually exclusive.
 
-   A "channel widget" is just any control that obeys two things:
+   `.dcs-form`   — DIALOG / MODAL layout. Use this in dialog boxes,
+                   modal-like panels, preference sheets, signup forms,
+                   wizards — anywhere the user is filling in a focused
+                   set of values rather than tweaking live channels.
+                   Labels are **right-justified** against a fixed-width
+                   column; controls keep their **natural width**; bare
+                   buttons self-center; a `.dcs-form__actions` footer
+                   right-aligns grouped actions under the control column.
+
+   `.dcs-props`  — INSPECTOR layout. Use this for property inspectors,
+                   channel editors, attribute lists, node settings —
+                   anywhere a live object's channels are exposed for
+                   continuous editing. Labels are **left-justified**
+                   against a fixed-width column; controls (including
+                   bare buttons) **stretch to fill** the row so a tall
+                   stack reads as even, same-size channel rows.
+
+   Inline checkbox-with-text (check left, label right) — just place a
+   bare `.dcs-check` outside a form/props stack; that's its default.
+
+   Tune label-column width per instance with `--dcs-form-label-w` or
+   `--dcs-props-label-w`. */
+.dcs-form {
+  /* In dialog mode the centerline IS the view's centerline — labels
+     right-justify up to 50%, controls start from 50%. This differs
+     from `.dcs-props` (inspector), where the label column is a fixed
+     pixel width tuned to the longest expected prompt. Override
+     `--dcs-form-label-w` per-instance if you need a different split. */
+  --dcs-form-label-w: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dcs-s-3);
+}
+
+.dcs-form > .dcs-field {
+  min-height: var(--dcs-h-in);
+}
+
+.dcs-form > .dcs-field > .dcs-field__label {
+  flex: 0 0 var(--dcs-form-label-w);
+  text-align: right;
+}
+
+.dcs-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--dcs-s-3);
+  padding-left: calc(var(--dcs-form-label-w) + var(--dcs-s-3));
+}
+
+/* A bare button (or button group) dropped directly into a `.dcs-form`
+   stack keeps its natural size and self-centers in the form column —
+   matches the "controls keep natural width" rule above. For grouped,
+   right-aligned action rows use `.dcs-form__actions`. */
+.dcs-form > .dcs-btn,
+.dcs-form > .dcs-btn-group {
+  align-self: center;
+}
+
+/* A `.dcs-btn-row` is a paired-button row that adapts to its stack:
+     • in `.dcs-form` (dialog): buttons sit centered at natural width
+       next to each other.
+     • in `.dcs-props` (inspector): buttons split the row evenly via
+       `flex: 1` — two buttons cut the row in half, three split it
+       into thirds, etc., matching the channel-widget contract.
+   Use this when you want Cancel/Apply, Yes/No, or any paired actions
+   without picking the right-aligned `.dcs-form__actions` footer. */
+.dcs-btn-row {
+  display: flex;
+  gap: var(--dcs-s-3);
+}
+
+.dcs-form > .dcs-btn-row {
+  justify-content: center;
+}
+
+.dcs-props > .dcs-btn-row > .dcs-btn,
+.dcs-props > .dcs-btn-row > .dcs-btn-group {
+  flex: 1;
+  min-width: 0;
+  height: var(--dcs-h-in);
+}
+
+/* ── Channel-widget contract ──────────────────────────────────────
+   Inside `.dcs-props`, each row is locked to --dcs-h-in tall so the
+   whole stack reads as even, same-size rows. A "channel widget" is
+   any control that obeys two rules:
      1. it's no taller than the row (--dcs-h-in), and
      2. if it should span the row, it stretches (flex: 1).
-   The built-ins listed below already comply; a custom widget complies
-   by adding `.dcs-field__fill` (to span) or simply staying short (to
-   sit right-aligned, like a switch/check). The set is open — anything
-   that follows the contract keeps the rhythm; anything that ignores it
-   just breaks the even spacing, which is allowed, only less tidy. */
+   Built-ins listed below already comply; a custom widget opts in by
+   adding `.dcs-field__fill` (to span) or simply staying short (to
+   sit LEFT-justified in the channel column, like a switch/check).
+   The set is open — anything that follows the contract keeps the
+   rhythm. */
 .dcs-props {
+  --dcs-props-label-w: 96px;
   display: flex;
   flex-direction: column;
   gap: var(--dcs-s-3);
@@ -762,7 +855,16 @@
 .dcs-props > .dcs-field {
   height: var(--dcs-h-in);
   min-height: var(--dcs-h-in);
-  justify-content: space-between;
+  /* No `justify-content` — defaults to flex-start so non-stretched
+     widgets (Check, Switch, fixed-width chip) sit at the LEFT edge
+     of the channel column, aligned with the start of stretched
+     controls above/below. Stretched widgets fill the column via
+     `flex: 1` below. */
+}
+
+.dcs-props > .dcs-field > .dcs-field__label {
+  flex: 0 0 var(--dcs-props-label-w);
+  text-align: left;
 }
 
 /* Spanning channel widgets: fill the row after the label and collapse
@@ -783,6 +885,184 @@
 }
 
 .dcs-props > .dcs-field > .dcs-btn-group .dcs-btn {
+  height: calc(var(--dcs-h-in) - 6px);
+  min-width: calc(var(--dcs-h-in) - 6px);
+}
+
+/* ── Standalone note / info / warning row ────────────────────────
+   A `.dcs-note` is a full-width text strip inside a form/props stack
+   — no prompt, no editor, just text spanning the row. Use it for
+   section hints, derived/status values, info messages, or warnings
+   that sit *between* the editable channels rather than next to one.
+   Variants colorize the text via semantic tokens; pair with a small
+   `<Icon>` for an at-a-glance affordance. */
+.dcs-note {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  font-size: var(--dcs-fs-sm);
+  line-height: var(--dcs-lh);
+  color: var(--dcs-text-dim); /* match `.dcs-field__label` prompts */
+  font-weight: 400;
+  min-width: 0;
+}
+
+.dcs-note--mono {
+  font-family: var(--dcs-font-num);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.dcs-note--mute {
+  color: var(--dcs-text-mute);
+}
+
+.dcs-note--info {
+  color: var(--dcs-info);
+}
+
+.dcs-note--warn {
+  color: var(--dcs-warn);
+}
+
+.dcs-note--ok {
+  color: var(--dcs-ok);
+}
+
+.dcs-note--danger {
+  color: var(--dcs-danger);
+}
+
+/* When dropped directly into a form/props stack, the note spans the
+   full row width (no prompt, no channel column) and stays at one
+   channel-row of height for a single line. Text is plain — normal
+   weight, no title hierarchy, no chrome — so it reads as a quiet
+   line in the dialog rather than a callout. In `.dcs-form` (dialog)
+   the text centers like a dialog blurb; in `.dcs-props` (inspector)
+   it stays left-aligned with the rest of the channel column. */
+.dcs-form > .dcs-note,
+.dcs-props > .dcs-note {
+  width: 100%;
+  min-height: var(--dcs-h-in);
+  font-weight: 400;
+}
+
+.dcs-form > .dcs-note {
+  justify-content: center;
+  text-align: center;
+}
+
+/* `.dcs-alert` dropped into a form/props stack — the heavier sibling
+   of `.dcs-note`. Restyled to a soft "callout" box: rounded rect,
+   semantic-tinted background, matching tinted border, icon on the
+   left, plain text on the right. The default `.dcs-alert` accent
+   stripe + raised-surface chrome (its standalone-panel look) is
+   dropped here — inline in a dialog, that visual weight fights the
+   rest of the form. */
+.dcs-form > .dcs-alert,
+.dcs-props > .dcs-alert {
+  width: 100%;
+  padding: var(--dcs-s-3) var(--dcs-s-4);
+  border: 1px solid var(--dcs-accent-haze);
+  background: var(--dcs-accent-dim);
+  border-radius: var(--dcs-r-2);
+  align-items: center;
+  gap: var(--dcs-s-3);
+  font-weight: 400;
+}
+
+.dcs-form > .dcs-alert.dcs-alert--ok,
+.dcs-props > .dcs-alert.dcs-alert--ok {
+  background: rgba(78, 209, 138, 0.12);
+  border-color: rgba(78, 209, 138, 0.35);
+}
+
+.dcs-form > .dcs-alert.dcs-alert--warn,
+.dcs-props > .dcs-alert.dcs-alert--warn {
+  background: rgba(242, 177, 74, 0.12);
+  border-color: rgba(242, 177, 74, 0.35);
+}
+
+.dcs-form > .dcs-alert.dcs-alert--danger,
+.dcs-props > .dcs-alert.dcs-alert--danger {
+  background: rgba(239, 107, 107, 0.12);
+  border-color: rgba(239, 107, 107, 0.35);
+}
+
+/* Inline-callout text: full-strength color, normal weight, no nested
+   title/msg distinction. The body can be a bare string — the existing
+   `.dcs-alert__title` / `.dcs-alert__msg` two-tier structure is
+   collapsed so a single line reads cleanly. */
+.dcs-form > .dcs-alert .dcs-alert__title,
+.dcs-props > .dcs-alert .dcs-alert__title {
+  font-weight: 400;
+  margin: 0;
+}
+
+.dcs-form > .dcs-alert .dcs-alert__msg,
+.dcs-props > .dcs-alert .dcs-alert__msg {
+  color: var(--dcs-text);
+}
+
+/* Textareas — the "larger edit box" — default to two channel rows tall
+   in both form and inspector contexts (so a freshly-dropped textarea
+   reads as the multi-line variant of an input, not a one-liner that
+   happens to scroll). The row holding it expands vertically, and the
+   label aligns to the top of the textarea so it doesn't float in the
+   middle of a tall block.
+
+   Resize affordance follows context: in `.dcs-form` the textarea has
+   natural width so it resizes BOTH ways; in `.dcs-props` the textarea
+   stretches to fill the channel column (`flex: 1`) so only vertical
+   resize is meaningful — horizontal resize would fight the layout. */
+.dcs-form > .dcs-field > .dcs-textarea,
+.dcs-props > .dcs-field > .dcs-textarea {
+  height: calc(var(--dcs-h-in) * 2 + var(--dcs-s-3));
+  min-height: calc(var(--dcs-h-in) * 2 + var(--dcs-s-3));
+}
+
+.dcs-form > .dcs-field > .dcs-textarea {
+  resize: both;
+}
+
+.dcs-props > .dcs-field > .dcs-textarea {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+}
+
+/* Row containing a textarea: lets the row grow vertically, drops the
+   middle-centering (no point centering a short label against a tall
+   box), and aligns the label's first line with the textarea's first
+   line of text. The label uses normal line-height so its top edge
+   matches the textarea's interior top padding (--dcs-s-3). */
+.dcs-form > .dcs-field:has(.dcs-textarea),
+.dcs-props > .dcs-field:has(.dcs-textarea) {
+  height: auto;
+  align-items: flex-start;
+}
+
+.dcs-form > .dcs-field:has(.dcs-textarea) > .dcs-field__label,
+.dcs-props > .dcs-field:has(.dcs-textarea) > .dcs-field__label {
+  padding-top: var(--dcs-s-3);
+  line-height: var(--dcs-lh);
+  /* Tall labels with a textarea should wrap, not ellipsis-clip — there
+     is room for the wrap, and clipping looks worse than two short
+     lines next to a multi-line edit box. */
+  white-space: normal;
+  text-overflow: clip;
+}
+
+/* A bare button (or button group) dropped directly into a `.dcs-props`
+   stack — not wrapped in a `.dcs-field` — acts as a channel-sized
+   widget: full row width, locked to row height. Stretch is the inspector
+   contract. */
+.dcs-props > .dcs-btn,
+.dcs-props > .dcs-btn-group {
+  width: 100%;
+  height: var(--dcs-h-in);
+}
+
+.dcs-props > .dcs-btn-group .dcs-btn {
   height: calc(var(--dcs-h-in) - 6px);
   min-width: calc(var(--dcs-h-in) - 6px);
 }
