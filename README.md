@@ -8,7 +8,7 @@ self-hosted type. One download, no dependencies.
 decius is built for **[affineui](https://github.com/benjcooley/affineui)** — a zero-dependency C++
 HTML/CSS renderer for native apps and games — and runs in any modern browser too.
 
-- 📖 **Docs & live demos:** https://benjcooley.github.io/decius-css/
+- 📖 **Docs & live demos:** https://decius.dev/
 - 📦 **npm:** [`decius-css`](https://www.npmjs.com/package/decius-css)
 - 🪪 **License:** MIT (framework + icons) · SIL OFL 1.1 (bundled webfonts)
 
@@ -51,7 +51,7 @@ import 'decius-css/css/decius.bundle.min.css';
 @use 'decius-css/scss/decius';
 ```
 
-Or [download the `.zip`](https://benjcooley.github.io/decius-css/) (css + js + fonts) from the docs site.
+Or [download the `.zip`](https://decius.dev/) (css + js + fonts) from the docs site.
 
 ### Then wrap your UI
 

@@ -68,7 +68,7 @@ syncDownloads();
 
 export default defineConfig({
   root: resolve(repoRoot, 'site'),
-  base: '/decius-css/',
+  base: '/',
   plugins: [deciusEntryPlugin(), react()],
   build: {
     outDir: resolve(repoRoot, '_site'),
