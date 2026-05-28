@@ -1,4 +1,4 @@
-/*! decius-css v0.5.2 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.5.3 | MIT License | https://github.com/benjcooley/decius-css */
 @charset "UTF-8";
 /* ============================================================
    decius.css — DCC interface framework
@@ -1069,37 +1069,34 @@
 .dcs-props > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) {
   --dcs-list-h: calc(var(--dcs-h) * 4);
   flex-direction: column;
+  align-items: flex-start;
   height: auto;
   min-height: 0;
   gap: var(--dcs-s-2);
 }
 
+/* In .dcs-form the entire prompt/list pair container is 66% wide and
+   centered in the form. Inside that container, the prompt sits at
+   top-left and the list fills the container's full width — so both
+   align to the container's left edge, and the whole pair sits in
+   the visual center of the form. */
 .dcs-form > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) {
-  align-items: center;
-}
-
-.dcs-form > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) > .dcs-field__label {
-  flex: 0 0 auto;
-  width: auto;
-  text-align: center;
-}
-
-.dcs-form > .dcs-field > .dcs-list,
-.dcs-form > .dcs-field > .dcs-tree,
-.dcs-form > .dcs-field > .dcs-table {
   width: 66%;
+  align-self: center;
 }
 
-.dcs-props > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) {
-  align-items: stretch;
-}
-
+.dcs-form > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) > .dcs-field__label,
 .dcs-props > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) > .dcs-field__label {
   flex: 0 0 auto;
   width: auto;
   text-align: left;
 }
 
+/* The list/tree/table fills the pair container's width — in .dcs-form
+   that's 66% of the form, in .dcs-props that's 100% of the inspector. */
+.dcs-form > .dcs-field > .dcs-list,
+.dcs-form > .dcs-field > .dcs-tree,
+.dcs-form > .dcs-field > .dcs-table,
 .dcs-props > .dcs-field > .dcs-list,
 .dcs-props > .dcs-field > .dcs-tree,
 .dcs-props > .dcs-field > .dcs-table {

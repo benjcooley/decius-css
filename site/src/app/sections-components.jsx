@@ -213,9 +213,10 @@ function SectionInputs() {
               <Switch checked={live} onChange={setLive} />
             </div>
 
-            {/* List inside a field — flips vertical. Prompt goes ABOVE,
-                list spans the row in .dcs-props or sits at 2/3 width
-                centered in .dcs-form. Default height is 4 channel rows. */}
+            {/* Lists, trees, and tables inside a field flip vertical: prompt
+                ABOVE, control below at full row width in .dcs-props or 2/3
+                width centered in .dcs-form. Default height 4 channel rows,
+                framed in a sunken well, scrollable. */}
             <div className="dcs-field">
               <label className="dcs-field__label">Linked assets</label>
               <div className="dcs-list">
@@ -225,6 +226,24 @@ function SectionInputs() {
                   </div>
                 ))}
               </div>
+            </div>
+            <div className="dcs-field">
+              <label className="dcs-field__label">Scene hierarchy</label>
+              <Tree
+                expanded={new Set(['root', 'group'])}
+                selected="b"
+                nodes={[{
+                  id: 'root', label: 'Project', icon: 'folder-open', children: [
+                    { id: 'group', label: 'Group', icon: 'group', children: [
+                      { id: 'a', label: 'Node A', icon: 'cube' },
+                      { id: 'b', label: 'Node B', icon: 'cube' },
+                      { id: 'c', label: 'Node C', icon: 'sphere' },
+                    ] },
+                    { id: 'cam', label: 'Camera', icon: 'camera' },
+                    { id: 'light', label: 'Light', icon: 'light' },
+                  ],
+                }]}
+              />
             </div>
 
             {/* Full-width text labels — no prompt, span the row. Use .dcs-note
