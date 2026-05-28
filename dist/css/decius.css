@@ -1,4 +1,4 @@
-/*! decius-css v0.5.1 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.5.2 | MIT License | https://github.com/benjcooley/decius-css */
 @charset "UTF-8";
 /* ============================================================
    decius.css — DCC interface framework
@@ -1050,6 +1050,82 @@
      lines next to a multi-line edit box. */
   white-space: normal;
   text-overflow: clip;
+}
+
+/* ── List / Tree as a field control ──────────────────────────────
+   Lists and trees are too tall and too "object-like" to share a row
+   with a label the way a slider or input does. When a `.dcs-list` or
+   `.dcs-tree` is the value side of a `.dcs-field`, the row flips
+   vertical: prompt sits ABOVE the list, list sits below as a sunken
+   chrome'd well.
+     • `.dcs-props` (inspector): list spans the full row width, label
+       left-aligned above it.
+     • `.dcs-form` (dialog): list takes two-thirds width and centers
+       under a centered label.
+   Default height is four channel rows so an engineer dropping a list
+   into a form doesn't have to size it. Adjust per-instance with the
+   `--dcs-list-h` custom property. */
+.dcs-form > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table),
+.dcs-props > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) {
+  --dcs-list-h: calc(var(--dcs-h) * 4);
+  flex-direction: column;
+  height: auto;
+  min-height: 0;
+  gap: var(--dcs-s-2);
+}
+
+.dcs-form > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) {
+  align-items: center;
+}
+
+.dcs-form > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) > .dcs-field__label {
+  flex: 0 0 auto;
+  width: auto;
+  text-align: center;
+}
+
+.dcs-form > .dcs-field > .dcs-list,
+.dcs-form > .dcs-field > .dcs-tree,
+.dcs-form > .dcs-field > .dcs-table {
+  width: 66%;
+}
+
+.dcs-props > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) {
+  align-items: stretch;
+}
+
+.dcs-props > .dcs-field:has(> .dcs-list, > .dcs-tree, > .dcs-table) > .dcs-field__label {
+  flex: 0 0 auto;
+  width: auto;
+  text-align: left;
+}
+
+.dcs-props > .dcs-field > .dcs-list,
+.dcs-props > .dcs-field > .dcs-tree,
+.dcs-props > .dcs-field > .dcs-table {
+  width: 100%;
+}
+
+/* Shared chrome: sunken well + border + scrollable + default height.
+   Tables need `display: block` to honour `overflow: auto` (default
+   `display: table` ignores overflow); this loses native column
+   auto-sizing — set `<th>`/`<td>` widths explicitly if needed. */
+.dcs-form > .dcs-field > .dcs-list,
+.dcs-form > .dcs-field > .dcs-tree,
+.dcs-form > .dcs-field > .dcs-table,
+.dcs-props > .dcs-field > .dcs-list,
+.dcs-props > .dcs-field > .dcs-tree,
+.dcs-props > .dcs-field > .dcs-table {
+  height: var(--dcs-list-h);
+  background: var(--dcs-well);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-2);
+  overflow: auto;
+}
+
+.dcs-form > .dcs-field > .dcs-table,
+.dcs-props > .dcs-field > .dcs-table {
+  display: block;
 }
 
 /* A bare button (or button group) dropped directly into a `.dcs-props`

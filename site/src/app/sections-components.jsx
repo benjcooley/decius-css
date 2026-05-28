@@ -213,6 +213,20 @@ function SectionInputs() {
               <Switch checked={live} onChange={setLive} />
             </div>
 
+            {/* List inside a field — flips vertical. Prompt goes ABOVE,
+                list spans the row in .dcs-props or sits at 2/3 width
+                centered in .dcs-form. Default height is 4 channel rows. */}
+            <div className="dcs-field">
+              <label className="dcs-field__label">Linked assets</label>
+              <div className="dcs-list">
+                {[['intro.scene', 'cube'], ['hero.mat', 'palette'], ['sky_4k.hdr', 'image'], ['walk.anim', 'curve'], ['notes.md', 'file']].map(([n, ic], i) => (
+                  <div key={n} className="dcs-list__item" aria-selected={i === 0}>
+                    <Icon name={ic} /><span style={{ flex: 1 }}>{n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Full-width text labels — no prompt, span the row. Use .dcs-note
                 for lightweight info/warning text, or drop a .dcs-alert into
                 the stack for the heavier "alert panel" treatment. */}

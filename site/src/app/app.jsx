@@ -95,7 +95,7 @@ function TopBar({ onMenu }) {
           <Icon name="decius" size="lg" />
         </span>
         <span>decius<span style={{ color: 'var(--dw-accent-lo)' }}>.css</span></span>
-        <span className="dw-brand__version">v0.5.1 Mus</span>
+        <span className="dw-brand__version">v0.5.2 Mus</span>
       </a>
       <nav className="dw-nav">
         <a href="#install" className="active">Docs</a>
@@ -293,7 +293,7 @@ function App() {
             <span className="dw-brand__mark" style={{ width: 24, height: 24 }}><Icon name="decius" /></span>
             decius.css
           </span>
-          <span>v0.5.1 "Mus" · MIT</span>
+          <span>v0.5.2 "Mus" · MIT</span>
           <span style={{ flex: 1 }} />
           <a href="#install">Install</a>
           <a href="#colors">Tokens</a>

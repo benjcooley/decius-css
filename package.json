@@ -1,6 +1,6 @@
 {
   "name": "decius-css",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A CSS framework for digital content creation (DCC) tools, synths, and pro desktop interfaces. Built for affineui; runs in any browser.",
   "keywords": [
     "css",

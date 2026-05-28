@@ -580,7 +580,7 @@ function init(root = document) {
 }
 
 const decius = {
-  version: '0.5.1',
+  version: '0.5.2',
   init,
   toast,
   modal: { open: openModal, close: (id) => { const m = typeof id === 'string' ? $(id[0] === '#' ? id : `#${id}`) : id; if (m) closeModal(m); } },
