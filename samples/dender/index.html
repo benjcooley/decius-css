@@ -116,7 +116,7 @@
         <div class="dcs-dockpane__body">
           <div id="vp-body" data-dcs-tabpanel>
             <div class="dn-vp-canvas" data-screen-label="3D Viewport" data-dcs-float-host>
-              <svg id="vp-scene" viewBox="0 0 1000 660" preserveAspectRatio="xMidYMid meet"></svg>
+              <canvas id="vp-scene"></canvas>
 
               <div class="dn-vp-stats">
                 <div><b>User Perspective</b></div>
@@ -1036,6 +1036,25 @@
 
 <script src="../../dist/js/decius.min.js"></script>
 <script src="app.js"></script>
+
+<!-- three.js — loaded as an ES module from a CDN so the sample stays
+     zero-build. `viewport.js` reads `THREE`/`OrbitControls` off window. -->
+<script type="importmap">
+{
+  "imports": {
+    "three":            "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/":    "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+window.THREE = THREE;
+window.OrbitControls = OrbitControls;
+window.dispatchEvent(new Event('three:ready'));
+</script>
+<script src="viewport.js"></script>
 
 <template id="__bundler_thumbnail">
   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

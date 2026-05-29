@@ -1022,6 +1022,13 @@ const DRAG_TARGET = '.dcs-panel--floating, .dcs-toolbar--floating';
    sliders, color squares, etc. inside the body. */
 const DRAG_IGNORE = 'button, a, input, select, textarea, label, .dcs-check, .dcs-radio, .dcs-switch, .dcs-slider, .dcs-fader, .dcs-knob, .dcs-combo, .dcs-dockpane__tab, .dcs-dockpane__tab-close, .dcs-tab, [data-dcs-toggle], [data-dcs-dismiss], .dcs-dockpane__body, .dcs-panel__body';
 function beginPanelDrag(e, target) {
+  // Guard against re-entry on the same pointerdown: if both an
+  // explicit handle AND the floater-level auto-handle fire (which
+  // happens by design now that the explicit handler no longer
+  // stopPropagation()s), the second call is a no-op so we don't
+  // double-register move/up listeners or fight over style writes.
+  if (target.__dcsDragPid === e.pointerId) return;
+  target.__dcsDragPid = e.pointerId;
   const boundsSel = target.getAttribute('data-dcs-drag-bounds');
   const bounds = (boundsSel ? $(boundsSel) : null)
               || target.offsetParent || document.body;
@@ -1075,6 +1082,7 @@ function beginPanelDrag(e, target) {
     window.removeEventListener('pointercancel', up, true);
     try { target.releasePointerCapture(pid); } catch (_) {}
     target.classList.remove('dcs--dragging');
+    if (target.__dcsDragPid === pid) target.__dcsDragPid = null;
   };
   target.addEventListener('pointermove', move);
   target.addEventListener('pointerup', up);
@@ -1085,18 +1093,18 @@ function beginPanelDrag(e, target) {
 }
 function initDraggable(root) {
   // 1) Explicit handles — anything with [data-dcs-drag-handle] drags
-  //    its nearest floating ancestor. Stop propagation so the
-  //    floating-panel-level auto-handle (below) doesn't double-fire
-  //    on the same pointerdown. Use `$$inc` so when init() is called
-  //    on a freshly-spawned floater (which IS a [data-dcs-drag-handle]
-  //    target only via a descendant), the descendants still register.
+  //    its nearest floating ancestor. We deliberately do NOT
+  //    stopPropagation here — the auto-handle (below) is idempotent
+  //    against a second begin call (same target, same math, same
+  //    pointerId guard) and letting both fire gives a fallback path
+  //    when the handle's own dispatch is somehow short-circuited by
+  //    a parent listener / framework state.
   $$inc('[data-dcs-drag-handle]', root).forEach((handle) => {
     if (handle[WIRED]) return; handle[WIRED] = true;
     handle.addEventListener('pointerdown', (e) => {
       if (e.target.closest(DRAG_IGNORE)) return;
       const target = handle.closest(DRAG_TARGET);
       if (!target) return;
-      e.stopPropagation();
       beginPanelDrag(e, target);
     });
   });

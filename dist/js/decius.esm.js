@@ -967,6 +967,8 @@ function initTreeDnd(root) {
 var DRAG_TARGET = ".dcs-panel--floating, .dcs-toolbar--floating";
 var DRAG_IGNORE = "button, a, input, select, textarea, label, .dcs-check, .dcs-radio, .dcs-switch, .dcs-slider, .dcs-fader, .dcs-knob, .dcs-combo, .dcs-dockpane__tab, .dcs-dockpane__tab-close, .dcs-tab, [data-dcs-toggle], [data-dcs-dismiss], .dcs-dockpane__body, .dcs-panel__body";
 function beginPanelDrag(e, target) {
+  if (target.__dcsDragPid === e.pointerId) return;
+  target.__dcsDragPid = e.pointerId;
   const boundsSel = target.getAttribute("data-dcs-drag-bounds");
   const bounds = (boundsSel ? $(boundsSel) : null) || target.offsetParent || document.body;
   e.preventDefault();
@@ -1013,6 +1015,7 @@ function beginPanelDrag(e, target) {
     } catch (_) {
     }
     target.classList.remove("dcs--dragging");
+    if (target.__dcsDragPid === pid) target.__dcsDragPid = null;
   };
   target.addEventListener("pointermove", move);
   target.addEventListener("pointerup", up);
@@ -1029,7 +1032,6 @@ function initDraggable(root) {
       if (e.target.closest(DRAG_IGNORE)) return;
       const target = handle.closest(DRAG_TARGET);
       if (!target) return;
-      e.stopPropagation();
       beginPanelDrag(e, target);
     });
   });

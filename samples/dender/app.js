@@ -25,6 +25,12 @@
   function line(a,b,attrs){ var A=P(a),B=P(b); return '<line x1="'+A[0].toFixed(1)+'" y1="'+A[1].toFixed(1)+'" x2="'+B[0].toFixed(1)+'" y2="'+B[1].toFixed(1)+'" '+attrs+'/>'; }
 
   function buildScene() {
+    // viewport.js (three.js) owns the 3D viewport now. The SVG scene
+    // builder used to render into #vp-scene; #vp-scene is a <canvas>
+    // today, so we just no-op here and let the WebGL pipeline take
+    // over. Kept around as a one-line stub in case any caller still
+    // expects buildScene() to exist.
+    return;
     var svg = document.getElementById("vp-scene");
     if (!svg) return;
     var s = [];
@@ -326,6 +332,12 @@
         '#prop-tabs .dcs-tab[data-dcs-target="#prop-object"]'
       );
       if (objTab && objTab.getAttribute("aria-selected") !== "true") objTab.click();
+      // Tell the three.js viewport which mesh to outline. Tree row
+      // labels match three.js object names ("Cube", "Light", "Camera").
+      if (window.DenderVP && labelEl) {
+        var name = labelEl.textContent.trim();
+        window.DenderVP.select(name);
+      }
     });
   }
 
