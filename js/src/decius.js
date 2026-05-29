@@ -617,7 +617,7 @@ function initCombo(root) {
       if (!unbounded) c.style.setProperty('--fill', `${((value - min) / (max - min)) * 100}%`);
       valEl.textContent = formatVal(value);
     };
-    function set(v) {
+    function set(v, opts) {
       let next = step ? Math.round(v / step) * step : v;
       // Guard against floating drift from the round-by-step (e.g. 0.1 +
       // 0.2 → 0.30000000000000004) by re-fixing to decN digits.
@@ -626,8 +626,16 @@ function initCombo(root) {
       value = next;
       c.setAttribute('data-value', value);
       render();
-      emit(c, 'input', { value });
+      // `silent` is set when an external setter wants to refresh the
+      // displayed value without re-firing the input event (otherwise
+      // a UI-driven update would echo back as user input and loop).
+      if (!(opts && opts.silent)) emit(c, 'input', { value });
     }
+    // External setter — host code can update the combo's value without
+    // simulating a drag. Keeps the internal closure value in sync with
+    // the displayed text and `data-value`, so a subsequent user drag
+    // scrubs from the new value instead of jumping to the stale one.
+    c.dcsSet = (v) => set(v, { silent: true });
     render();
     c.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.dcs-combo__btn')) return;

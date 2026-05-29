@@ -1049,9 +1049,11 @@
 </script>
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OrbitControls }     from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 window.THREE = THREE;
 window.OrbitControls = OrbitControls;
+window.TransformControls = TransformControls;
 window.dispatchEvent(new Event('three:ready'));
 </script>
 <script src="viewport.js"></script>

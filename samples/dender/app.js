@@ -373,6 +373,223 @@
     frame.addEventListener("input", function () { reconcile(frame); });
   }
 
+  /* ---- viewport ↔ outliner / inspector / add-menu bridge ----------------
+     Connects the three.js scene (viewport.js → window.DenderVP) to the
+     decius UI: Outliner row click → VP.select; Inspector X/Y/Z combos
+     drive VP.setTransform; the Add menu's items call VP.add(type);
+     selection / transform / add / remove events from VP repaint the
+     Outliner leaves and the Inspector combos.
+
+     Held loosely — if viewport.js hasn't published DenderVP yet (importmap
+     module load races the rest of the boot), this waits on the
+     `dender:vp-ready` event and re-runs. */
+  function wireViewport() {
+    if (!window.DenderVP) {
+      window.addEventListener("dender:vp-ready", wireViewport, { once: true });
+      return;
+    }
+    var VP = window.DenderVP;
+
+    /* ICON_FOR maps registry types → an existing `di-*` icon class so
+       the outliner row matches the object type at a glance. */
+    var ICON_FOR = {
+      'Cube': 'cube', 'UV Sphere': 'cube', 'Icosphere': 'cube',
+      'Cylinder': 'cube', 'Cone': 'cube', 'Torus': 'cube', 'Plane': 'cube',
+      'Point Light': 'light', 'Sun': 'light', 'Spot': 'light',
+      'Camera': 'camera',
+      'Empty': 'cross-target',
+    };
+
+    /* ---- Outliner ----
+       Rebuild the depth-2 "Collection children" rows from VP.objects on
+       every add / remove / rename. Static Scene / Collection / World rows
+       in the HTML are left alone. */
+    var tree = document.getElementById("outliner-tree");
+    var rebuildOutliner = function () {
+      if (!tree) return;
+      // Remove all rows we previously injected (marked by data-vp-row).
+      Array.from(tree.querySelectorAll("[data-vp-row]")).forEach(function (n) { n.remove(); });
+      // Find the Collection row to insert after.
+      var rows = Array.from(tree.querySelectorAll(".dcs-tree__row"));
+      var collectionRow = rows.find(function (r) {
+        var l = r.querySelector(".dcs-tree__label");
+        return l && l.textContent.trim() === "Collection";
+      });
+      var anchor = collectionRow ? collectionRow.nextElementSibling : tree.firstChild;
+      VP.objects.forEach(function (obj) {
+        var row = document.createElement("div");
+        row.className = "dcs-tree__row";
+        row.setAttribute("style", "--depth:2");
+        row.setAttribute("data-vp-row", obj.id);
+        if (VP.selected && VP.selected.id === obj.id) row.setAttribute("aria-selected", "true");
+        var icon = ICON_FOR[obj.type] || "cube";
+        row.innerHTML =
+          '<span class="dcs-tree__chevron"></span>' +
+          '<span class="dcs-tree__icon"><i class="di di-' + icon + '"></i></span>' +
+          '<span class="dcs-tree__label">' + obj.name + '</span>' +
+          '<span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>';
+        tree.insertBefore(row, anchor);
+      });
+    };
+    if (tree) {
+      tree.addEventListener("click", function (e) {
+        var row = e.target.closest("[data-vp-row]");
+        if (!row) return;
+        var id = row.getAttribute("data-vp-row");
+        if (id) VP.select(id);
+      });
+    }
+    rebuildOutliner();
+
+    /* ---- Inspector: object name + icon ---- */
+    var nameEl = document.getElementById("dn-object-name");
+    var iconEl = document.getElementById("dn-object-icon");
+    var setObjectMeta = function (obj) {
+      if (nameEl) nameEl.value = obj ? obj.name : "—";
+      if (iconEl) {
+        var icon = obj ? (ICON_FOR[obj.type] || "cube") : "cube";
+        iconEl.className = "di di-" + icon;
+      }
+    };
+
+    /* ---- Inspector: Location / Rotation / Scale combos ----
+       Each foldout's `.dcs-vec` holds three `[data-dcs-combo]` widgets
+       (X / Y / Z). We read the matching transform component off the
+       selected object and write to it on `dcs:change`. Two-way binding;
+       the `__suppress` flag prevents the update-→change feedback loop. */
+    var props = document.querySelector("#prop-object .dcs-foldout__body .dcs-props");
+    var locVec, rotVec, sclVec;
+    if (props) {
+      var vecs = props.querySelectorAll(".dcs-vec");
+      locVec = vecs[0]; rotVec = vecs[1]; sclVec = vecs[2];
+    }
+    var combosOf = function (vec) {
+      return vec ? Array.from(vec.querySelectorAll("[data-dcs-combo]")) : [];
+    };
+    var setCombo = function (combo, v) {
+      if (!combo) return;
+      var num = Number(v);
+      combo.__suppress = true;
+      // Prefer the framework's external setter (added in 0.6.0) so the
+      // combo's internal closure value stays in sync; fall back to a
+      // data-attribute write for older bundles.
+      if (typeof combo.dcsSet === "function") combo.dcsSet(num);
+      else {
+        combo.setAttribute("data-value", num);
+        var valEl = combo.querySelector(".dcs-combo__value");
+        if (valEl) valEl.textContent = Number(num.toFixed(3)) + (combo.getAttribute("data-suffix") || "");
+      }
+      combo.__suppress = false;
+    };
+    var updateInspectorFromSelected = function () {
+      var obj = VP.selected;
+      setObjectMeta(obj);
+      if (!obj) return;
+      var loc = combosOf(locVec), rot = combosOf(rotVec), scl = combosOf(sclVec);
+      ['x', 'y', 'z'].forEach(function (ax, i) {
+        if (loc[i]) setCombo(loc[i], obj.root.position[ax]);
+        if (rot[i]) setCombo(rot[i], obj.root.rotation[ax] * (180 / Math.PI));
+        if (scl[i]) setCombo(scl[i], obj.root.scale[ax]);
+      });
+    };
+    var bindVec = function (vec, kind) {
+      if (!vec) return;
+      // Combos emit 'input' with detail.value; listen on the vec
+      // container so we don't have to attach per-combo.
+      vec.addEventListener("input", function (e) {
+        var combo = e.target.closest("[data-dcs-combo]");
+        if (!combo || combo.__suppress) return;
+        var arr = combosOf(vec);
+        var i = arr.indexOf(combo);
+        if (i < 0) return;
+        var obj = VP.selected;
+        if (!obj) return;
+        var axis = ['x', 'y', 'z'][i];
+        var val = Number(e.detail && e.detail.value);
+        if (Number.isNaN(val)) return;
+        if (kind === "loc") obj.root.position[axis] = val;
+        else if (kind === "rot") obj.root.rotation[axis] = val * (Math.PI / 180);
+        else if (kind === "scl") obj.root.scale[axis] = val;
+        VP.setTransform(obj, {});  // triggers helper refresh + emits
+      });
+    };
+    bindVec(locVec, "loc");
+    bindVec(rotVec, "rot");
+    bindVec(sclVec, "scl");
+
+    /* ---- Add menu ----
+       Replace the placeholder #menu-add items with primitive entries
+       backed by `data-dcs-value="add:<type>"`. The framework's menu
+       dispatcher fires `dcs:select` with the value on click. */
+    var addMenu = document.getElementById("menu-add");
+    if (addMenu) {
+      addMenu.innerHTML = "";
+      var section = function (label) {
+        var d = document.createElement("div");
+        d.className = "dcs-menu__label";
+        d.textContent = label;
+        addMenu.appendChild(d);
+      };
+      var item = function (type, iconName) {
+        var d = document.createElement("div");
+        d.className = "dcs-menu__item";
+        d.setAttribute("data-dcs-value", "add:" + type);
+        d.innerHTML =
+          '<span class="dcs-menu__icon"><i class="di di-' + iconName + '"></i></span>' +
+          '<span class="dcs-menu__label-text">' + type + '</span>';
+        addMenu.appendChild(d);
+      };
+      var sep = function () {
+        var d = document.createElement("div");
+        d.className = "dcs-menu__sep";
+        addMenu.appendChild(d);
+      };
+      section("Mesh");
+      ['Cube', 'UV Sphere', 'Icosphere', 'Cylinder', 'Cone', 'Torus', 'Plane'].forEach(function (t) { item(t, 'cube'); });
+      sep();
+      section("Light");
+      ['Point Light', 'Sun', 'Spot'].forEach(function (t) { item(t, 'light'); });
+      sep();
+      item('Camera', 'camera');
+      item('Empty',  'cross-target');
+      addMenu.addEventListener("dcs:select", function (e) {
+        var v = e.detail && e.detail.value;
+        if (!v || v.indexOf("add:") !== 0) return;
+        var obj = VP.add(v.slice(4));
+        if (obj) VP.select(obj.id);
+      });
+    }
+
+    /* ---- Shift+A opens the Add menu anchored to the Add button ---- */
+    window.addEventListener("dender:add-menu", function () {
+      var btn = document.querySelector('[data-dcs-toggle="menu"][data-dcs-target="#menu-add"]');
+      if (!btn || !window.decius || !window.decius.menu) return;
+      window.decius.menu.open("#menu-add", btn);
+    });
+
+    /* ---- Viewport shading modes — toggle wireframe / shaded ---- */
+    var shadeBtns = document.querySelectorAll(".dn-shademodes [data-dcs-radio='shade']");
+    shadeBtns.forEach(function (b, i) {
+      b.addEventListener("click", function () {
+        // i: 0=wire, 1=solid (default), 2=texture, 3=render
+        VP.scene.traverse(function (n) {
+          if (n.isMesh && n.material) {
+            n.material.wireframe = (i === 0);
+          }
+        });
+      });
+    });
+
+    /* ---- VP → UI ---- */
+    VP.on('add',       function () { rebuildOutliner(); });
+    VP.on('remove',    function () { rebuildOutliner(); });
+    VP.on('rename',    function () { rebuildOutliner(); });
+    VP.on('select',    function () { rebuildOutliner(); updateInspectorFromSelected(); });
+    VP.on('transform', function () { updateInspectorFromSelected(); });
+
+    updateInspectorFromSelected();
+  }
+
   /* ---- boot ------------------------------------------------------------- */
   function boot() {
     if (window.decius && window.decius.init) window.decius.init(document);
@@ -383,6 +600,7 @@
     wirePlay();
     wireFrameValidation();
     wireOutlinerSelection();
+    wireViewport();
     var rt;
     window.addEventListener("resize", function () {
       clearTimeout(rt); rt = setTimeout(buildTimeline, 120);

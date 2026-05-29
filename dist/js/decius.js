@@ -631,15 +631,16 @@ var decius = (() => {
         if (!unbounded) c.style.setProperty("--fill", `${(value - min) / (max - min) * 100}%`);
         valEl.textContent = formatVal(value);
       };
-      function set(v) {
+      function set(v, opts) {
         let next = step ? Math.round(v / step) * step : v;
         if (decN >= 0) next = parseFloat(next.toFixed(decN + 6));
         if (!unbounded) next = clamp(next, min, max);
         value = next;
         c.setAttribute("data-value", value);
         render();
-        emit(c, "input", { value });
+        if (!(opts && opts.silent)) emit(c, "input", { value });
       }
+      c.dcsSet = (v) => set(v, { silent: true });
       render();
       c.addEventListener("pointerdown", (e) => {
         if (e.target.closest(".dcs-combo__btn")) return;
