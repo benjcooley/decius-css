@@ -152,7 +152,14 @@ body.dcs { overflow: hidden; }
   position: absolute; top: var(--dcs-s-3); right: 232px; z-index: 5;
   display: flex; align-items: flex-start; gap: var(--dcs-s-3);
 }
-.dn-gizmo { width: 72px; height: 72px; cursor: grab; }
+/* The SVG itself is click-through (so dragging empty gizmo space orbits
+   the view); only the axis nubs capture pointer events. */
+.dn-gizmo { width: 72px; height: 72px; pointer-events: none; }
+.dn-gizmo__nub { pointer-events: auto; cursor: pointer; }
+.dn-gizmo__nub circle { transition: stroke .1s ease; }
+.dn-gizmo__nub:hover circle { stroke: #fff; stroke-width: 2; }
+.dn-gizmo__neglabel { opacity: 0; pointer-events: none; transition: opacity .1s ease; }
+.dn-gizmo__nub:hover .dn-gizmo__neglabel { opacity: 1; }
 .dn-navbtns { display: flex; flex-direction: column; gap: 2px; }
 
 /* shading-mode cluster on the viewport header right */

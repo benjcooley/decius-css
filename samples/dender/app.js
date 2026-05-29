@@ -138,36 +138,133 @@
     s.push('<circle cx="'+pc[0].toFixed(1)+'" cy="'+pc[1].toFixed(1)+'" r="2.6" fill="#cfd3da"/>');
   }
 
-  /* ---- navigation gizmo (axis ball, top-right) -------------------------- */
+  /* ---- navigation gizmo (axis ball, top-right) --------------------------
+     A live orientation gizmo wired to the three.js viewport camera. Each
+     frame we rotate the six world-axis directions (±X · ±Y · ±Z) by the
+     inverse camera rotation into the gizmo's 2D space, then depth-sort the
+     nubs so the axes nearest the viewer paint on top (and back-facing ones
+     dim). Clicking a nub snaps the viewport camera to look straight down
+     that axis — Blender's navigate-by-gizmo behaviour. Until viewport.js
+     publishes window.DenderVP the nubs sit in a static iso layout. */
   function buildGizmo() {
     var svg = document.getElementById("vp-gizmo");
     if (!svg) return;
-    var cx = 50, cy = 50, R = 30;
-    var dirs = {
-      x: [COS, SIN], y: [-COS, SIN], z: [0, -1]
-    };
-    var cols = { x:"#d8475a", y:"#6fb74a", z:"#3f7ad0" };
-    var nubs = [];
-    ["x","y","z"].forEach(function(ax){
-      var d = dirs[ax];
-      nubs.push({ ax:ax, sign:1,  x:cx+d[0]*R, y:cy+d[1]*R, col:cols[ax], label:ax.toUpperCase() });
-      nubs.push({ ax:ax, sign:-1, x:cx-d[0]*R, y:cy-d[1]*R, col:cols[ax], label:"" });
-    });
-    var s = ['<circle cx="50" cy="50" r="40" fill="#1f222a" opacity="0.0"/>'];
-    /* axis lines for positive nubs */
-    ["x","y","z"].forEach(function(ax){ var d=dirs[ax];
-      s.push('<line x1="50" y1="50" x2="'+(cx+d[0]*R).toFixed(1)+'" y2="'+(cy+d[1]*R).toFixed(1)+'" stroke="'+cols[ax]+'" stroke-width="2.4" stroke-linecap="round"/>'); });
-    /* draw nubs back-to-front by y */
-    nubs.sort(function(a,b){ return a.y - b.y; });
-    nubs.forEach(function(n){
-      if (n.sign === 1) {
-        s.push('<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="9" fill="'+n.col+'"/>');
-        s.push('<text x="'+n.x.toFixed(1)+'" y="'+(n.y+3.2).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#fff" font-family="IBM Plex Sans, sans-serif">'+n.label+'</text>');
-      } else {
-        s.push('<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="8" fill="#22252c" stroke="'+n.col+'" stroke-width="2"/>');
+    var SVGNS = "http://www.w3.org/2000/svg";
+    var el = function (tag) { return document.createElementNS(SVGNS, tag); };
+    var cx = 50, cy = 50, R = 32;
+
+    /* Positive nubs are filled + labelled; negative nubs are hollow rings
+       whose letter only fades in on hover. `iso` seeds a sensible Y-up
+       isometric layout before the live camera takes over. */
+    var AXES = [
+      { key: "x", sign:  1, dir: [ 1, 0, 0], color: "#d8475a", iso: [ COS,  SIN] },
+      { key: "y", sign:  1, dir: [ 0, 1, 0], color: "#6fb74a", iso: [ 0,   -1  ] },
+      { key: "z", sign:  1, dir: [ 0, 0, 1], color: "#3f7ad0", iso: [-COS,  SIN] },
+      { key: "x", sign: -1, dir: [-1, 0, 0], color: "#d8475a", iso: [-COS, -SIN] },
+      { key: "y", sign: -1, dir: [ 0,-1, 0], color: "#6fb74a", iso: [ 0,    1  ] },
+      { key: "z", sign: -1, dir: [ 0, 0,-1], color: "#3f7ad0", iso: [ COS, -SIN] }
+    ];
+
+    var VP = null;
+    function snap(dir) {
+      if (!VP) return;
+      var cam = VP.camera, controls = VP.controls;
+      var tgt = controls.target;
+      var dist = cam.position.distanceTo(tgt) || 8;
+      // Position the camera `dist` along the axis from the orbit target and
+      // let OrbitControls.update() re-aim it (its pole clamp keeps the
+      // straight up/down views from gimbal-flipping).
+      cam.position.set(tgt.x + dir[0] * dist, tgt.y + dir[1] * dist, tgt.z + dir[2] * dist);
+      controls.update();
+    }
+
+    svg.innerHTML = "";
+    var lineLayer = el("g");
+    var nubLayer = el("g");
+    svg.appendChild(lineLayer);
+    svg.appendChild(nubLayer);
+
+    var nodes = AXES.map(function (a) {
+      var node = { dir: a.dir, depth: 0, sx: cx + a.iso[0] * R, sy: cy + a.iso[1] * R };
+      if (a.sign > 0) {
+        var ln = el("line");
+        ln.setAttribute("x1", cx); ln.setAttribute("y1", cy);
+        ln.setAttribute("x2", node.sx); ln.setAttribute("y2", node.sy);
+        ln.setAttribute("stroke", a.color);
+        ln.setAttribute("stroke-width", "2.4");
+        ln.setAttribute("stroke-linecap", "round");
+        lineLayer.appendChild(ln);
+        node.line = ln;
       }
+      var g = el("g");
+      g.setAttribute("class", "dn-gizmo__nub");
+      var c = el("circle");
+      c.setAttribute("cx", node.sx); c.setAttribute("cy", node.sy);
+      if (a.sign > 0) {
+        c.setAttribute("r", "9"); c.setAttribute("fill", a.color);
+      } else {
+        c.setAttribute("r", "8"); c.setAttribute("fill", "#22252c");
+        c.setAttribute("stroke", a.color); c.setAttribute("stroke-width", "2");
+      }
+      g.appendChild(c);
+      var t = el("text");
+      t.setAttribute("x", node.sx); t.setAttribute("y", node.sy + 3.2);
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("font-size", "9");
+      t.setAttribute("font-weight", "700");
+      t.setAttribute("font-family", "IBM Plex Sans, sans-serif");
+      t.textContent = a.key.toUpperCase();
+      if (a.sign > 0) {
+        t.setAttribute("fill", "#fff");
+      } else {
+        t.setAttribute("fill", a.color);
+        t.setAttribute("class", "dn-gizmo__neglabel");
+      }
+      g.appendChild(t);
+      g.addEventListener("click", function (e) { e.stopPropagation(); snap(a.dir); });
+      nubLayer.appendChild(g);
+      node.group = g; node.circle = c; node.text = t;
+      return node;
     });
-    svg.innerHTML = s.join("");
+
+    /* Per-frame layout — only repaints when the camera orientation
+       actually changed, so hover/click stay stable while the view is
+       still and there's no needless DOM churn. */
+    var tmp = null, lastKey = "";
+    function layout() {
+      requestAnimationFrame(layout);
+      if (!VP) {
+        if (!window.DenderVP) return;
+        VP = window.DenderVP;
+        tmp = new VP.THREE.Vector3();
+      }
+      var q = VP.camera.quaternion;
+      var key = q.x.toFixed(4) + "," + q.y.toFixed(4) + "," + q.z.toFixed(4) + "," + q.w.toFixed(4);
+      if (key === lastKey) return;
+      lastKey = key;
+      var inv = q.clone().invert();
+      nodes.forEach(function (n) {
+        tmp.set(n.dir[0], n.dir[1], n.dir[2]).applyQuaternion(inv);
+        n.sx = cx + tmp.x * R;        // camera-local X → screen right
+        n.sy = cy - tmp.y * R;        // camera-local Y → screen up (SVG y is down)
+        n.depth = tmp.z;              // +Z is toward the viewer → paints on top
+        n.circle.setAttribute("cx", n.sx.toFixed(2));
+        n.circle.setAttribute("cy", n.sy.toFixed(2));
+        n.text.setAttribute("x", n.sx.toFixed(2));
+        n.text.setAttribute("y", (n.sy + 3.2).toFixed(2));
+        n.group.style.opacity = n.depth < -0.05 ? "0.55" : "1";
+        if (n.line) {
+          n.line.setAttribute("x2", n.sx.toFixed(2));
+          n.line.setAttribute("y2", n.sy.toFixed(2));
+          n.line.setAttribute("opacity", n.depth >= 0 ? "1" : "0.4");
+        }
+      });
+      /* Painter's algorithm: re-append nubs nearest the viewer last.
+         Moving existing nodes keeps their listeners + hover state. */
+      nodes.slice().sort(function (a, b) { return a.depth - b.depth; })
+        .forEach(function (n) { nubLayer.appendChild(n.group); });
+    }
+    requestAnimationFrame(layout);
   }
 
   /* ---- timeline --------------------------------------------------------- */

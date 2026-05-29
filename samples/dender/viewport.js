@@ -88,10 +88,32 @@
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // World axes (R / G / B short gnomon at origin).
-    const axes = new THREE.AxesHelper(1.4);
-    axes.material.depthTest = false;
-    axes.renderOrder = 1;
+    // World axes — a small gnomon of R / G / B arrows at the origin. Each
+    // arrow is a cylinder shaft capped with a cone head (a plain line per
+    // axis reads as unfinished). Drawn unlit with depthTest off + a high
+    // renderOrder so the gnomon floats over the scene like Blender's
+    // origin gizmo regardless of what's in front of it.
+    const AXIS_COLORS = { x: 0xd8475a, y: 0x6fb74a, z: 0x3f7ad0 };
+    const makeAxisArrow = (dir, color) => {
+      const grp = new THREE.Group();
+      const shaftLen = 1.06, headLen = 0.34, shaftR = 0.022, headR = 0.085;
+      const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false, toneMapped: false });
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(shaftR, shaftR, shaftLen, 14), mat);
+      shaft.position.y = shaftLen / 2;
+      const head = new THREE.Mesh(new THREE.ConeGeometry(headR, headLen, 18), mat);
+      head.position.y = shaftLen + headLen / 2;
+      shaft.renderOrder = head.renderOrder = 3;
+      grp.add(shaft, head);
+      // Cylinder/cone are built along +Y; rotate the whole arrow so +Y → dir.
+      grp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      return grp;
+    };
+    const axes = new THREE.Group();
+    axes.add(
+      makeAxisArrow(new THREE.Vector3(1, 0, 0), AXIS_COLORS.x),
+      makeAxisArrow(new THREE.Vector3(0, 1, 0), AXIS_COLORS.y),
+      makeAxisArrow(new THREE.Vector3(0, 0, 1), AXIS_COLORS.z)
+    );
     scene.add(axes);
 
     /* ──────────────────────────────────────────────────────────
