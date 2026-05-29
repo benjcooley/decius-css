@@ -14,6 +14,20 @@
                                     widget always reads one shade darker than
                                     whatever panel surface it lands on. */
   --dcs-rail:        #181a21;   /* deepest separator */
+  --dcs-stage:       #4a5160;   /* "main view" surface — Photoshop-style:
+                                    one step LIGHTER than the dock chrome
+                                    so the editor (canvas / 3D viewport)
+                                    reads as the focal surface of the app.
+                                    Used by .dcs-dockpane--center. */
+
+  /* Optical text-centering nudge — IBM Plex Sans and most pro fonts have
+     ascender + cap-height occupying the top ~92% of the em with the
+     descender slot mostly empty, so `align-items: center` lands the
+     glyphs ~1–2px above the visual midline of the row. Applied as
+     padding-top on tight, single-line-of-text rows (menubar items,
+     menu items, brand labels) to push the glyphs onto the optical
+     midline. Adjust per-theme if your font has different metrics. */
+  --dcs-text-nudge:  2px;
 
   /* Borders */
   --dcs-line:        #14161c;   /* hard, dark separator */
@@ -160,8 +174,10 @@
 
 /* Accent recipes (set by Tweaks panel) */
 [data-dcs-accent="cyan"]    { --dcs-accent: #00b8d4; --dcs-accent-hi:#22d4ee; --dcs-accent-lo:#0098b0; --dcs-accent-dim: rgba(0,184,212,.18); --dcs-accent-haze: rgba(0,184,212,.35); }
+[data-dcs-accent="teal"]    { --dcs-accent: #2f9c93; --dcs-accent-hi:#3fb8ad; --dcs-accent-lo:#247b73; --dcs-accent-dim: rgba(47,156,147,.18); --dcs-accent-haze: rgba(47,156,147,.35); }
 [data-dcs-accent="orange"]  { --dcs-accent: #ff8a3a; --dcs-accent-hi:#ffa566; --dcs-accent-lo:#e07024; --dcs-accent-dim: rgba(255,138,58,.18); --dcs-accent-haze: rgba(255,138,58,.35); }
 [data-dcs-accent="violet"]  { --dcs-accent: #8b6dff; --dcs-accent-hi:#a48cff; --dcs-accent-lo:#6f4eea; --dcs-accent-dim: rgba(139,109,255,.18); --dcs-accent-haze: rgba(139,109,255,.35); }
+[data-dcs-accent="purple"]  { --dcs-accent: #8466cf; --dcs-accent-hi:#9d83df; --dcs-accent-lo:#6a4eb3; --dcs-accent-dim: rgba(132,102,207,.18); --dcs-accent-haze: rgba(132,102,207,.35); }
 [data-dcs-accent="green"]   { --dcs-accent: #3dd68a; --dcs-accent-hi:#5be8a0; --dcs-accent-lo:#2bb872; --dcs-accent-dim: rgba(61,214,138,.18); --dcs-accent-haze: rgba(61,214,138,.35); }
 
 /* Darkness modes */
@@ -172,6 +188,7 @@
   --dcs-surface-2: #2e323e;
   --dcs-surface-3: #383d4a;
   --dcs-well: #14161c;
+  --dcs-stage: #3a4150;
 }
 [data-dcs-dark="lighter"] {
   --dcs-bg-app: #2c303a;
@@ -180,4 +197,5 @@
   --dcs-surface-2: #4a5161;
   --dcs-surface-3: #555d6e;
   --dcs-well: #22252e;   /* darker than lighter-mode bg-app */
+  --dcs-stage: #5e6577;
 }

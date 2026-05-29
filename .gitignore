@@ -11,6 +11,10 @@ site/src/app.gen.jsx
 # raw dist mirrored into the site for download links (produced by vite.config)
 site/public/dl/
 
+# sample apps mirrored from samples/ into the site (produced by vite.config syncSamples)
+site/public/dender/
+site/public/photoedit/
+
 # dev/build scratch
 .cache/
 

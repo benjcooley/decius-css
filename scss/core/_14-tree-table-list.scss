@@ -55,6 +55,10 @@
 }
 .dcs-list__item:hover,
 .dcs-tree__row:hover { background: var(--dcs-surface-1); color: var(--dcs-text); }
+/* Collapsing a tree branch hides descendant rows via `[hidden]`. Override
+   the default class-driven `display: flex` so the hidden state wins. */
+.dcs-list__item[hidden],
+.dcs-tree__row[hidden] { display: none; }
 .dcs-list__item[aria-selected="true"],
 .dcs-tree__row[aria-selected="true"] {
   background: var(--dcs-accent-dim);

@@ -4,6 +4,98 @@
 const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
 
 /* ─────────────────────────────────────────────────────────────
+   Live sample apps — actual full-page applications built on the
+   framework, linked out to /dender/ and /photoedit/. The tiles
+   use WebP screenshots from site/public/images/ at thumbnail
+   resolution (~600x385 displayed, retina-ready at 1200x770).
+   ───────────────────────────────────────────────────────────── */
+function SectionLiveApps() {
+  const apps = [
+    {
+      slug: 'dender',
+      image: 'dender.webp',
+      title: 'Dender',
+      tagline: '3D modeler',
+      desc: 'A Blender-style modeling environment — dockable inspector and outliner, floating N-panel and tool rail, multi-tab document/viewport, full per-tab toolbars, timeline. Built entirely from decius components.',
+      icon: 'cube',
+    },
+    {
+      slug: 'photoedit',
+      image: 'photoedit.webp',
+      title: 'Photo Edit',
+      tagline: 'Image editor',
+      desc: 'A Photoshop-style image editor — every panel floats and tears off, document tabs across the top, real color picker popovers from the FG/BG chips, layers / channels / paths / history dockpane.',
+      icon: 'image',
+    },
+  ];
+  return (
+    <section className="dw-section" id="sample-apps" style={{ marginTop: 24 }}>
+      <div className="dw-section__eyebrow">Live sample apps</div>
+      <h2>The whole framework, driving real apps.</h2>
+      <p className="dw-section__lead">
+        Two full applications built only with decius components. Same docking, tear-off, edge-snap,
+        popover and color-picker primitives you find in the docs — composed into something you can
+        actually click around in.
+      </p>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: 24,
+        marginTop: 28,
+      }}>
+        {apps.map(a => (
+          <a key={a.slug}
+             href={`${import.meta.env.BASE_URL}${a.slug}/index.html`}
+             target="_blank" rel="noreferrer noopener"
+             style={{
+               display: 'block',
+               textDecoration: 'none',
+               color: 'inherit',
+               background: 'var(--dw-surface)',
+               border: '1px solid var(--dw-line)',
+               borderRadius: 10,
+               overflow: 'hidden',
+               transition: 'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
+             }}
+             onMouseEnter={(e) => {
+               e.currentTarget.style.transform = 'translateY(-2px)';
+               e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,.35)';
+               e.currentTarget.style.borderColor = 'var(--dw-accent)';
+             }}
+             onMouseLeave={(e) => {
+               e.currentTarget.style.transform = '';
+               e.currentTarget.style.boxShadow = '';
+               e.currentTarget.style.borderColor = 'var(--dw-line)';
+             }}>
+            <div style={{ aspectRatio: '1200 / 770', background: 'var(--dcs-bg-app)', overflow: 'hidden' }}>
+              <img src={`${import.meta.env.BASE_URL}images/${a.image}`}
+                   alt={`${a.title} — ${a.tagline}`}
+                   loading="lazy"
+                   style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ padding: '14px 18px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <Icon name={a.icon} size="sm" style={{ color: 'var(--dw-accent)' }} />
+                <span style={{ fontWeight: 600, fontSize: 16 }}>{a.title}</span>
+                <span style={{ color: 'var(--dw-text-mute)', fontSize: 13 }}>· {a.tagline}</span>
+                <span style={{ flex: 1 }} />
+                <span style={{ color: 'var(--dw-accent)', fontSize: 13, fontFamily: 'var(--dw-font-mono)' }}>
+                  Open <Icon name="chevron-right" size="sm" />
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.5, color: 'var(--dw-text-mute)' }}>
+                {a.desc}
+              </p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+Object.assign(window, { SectionLiveApps });
+
+/* ─────────────────────────────────────────────────────────────
    Sample DCC tool — "decius modeler"
    A scaled-down composite of every DCC pattern in the framework.
    ───────────────────────────────────────────────────────────── */

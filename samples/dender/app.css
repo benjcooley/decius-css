@@ -1,0 +1,327 @@
+/* ============================================================================
+   dender — app-specific styles. Everything reusable comes from decius.bundle.css;
+   this file only covers the window grid, the 3D-viewport surface + overlays,
+   the navigation gizmo cluster, and the timeline (ruler / playhead / keyframes).
+   ========================================================================== */
+
+html, body { height: 100%; margin: 0; }
+body.dcs { overflow: hidden; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* — APP SHELL ————————————————————————————————————————————————————————
+   Vertical flex stack: topbar / workspaces / workarea / statusbar.
+   The workarea is a `.dcs-dock dcs-dock--v` that nests further .dcs-dock
+   rows + .dcs-splitter handles. All resize happens via stock decius;
+   no grid + no .dn-gutter anywhere. */
+.dn-app {
+  position: fixed; inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--dcs-bg-app);
+}
+.dn-app > .dn-workspaces { flex: 0 0 auto; }
+.dn-app > .dn-workarea { flex: 1; min-height: 0; }
+
+/* — TOPBAR ———————————————————————————————————————————————————————————
+   The topbar is a single horizontal toolbar that hosts the app logo,
+   the menubar, and a row of theme/control groups. Every child group
+   is itself flex/inline-flex with align-items:center, so the whole
+   row reads as one centered band of icon-plus-text pairs. */
+.dn-topbar {
+  gap: var(--dcs-s-2);
+  padding-left: var(--dcs-s-2);
+  align-items: center;
+}
+/* The menubar sits inside the topbar — drop its own block-height,
+   background, border and padding so it acts as a transparent flex
+   item that flows with the surrounding toolbar metrics. Lock its
+   items to line-height:1 so their text glyph boxes match the rest
+   of the topbar's children (no taller line-box pushing the row out
+   of vertical center). */
+.dn-topbar > .dcs-menubar {
+  height: auto;
+  align-self: stretch;
+  background: transparent;
+  border-bottom: none;
+  padding: 0;
+  line-height: 1;
+}
+.dn-topbar > .dcs-menubar > .dcs-menubar__item {
+  /* Stretch to fill the topbar's height; the stock `--dcs-text-nudge`
+     padding-top inside `.dcs-menubar__item` handles the optical
+     centering of the caps text. */
+  align-self: stretch;
+}
+
+/* The DENDER title cell — a dark brand patch in the top-left. Children
+   share `line-height: 1` so their glyph boxes are exactly font-size
+   tall; the inline-flex parent centres them on its cross axis. The
+   `<i class="di di-decius">` icon font glyph sizes off font-size
+   (NOT width/height) so we set font-size explicitly. */
+.dn-logo {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  gap: var(--dcs-s-2);
+  /* Nudge applied at the container level so the icon AND text shift
+     together as a unit — applying the nudge per-child caused their
+     internal baselines to drift apart (icon font and text font have
+     different em-box metrics). */
+  padding: var(--dcs-text-nudge) var(--dcs-s-4) 0;
+  margin: 0 var(--dcs-s-1) 0 calc(-1 * var(--dcs-s-2));
+  background: #0d0f14;
+  color: var(--dcs-text);
+  cursor: pointer;
+  line-height: 1;
+}
+.dn-logo:hover { background: #14171e; }
+.dn-logo__mark {
+  flex: none;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--dcs-accent);
+}
+.dn-logo__name {
+  font-weight: 700;
+  letter-spacing: .14em;
+  font-size: var(--dcs-fs-sm);
+  line-height: 1;
+  color: #e7e9ee;
+}
+
+/* accent switcher dots */
+.dn-accent-row { display: inline-flex; align-items: center; gap: 4px; padding: 0 var(--dcs-s-2); }
+.dn-accent-dot {
+  width: 14px; height: 14px; border-radius: 50%; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+}
+.dn-accent-dot[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--dcs-bg-app), 0 0 0 3px currentColor;
+}
+
+/* — WORKSPACE BAR (sits inside the dockpane tabbar) ———————————————————— */
+.dn-workspaces { width: 100%; }
+.dn-workspaces > .dcs-dockpane__tabbar { padding-left: var(--dcs-s-2); }
+
+/* — WORK AREA (flex + stock splitters) ————————————————————————————————
+   .dn-workarea = .dcs-dock.dcs-dock--v
+     ├─ .dcs-dock                        (row: viewport | right column)
+     │    ├─ .dn-viewport (.dcs-dockpane--center, flex:1)
+     │    ├─ .dcs-splitter[data-dcs-splitter]
+     │    └─ .dn-right (.dcs-dock.dcs-dock--v, flex:0 0 340px)
+     │         ├─ .dn-outliner (.dcs-dockpane, flex:0 0 240px)
+     │         ├─ .dcs-splitter--h[data-dcs-splitter="h"]
+     │         └─ .dn-props (.dcs-dockpane, flex:1)
+     ├─ .dcs-splitter--h[data-dcs-splitter="h"]
+     └─ .dn-timeline (.dcs-dockpane, flex:0 0 140px)
+*/
+.dn-workarea > .dcs-dock { min-height: 0; min-width: 0; }
+.dn-right, .dn-right > .dcs-dockpane { min-height: 0; min-width: 0; }
+.dn-viewport, .dn-outliner, .dn-props, .dn-timeline { min-width: 0; min-height: 0; }
+
+/* — 3D VIEWPORT ———————————————————————————————————————————————————————
+   The viewport is a .dcs-dockpane--center. Its body / tabpanel /
+   .dn-vp-canvas all need to fill so the procedural SVG scene actually
+   has dimensions to render into. */
+.dn-viewport { position: relative; min-width: 0; }
+.dn-viewport > .dcs-dockpane__body { padding: 0; display: flex; }
+.dn-viewport > .dcs-dockpane__body > [data-dcs-tabpanel] { flex: 1; min-width: 0; min-height: 0; display: flex; }
+.dn-vp-canvas {
+  position: relative; flex: 1 1 auto; min-height: 0; min-width: 0; overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 8%, #50545d 0%, #3a3d45 38%, #292b31 78%, #202228 100%);
+}
+.dn-vp-canvas > svg#vp-scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* viewport stats overlay */
+.dn-vp-stats {
+  position: absolute; top: var(--dcs-s-3); left: 56px; z-index: 4;
+  font-size: var(--dcs-fs-xs); color: #d7dae1;
+  text-shadow: 0 1px 2px rgba(0,0,0,.8);
+  pointer-events: none; line-height: 1.5;
+}
+.dn-vp-stats b { font-weight: 700; }
+.dn-vp-corner {
+  position: absolute; bottom: var(--dcs-s-3); left: var(--dcs-s-3); z-index: 4;
+  font-size: var(--dcs-fs-xs); color: var(--dcs-text-dim);
+  text-shadow: 0 1px 2px rgba(0,0,0,.8); pointer-events: none;
+}
+
+/* navigation gizmo cluster */
+.dn-navcluster {
+  position: absolute; top: var(--dcs-s-3); right: 232px; z-index: 5;
+  display: flex; align-items: flex-start; gap: var(--dcs-s-3);
+}
+.dn-gizmo { width: 72px; height: 72px; cursor: grab; }
+.dn-navbtns { display: flex; flex-direction: column; gap: 2px; }
+
+/* shading-mode cluster on the viewport header right */
+.dn-shademodes { display: inline-flex; }
+
+/* — N-PANEL (floating in viewport) ————————————————————————————————————— */
+.dn-npanel .dcs-tabs {
+  padding: 0 var(--dcs-s-2);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+}
+.dn-npanel .dcs-panel__body { padding: 0; }
+
+/* — TOOLRAIL fine-tune ———————————————————————————————————————————————— */
+.dn-toolrail { gap: 2px; }
+.dn-toolrail .dcs-divider {
+  width: 60%; height: 1px; background: var(--dcs-line); margin: var(--dcs-s-1) auto;
+}
+
+/* Toolbar icon buttons: stock decius `.dcs-btn--ghost` already gives the
+   flat (Photoshop/Blender-style) look — transparent until hover, and the
+   `.dcs-toolbar .dcs-btn[aria-pressed="true"]` rule promotes the selected
+   tool to solid accent. No app-side overrides needed. */
+
+/* — RIGHT COLUMN: outliner + properties ——————————————————————————————— */
+.dn-outliner, .dn-props { background: var(--dcs-bg); overflow: hidden; }
+.dn-outliner > .dcs-dockpane__body { padding: 0; }
+
+/* Inspector layout — anchored to the tabpanel itself (#props-body) and
+   to its surrounding dockpane body, NOT to the .dn-props dockpane class.
+   That way the layout travels with the content when the Inspector tab
+   is torn off into a floater: the new dockpane doesn't carry .dn-props,
+   but #props-body always does, and its host body is always a
+   .dcs-dockpane__body whether the parent is .dn-props or a fresh
+   tear-off. Drops the body padding once and pins the inspector's icon
+   rail + sheet to a permanent two-column row layout (never switches to
+   vertical, no matter how narrow the panel gets — the rail stays on
+   the left, the sheet scrolls). */
+.dcs-dockpane__body:has(> #props-body) {
+  padding: 0;
+  display: flex;
+  /* Inspector's `.dn-props__sheet` is the scrolling region. Suppress the
+     stock `.dcs-dockpane__body { overflow: auto }` so a nested scrollbar
+     doesn't appear here too. */
+  overflow: hidden;
+}
+#props-body {
+  flex: 1; min-width: 0; min-height: 0;
+  display: flex; flex-direction: row;
+}
+#props-body > .dcs-tabs {
+  flex: 0 0 auto;
+  flex-direction: column;
+  height: auto;
+  width: auto;
+  background: var(--dcs-surface-1);
+  border-right: none;
+  border-bottom: none;
+  padding: var(--dcs-s-1) 0;
+  gap: 1px;
+}
+#props-body > .dcs-tabs .dcs-tab {
+  width: 28px; height: 28px;
+  padding: 0; justify-content: center;
+  background: transparent;
+  border-color: transparent;
+  border-radius: var(--dcs-r-1);
+  margin: 1px var(--dcs-s-1);
+  color: var(--dcs-text-dim);
+}
+#props-body > .dcs-tabs .dcs-tab:hover {
+  background: var(--dcs-surface-2);
+  border-color: transparent;
+  color: var(--dcs-text);
+}
+#props-body > .dcs-tabs .dcs-tab[aria-selected="true"] {
+  background: var(--dcs-accent-dim);
+  border-color: transparent;
+  color: var(--dcs-accent);
+}
+#props-body > .dcs-tabs .dcs-tab[aria-selected="true"]::after { display: none; }
+.dn-props__sheet { flex: 1 1 auto; min-width: 0; overflow: auto; }
+.dn-props__sheet .dcs-foldouts { padding: var(--dcs-s-3); }
+
+/* modifier card */
+.dn-modifier {
+  margin: var(--dcs-s-3); border-radius: var(--dcs-r-3); overflow: hidden;
+  border: 1px solid var(--dcs-line);
+  background: var(--dcs-surface-1);
+}
+.dn-modifier__head {
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  height: var(--dcs-h); padding: 0 var(--dcs-s-2);
+  background: var(--dcs-surface-2);
+  border-bottom: 1px solid var(--dcs-line);
+}
+.dn-modifier__title { flex: 1 1 auto; font-weight: 500; font-size: var(--dcs-fs-sm); }
+.dn-modifier__body { padding: var(--dcs-s-3); display: grid; gap: var(--dcs-s-3); }
+
+/* material preview chip */
+.dn-mat-preview {
+  width: 18px; height: 18px; border-radius: 50%; flex: none;
+  background: conic-gradient(from 200deg, #cf6b3a, #e8943c 40%, #8a4a26);
+  box-shadow: inset -3px -3px 5px rgba(0,0,0,.4), inset 2px 2px 4px rgba(255,255,255,.25);
+}
+
+/* small caption inside an inspector tab */
+.dn-cap {
+  font-size: var(--dcs-fs-xs); color: var(--dcs-text-mute);
+  padding: var(--dcs-s-3) var(--dcs-s-3) 0;
+}
+
+/* — TIMELINE ————————————————————————————————————————————————————————— */
+.dn-timeline { min-height: 0; background: var(--dcs-bg); }
+.dn-timeline > .dcs-dockpane__body { padding: 0; display: flex; }
+.dn-timeline > .dcs-dockpane__body > [data-dcs-tabpanel] { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.dn-tl-controls { display: flex; align-items: center; gap: 1px; }
+.dn-timeline-body {
+  position: relative; flex: 1 1 auto; min-height: 0;
+  background: var(--dcs-bg-app);
+  overflow: hidden;
+}
+.dn-tl-ruler {
+  position: relative; height: 22px;
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  overflow: hidden;
+}
+.dn-tl-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--dcs-line); }
+.dn-tl-tick span {
+  position: absolute; top: 3px; left: 3px;
+  font-size: var(--dcs-fs-xs); color: var(--dcs-text-mute);
+  font-variant-numeric: tabular-nums;
+}
+.dn-tl-tick--major { background: var(--dcs-line-strong); }
+.dn-tl-tracks { position: relative; flex: 1; }
+.dn-tl-track {
+  position: relative; height: 20px;
+  border-bottom: 1px solid var(--dcs-line);
+  display: flex; align-items: center;
+}
+.dn-tl-track__label {
+  position: absolute; left: var(--dcs-s-3);
+  font-size: var(--dcs-fs-xs); color: var(--dcs-text-dim);
+  z-index: 2;
+}
+.dn-key {
+  position: absolute; width: 9px; height: 9px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--dcs-accent);
+  border: 1px solid #2a1c08;
+  border-radius: 1.5px;
+}
+.dn-key--sel { background: #fff; }
+.dn-playhead { position: absolute; top: 0; bottom: 0; width: 0; z-index: 6; pointer-events: none; }
+.dn-playhead::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px;
+  background: var(--dcs-accent);
+}
+.dn-playhead__flag {
+  position: absolute; top: 0; left: -14px; width: 28px; height: 15px;
+  background: var(--dcs-accent);
+  color: #0a1220;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 0 0 2px 2px;
+  font-variant-numeric: tabular-nums;
+}
+.dn-tl-range {
+  position: absolute; top: 0; bottom: 0;
+  background: color-mix(in srgb, var(--dcs-accent) 9%, transparent);
+}

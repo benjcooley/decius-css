@@ -1,0 +1,524 @@
+/* ===========================================================================
+   DECIUS-PHOTOSHOP — app-specific CSS
+   Everything visual comes from decius.css tokens (--dcs-*). This file only
+   wires LAYOUT + the few image-editor-specific surfaces decius doesn't ship
+   (document canvas, checkerboard, rulers, layer thumbnails, picker layout).
+   =========================================================================== */
+
+html, body { height: 100%; margin: 0; }
+body.dcs {
+  overflow: hidden;
+  background: var(--dcs-bg-app);
+  color: var(--dcs-text);
+  font-family: var(--dcs-font);
+  font-size: var(--dcs-fs);
+  -webkit-font-smoothing: antialiased;
+}
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ---- top-level app grid ------------------------------------------------- */
+.ps-app {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  height: 100vh;
+  width: 100vw;
+}
+.ps-body {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ---- menubar tweaks ----------------------------------------------------- */
+.ps-menubar .ps-doc-name {
+  color: var(--dcs-text-mute);
+  font-size: var(--dcs-fs-sm);
+  font-family: var(--dcs-font-mono);
+}
+
+/* Dark "Decius Photo" brand patch in the top-left. The container is
+   inline-flex with align-items: center; line-height: 1 on both children
+   plus the stock `--dcs-text-nudge` padding-top so caps and the icon
+   glyph sit on the optical midline together. The patch sits flush
+   against the left edge of the menubar. */
+.ps-brand {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  gap: var(--dcs-s-2);
+  padding: var(--dcs-text-nudge) var(--dcs-s-4) 0;
+  margin: 0 var(--dcs-s-3) 0 calc(-1 * var(--dcs-s-3));
+  background: #0d0f14;
+  color: var(--dcs-text);
+  cursor: pointer;
+  line-height: 1;
+}
+.ps-brand:hover { background: #14171e; }
+.ps-brand__mark {
+  flex: none;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--dcs-accent);
+}
+.ps-brand__name {
+  font-weight: 600;
+  letter-spacing: .02em;
+  font-size: var(--dcs-fs-sm);
+  line-height: 1;
+  color: #e7e9ee;
+  white-space: nowrap;
+}
+
+/* Settings cog at the far right of the menubar. Anchor it as a normal
+   small icon button rather than letting it stretch to the menubar's
+   full height — the stretched ghost button visually drifted off the
+   text baseline of the other menubar items. */
+.ps-settings {
+  align-self: center;
+  margin: 0 var(--dcs-s-2) 0 var(--dcs-s-1);
+}
+/* While the tweaks popover is open the cog should read as "pressed"
+   so the connection between trigger and popover is obvious. */
+.ps-settings[aria-expanded="true"],
+.ps-settings.dcs--open {
+  background: var(--dcs-surface-3);
+  color: var(--dcs-accent);
+}
+
+/* ---- theme tweaks popover ----------------------------------------------- */
+.ps-tweaks-popover .dcs-field {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: var(--dcs-s-3);
+}
+.ps-accent-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  padding: var(--dcs-s-1) 0;
+}
+.ps-accent-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+  transition: transform var(--dcs-t-fast);
+}
+.ps-accent-dot:hover { transform: scale(1.12); }
+.ps-accent-dot[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--dcs-bg-app), 0 0 0 3px currentColor;
+}
+
+/* ---- options bar (contextual tool options) ------------------------------ */
+.ps-options {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-3);
+  height: var(--dcs-h-xl);
+  padding: 0 var(--dcs-s-4);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ps-options .ps-optgroup {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+}
+#ps-opt-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-3);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.ps-options label.ps-optlabel {
+  color: var(--dcs-text-dim);
+  font-size: var(--dcs-fs-sm);
+}
+.ps-options .dcs-divider--v { height: 20px; align-self: center; }
+.ps-tool-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: var(--dcs-r-2);
+  background: var(--dcs-well);
+  color: var(--dcs-accent);
+  font-size: 16px;
+  flex: none;
+}
+.ps-tool-name { font-weight: 600; font-size: var(--dcs-fs-md); }
+
+/* ---- left tool strip (now a FLOATING vertical toolbar) ------------------ */
+.ps-toolstrip {
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: auto;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.ps-toolstrip > .dcs-grip { margin-bottom: var(--dcs-s-2); }
+.ps-toolstrip #ps-tools {
+  display: grid;
+  grid-template-columns: repeat(2, 34px);
+  gap: 1px;
+  align-items: center;
+}
+.ps-toolstrip #ps-tools .ps-toolsep { grid-column: 1 / -1; width: 28px; justify-self: center; }
+.ps-tool {
+  position: relative;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--dcs-r-2);
+  color: var(--dcs-text-dim);
+  font-size: 17px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--dcs-t-fast), color var(--dcs-t-fast);
+}
+.ps-tool:hover { background: var(--dcs-surface-2); color: var(--dcs-text); }
+.ps-tool[aria-pressed="true"] {
+  background: var(--dcs-accent-dim);
+  color: var(--dcs-accent-hi);
+  border-color: var(--dcs-accent-lo);
+}
+/* little corner mark = tool group has alternates */
+.ps-tool[data-group="1"]::after {
+  content: "";
+  position: absolute;
+  right: 3px; bottom: 3px;
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-bottom: 4px solid var(--dcs-text-mute);
+}
+.ps-tool[aria-pressed="true"][data-group="1"]::after { border-bottom-color: var(--dcs-accent-hi); }
+.ps-toolsep {
+  width: 22px; height: 1px;
+  background: var(--dcs-line-soft);
+  margin: var(--dcs-s-2) 0;
+  flex: none;
+}
+
+/* foreground / background color chips (classic overlap) */
+.ps-colorchips {
+  position: relative;
+  width: 38px; height: 38px;
+  margin: var(--dcs-s-3) 0 var(--dcs-s-1);
+  flex: none;
+}
+.ps-colorchip {
+  position: absolute;
+  width: 24px; height: 24px;
+  border: 1px solid var(--dcs-line-strong);
+  border-radius: var(--dcs-r-1);
+  box-shadow: var(--dcs-shadow-1);
+  cursor: pointer;
+}
+.ps-colorchip--bg { right: 0; bottom: 0; background: #ffffff; z-index: 1; }
+.ps-colorchip--fg { left: 0; top: 0; background: #000000; z-index: 2; }
+.ps-colorchips .ps-swap, .ps-colorchips .ps-reset {
+  position: absolute;
+  color: var(--dcs-text-mute);
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 1;
+}
+.ps-colorchips .ps-swap { right: 0; top: -2px; }
+.ps-colorchips .ps-reset { left: -1px; bottom: -1px; font-size: 13px; }
+.ps-colorchips .ps-swap:hover, .ps-colorchips .ps-reset:hover { color: var(--dcs-accent); }
+
+/* ---- center: rulers + document stage (fills the body) -------------------
+   The stage IS a Photoshop-style center surface — the canvas reads as the
+   focal area, brighter than the surrounding dock chrome. Uses the stock
+   `--dcs-stage` token rather than hard-coding a color. */
+.ps-stagewrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  grid-template-rows: 18px 1fr;
+  min-width: 0; min-height: 0;
+  background: var(--dcs-stage);
+}
+.ps-ruler-corner { background: var(--dcs-surface-1); border-right: 1px solid var(--dcs-line); border-bottom: 1px solid var(--dcs-line); }
+.ps-ruler {
+  background: var(--dcs-surface-1);
+  color: var(--dcs-text-mute);
+  font-family: var(--dcs-font-mono);
+  font-size: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.ps-ruler--h { border-bottom: 1px solid var(--dcs-line); }
+.ps-ruler--v { border-right: 1px solid var(--dcs-line); }
+.ps-ruler canvas { display: block; }
+
+.ps-stage {
+  position: relative;
+  overflow: hidden;
+  min-width: 0; min-height: 0;
+  cursor: crosshair;
+}
+.ps-stage.is-pan { cursor: grab; }
+.ps-stage.is-panning { cursor: grabbing; }
+
+/* the document: a stack of layer canvases, scaled by --z, panned by --px/--py */
+.ps-doc {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%) translate(var(--px, 0px), var(--py, 0px)) scale(var(--z, 1));
+  transform-origin: center center;
+  box-shadow: 0 0 0 1px #0008, var(--dcs-shadow-3);
+  /* transparency checkerboard */
+  background-image:
+    repeating-conic-gradient(#cfcfcf 0 90deg, #ffffff 90deg 180deg);
+  background-size: 16px 16px;
+  background-position: 0 0;
+  image-rendering: auto;
+}
+.ps-doc canvas { display: block; position: absolute; left: 0; top: 0; }
+.ps-doc .ps-composite { position: relative; }
+.ps-doc.is-pixelated canvas { image-rendering: pixelated; }
+
+/* marching-ants selection overlay */
+.ps-marquee {
+  position: absolute;
+  pointer-events: none;
+  outline: 1px dashed #fff;
+  box-shadow: 0 0 0 1px #000;
+  animation: ps-ants .6s linear infinite;
+}
+@keyframes ps-ants { to { outline-offset: -4px; } }
+
+/* ---- right dock --------------------------------------------------------- */
+.ps-dock {
+  background: var(--dcs-bg);
+  border-left: 1px solid var(--dcs-line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.ps-dock-group { display: flex; flex-direction: column; min-height: 0; }
+.ps-dock .dcs-dockpane { border-bottom: 1px solid var(--dcs-line); }
+.ps-dock .dcs-dockpane__body { overflow: auto; overflow-x: hidden; }
+
+/* color panel */
+.ps-colorpanel { padding: var(--dcs-s-4); display: flex; flex-direction: column; gap: var(--dcs-s-3); }
+.ps-sv {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--dcs-r-2);
+  border: 1px solid var(--dcs-line);
+  position: relative;
+  cursor: crosshair;
+}
+.ps-sv-dot {
+  position: absolute; width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px #0009, 0 1px 3px #000a;
+  transform: translate(-50%, -50%); pointer-events: none;
+}
+.ps-hue { height: 14px; cursor: crosshair; position: relative; }
+.ps-hue-dot {
+  position: absolute; top: 50%; width: 5px; height: 20px; border-radius: 2px;
+  background: #fff; box-shadow: 0 0 0 1px #0009; transform: translate(-50%, -50%); pointer-events: none;
+}
+.ps-swatches { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.ps-swatch-chip {
+  aspect-ratio: 1; border-radius: var(--dcs-r-1); border: 1px solid var(--dcs-line);
+  cursor: pointer;
+}
+.ps-swatch-chip:hover { outline: 1px solid var(--dcs-accent); outline-offset: 1px; }
+
+/* layers panel */
+.ps-layers { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.ps-layer-toprow {
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  padding: var(--dcs-s-2) var(--dcs-s-3);
+  border-bottom: 1px solid var(--dcs-line-soft);
+}
+.ps-layer-list { overflow: auto; overflow-x: hidden; }
+.ps-layer {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  padding: var(--dcs-s-2) var(--dcs-s-3);
+  border-bottom: 1px solid var(--dcs-line);
+  cursor: pointer;
+  position: relative;
+}
+.ps-layer:hover { background: var(--dcs-surface-1); }
+.ps-layer.is-active { background: var(--dcs-accent-dim); box-shadow: inset 2px 0 0 var(--dcs-accent); }
+.ps-layer-eye {
+  width: 18px; text-align: center; color: var(--dcs-text-dim); cursor: pointer; flex: none; font-size: 14px;
+}
+.ps-layer-eye.is-off { color: var(--dcs-text-mute); opacity: .45; }
+.ps-layer-thumb {
+  width: 34px; height: 34px; flex: none;
+  border: 1px solid var(--dcs-line-strong);
+  border-radius: var(--dcs-r-1);
+  background-image: repeating-conic-gradient(#cfcfcf 0 90deg, #fff 90deg 180deg);
+  background-size: 8px 8px;
+  overflow: hidden;
+}
+.ps-layer-thumb canvas { width: 100%; height: 100%; display: block; }
+.ps-layer-name {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--dcs-fs); color: var(--dcs-text);
+}
+.ps-layer-name input {
+  width: 100%; background: var(--dcs-well); color: var(--dcs-text);
+  border: 1px solid var(--dcs-accent); border-radius: var(--dcs-r-1); font: inherit; padding: 1px 4px;
+}
+.ps-layer-lock { color: var(--dcs-text-mute); font-size: 12px; flex: none; }
+.ps-layer.is-drop-above::before,
+.ps-layer.is-drop-below::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--dcs-accent);
+}
+.ps-layer.is-drop-above::before { top: -1px; }
+.ps-layer.is-drop-below::after { bottom: -1px; }
+
+/* history panel */
+.ps-history-item {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  padding: var(--dcs-s-2) var(--dcs-s-3);
+  cursor: pointer; color: var(--dcs-text-dim);
+  border-bottom: 1px solid var(--dcs-line);
+  font-size: var(--dcs-fs);
+}
+.ps-history-item .di { font-size: 13px; width: 16px; text-align: center; color: var(--dcs-text-mute); }
+.ps-history-item:hover { background: var(--dcs-surface-1); }
+.ps-history-item.is-current { background: var(--dcs-accent-dim); color: var(--dcs-text); }
+.ps-history-item.is-future { opacity: .4; }
+
+/* generic prop row */
+.ps-prop {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: var(--dcs-s-3);
+  padding: var(--dcs-s-2) var(--dcs-s-4);
+}
+.ps-prop > label { color: var(--dcs-text-dim); font-size: var(--dcs-fs-sm); }
+.ps-prop .ps-prop-val { font-family: var(--dcs-font-mono); font-size: var(--dcs-fs-sm); color: var(--dcs-text-dim); min-width: 34px; text-align: right; }
+
+/* statusbar */
+.ps-statusbar .ps-zoom-field { font-family: var(--dcs-font-mono); }
+
+/* ---- Photoshop-style Layers panel top + footer ------------------------- */
+.ps-layer-filter {
+  display: flex; align-items: center; gap: 1px;
+  padding: var(--dcs-s-2) var(--dcs-s-3);
+  border-bottom: 1px solid var(--dcs-line-soft);
+}
+.ps-layer-bo {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  padding: var(--dcs-s-3) var(--dcs-s-3) var(--dcs-s-2);
+}
+.ps-layer-lock-row {
+  display: flex; align-items: center; gap: var(--dcs-s-2);
+  padding: 0 var(--dcs-s-3) var(--dcs-s-3);
+  border-bottom: 1px solid var(--dcs-line);
+}
+.ps-amt-label { color: var(--dcs-text-dim); font-size: var(--dcs-fs-sm); white-space: nowrap; }
+.ps-amt {
+  font-family: var(--dcs-font-mono); font-size: var(--dcs-fs-sm); color: var(--dcs-text);
+  cursor: ew-resize; min-width: 40px; text-align: right; padding: 1px 4px;
+  border-radius: var(--dcs-r-1); -webkit-user-select: none; user-select: none;
+}
+.ps-amt:hover { background: var(--dcs-well); box-shadow: inset 0 0 0 1px var(--dcs-line-soft); }
+.ps-lock-group { display: flex; gap: 1px; }
+.ps-lock-group .dcs-btn--icon[aria-pressed="true"] { background: var(--dcs-accent-dim); color: var(--dcs-accent-hi); }
+.ps-tcap { font-weight: 700; font-size: 11px; font-family: var(--dcs-font); }
+.ps-layer-footer {
+  display: flex; align-items: center; gap: 1px;
+  padding: var(--dcs-s-2) var(--dcs-s-3);
+  border-top: 1px solid var(--dcs-line); flex: none;
+}
+.ps-fx { font: italic 700 12px/1 Georgia, "Times New Roman", serif; letter-spacing: -.5px; }
+
+/* Layer Comps (filler) */
+.ps-comps { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.ps-comp-row {
+  display: flex; align-items: center; gap: var(--dcs-s-3);
+  padding: var(--dcs-s-2) var(--dcs-s-4);
+  border-bottom: 1px solid var(--dcs-line);
+  cursor: pointer; color: var(--dcs-text-dim); font-size: var(--dcs-fs);
+}
+.ps-comp-row .di { color: var(--dcs-text-mute); width: 16px; text-align: center; }
+.ps-comp-row:hover { background: var(--dcs-surface-1); }
+.ps-comp-row.is-active { background: var(--dcs-accent-dim); color: var(--dcs-text); box-shadow: inset 2px 0 0 var(--dcs-accent); }
+.ps-comp-row .dcs-tree__meta { margin-left: auto; }
+
+/* small helpers */
+.ps-grow { flex: 1; }
+.di { line-height: 1; }
+.ps-hidden { display: none !important; }
+
+/* App preference: decius uppercases dropdown menu labels — keep them sentence case */
+.dcs .dcs-menu__label { text-transform: none; letter-spacing: normal; }
+
+/* Flat icon buttons everywhere (Photoshop-style: no border/well until hover) */
+.dcs-btn--icon { background: transparent; border-color: transparent; box-shadow: none; }
+.dcs-btn--icon:hover { background: var(--dcs-surface-2); border-color: transparent; }
+.dcs-btn--icon:active { background: var(--dcs-surface-3); }
+
+/* Stock decius handles tear-off cursors for .dcs-panel--floating header and
+   any wrapped .dcs-dockpane__tabbar; nothing extra needed here. */
+
+/* ---- detached Navigator panel contents ---------------------------------- */
+.ps-navigator { width: 214px; }
+.ps-nav-thumb {
+  position: relative;
+  width: 100%; height: 116px;
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-1);
+  overflow: hidden;
+  background-image: repeating-conic-gradient(#cfcfcf 0 90deg, #fff 90deg 180deg);
+  background-size: 10px 10px;
+  cursor: move;
+}
+.ps-nav-thumb canvas { position: absolute; display: block; }
+.ps-nav-view {
+  position: absolute;
+  border: 1.5px solid var(--dcs-danger);
+  box-shadow: 0 0 0 1px #0008;
+  pointer-events: none;
+}
+.ps-floatbar { align-items: center; }
+
+/* ---- floating panel GROUPS (tool panels become detached windows) -------- */
+.ps-float-panel { display: flex; flex-direction: column; }
+.ps-float-panel > .dcs-dockpane { flex: 1; min-height: 0; width: 100%; background: transparent; }
+.ps-float-panel > .dcs-panel__body { flex: 1; min-height: 0; }
+.ps-float-panel .dcs-dockpane__body { overflow: auto; overflow-x: hidden; min-height: 0; }
+.dcs-dockpane__tabs .dcs-grip { margin: 0 var(--dcs-s-2) 0 var(--dcs-s-1); align-self: center; }
+.dcs-dockpane__tabs .dcs-btn--icon[data-dcs-dismiss] { align-self: center; margin-right: var(--dcs-s-1); }
+
+/* ---- panel resize handles (drag the borders) ---------------------------- */
+.ps-rz { position: absolute; z-index: 8; touch-action: none; }
+.ps-rz-e  { top: 0; right: 0; width: 6px; height: 100%; cursor: ew-resize; }
+.ps-rz-s  { left: 0; bottom: 0; height: 6px; width: 100%; cursor: ns-resize; }
+.ps-rz-se { right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; z-index: 9; }
+.ps-rz-se::after { content: ""; position: absolute; right: 2px; bottom: 2px; width: 7px; height: 7px; border-right: 2px solid var(--dcs-line-strong); border-bottom: 2px solid var(--dcs-line-strong); border-bottom-right-radius: 2px; }
+
+/* ---- dialog (modal) form layout ---------------------------------------- */
+.ps-dlg-body { display: flex; flex-direction: column; gap: var(--dcs-s-3); min-width: 0; }
+.ps-dlg-row { display: grid; grid-template-columns: 116px 1fr; align-items: center; gap: var(--dcs-s-4); }
+.ps-dlg-row > label { color: var(--dcs-text-dim); font-size: var(--dcs-fs-sm); }
+.ps-dlg-row .dcs-input { width: 100%; min-width: 0; }
+.ps-dlg-sec { font-size: var(--dcs-fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--dcs-text-mute); font-weight: 600; margin-top: var(--dcs-s-3); }
+.ps-dlg-sec:first-child { margin-top: 0; }
+.ps-dlg-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--dcs-s-3); }
+.ps-dlg-slider { display: grid; grid-template-columns: 1fr 46px; align-items: center; gap: var(--dcs-s-3); }
+.ps-dlg-static { color: var(--dcs-text-dim); font-size: var(--dcs-fs-sm); line-height: 1.5; }
+.ps-dlg-chip { width: 26px; height: 18px; border-radius: var(--dcs-r-1); border: 1px solid var(--dcs-line-strong); display: inline-block; vertical-align: middle; }
+.ps-anchor-grid { display: grid; grid-template-columns: repeat(3, 22px); grid-template-rows: repeat(3, 22px); gap: 3px; }
+.ps-anchor-grid button { padding: 0; }
+.ps-kbd-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--dcs-s-2) var(--dcs-s-6); }
+.ps-kbd-list > div { display: flex; align-items: center; justify-content: space-between; gap: var(--dcs-s-4); color: var(--dcs-text-dim); font-size: var(--dcs-fs-sm); }

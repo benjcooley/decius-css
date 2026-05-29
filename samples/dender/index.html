@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>DENDER</title>
+<link rel="stylesheet" href="../../dist/css/decius.bundle.min.css" />
+<link rel="stylesheet" href="app.css" />
+</head>
+<body class="dcs" data-dcs-density="comfortable" data-dcs-accent="orange">
+
+<div class="dn-app" id="dender">
+
+  <!-- ============================ TOPBAR ============================ -->
+  <header class="dcs-toolbar dn-topbar">
+    <div class="dn-logo" data-dcs-tip="DENDER — splash &amp; about">
+      <i class="di di-decius dn-logo__mark" aria-hidden="true"></i>
+      <span class="dn-logo__name">DENDER</span>
+    </div>
+
+    <nav class="dcs-menubar">
+      <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-file">File</button>
+      <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-edit">Edit</button>
+      <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-render">Render</button>
+      <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-window">Window</button>
+      <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-help">Help</button>
+    </nav>
+
+    <span class="dcs-toolbar__sep"></span>
+
+    <!-- Workspace picker: replaces the wide Layout/Modeling/Sculpting/...
+         tab strip with a compact dropdown that frees up a full row for the
+         actual editors. Document-context tools (Render Engine etc.) move
+         into the 3D Viewport's __toolbars; app-context items stay here. -->
+    <div class="dcs-select dcs-select--btn dn-workspace-pick" data-dcs-toggle="menu" data-dcs-target="#menu-workspace" data-dcs-tip="Workspace">
+      <span class="dcs-select__label">Layout</span>
+      <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+    </div>
+
+    <span class="dcs-toolbar__spacer"></span>
+
+    <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-scene" data-dcs-tip="Scene">
+      <i class="di di-cube"></i>
+      <span class="dcs-select__label">Scene</span>
+      <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+    </div>
+    <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-viewlayer" data-dcs-tip="View Layer">
+      <i class="di di-layers"></i>
+      <span class="dcs-select__label">ViewLayer</span>
+      <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+    </div>
+
+    <span class="dcs-toolbar__sep"></span>
+
+    <!-- Theme tweaks live in the far-right corner; `bottom-end` placement
+         aligns the popover's right edge with the cog's right edge so it
+         drops down flush against the topbar's edge instead of clamping
+         awkwardly off-screen. -->
+    <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-toggle="popover" data-dcs-target="#dn-tweaks" data-dcs-placement="bottom-end" data-dcs-tip="Theme tweaks">
+      <i class="di di-cog"></i>
+    </button>
+  </header>
+
+  <!-- ============================ WORK AREA (dock + splitters) ============================ -->
+  <div class="dcs-dock dcs-dock--v dn-workarea">
+    <div class="dcs-dock" style="flex:1;min-height:0;">
+
+      <!-- ===== VIEWPORT (center) ===== -->
+      <div class="dcs-dockpane dcs-dockpane--center dn-viewport" style="flex:1;">
+        <div class="dcs-dockpane__tabbar">
+          <div class="dcs-dockpane__tabs">
+            <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#vp-body">
+              <i class="di di-cube"></i> 3D Viewport
+            </button>
+          </div>
+          <div class="dcs-dockpane__toolbars">
+            <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#vp-body">
+              <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-mode" data-dcs-tip="Interaction Mode">
+                <span class="dcs-select__label">Object Mode</span>
+                <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+              </div>
+              <span class="dcs-toolbar__sep"></span>
+              <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-view">View</button>
+              <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-select">Select</button>
+              <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-add">Add</button>
+              <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-object">Object</button>
+              <span class="dcs-toolbar__sep"></span>
+              <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-orient" data-dcs-tip="Transform Orientation">
+                <span class="dcs-select__label">Global</span>
+                <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+              </div>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-toggle="menu" data-dcs-target="#menu-pivot" data-dcs-tip="Transform Pivot Point"><i class="di di-pivot"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" aria-pressed="false" data-dcs-tip="Snapping"><i class="di di-magnet"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" aria-pressed="false" data-dcs-tip="Proportional Editing"><i class="di di-cross-target"></i></button>
+              <span class="dcs-toolbar__spacer"></span>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" aria-pressed="true" data-dcs-tip="Show Gizmo"><i class="di di-gizmo"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" aria-pressed="true" data-dcs-tip="Show Overlays"><i class="di di-view-bbox"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" aria-pressed="false" data-dcs-tip="Toggle X-Ray"><i class="di di-eye"></i></button>
+              <div class="dcs-btn-group dn-shademodes" data-dcs-tip="Viewport Shading">
+                <button class="dcs-btn dcs-btn--icon" data-dcs-radio="shade"><i class="di di-view-wire"></i></button>
+                <button class="dcs-btn dcs-btn--icon" aria-pressed="true" data-dcs-radio="shade"><i class="di di-view-solid"></i></button>
+                <button class="dcs-btn dcs-btn--icon" data-dcs-radio="shade"><i class="di di-view-tex"></i></button>
+                <button class="dcs-btn dcs-btn--icon" data-dcs-radio="shade"><i class="di di-view-render"></i></button>
+              </div>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-toggle="menu" data-dcs-target="#menu-vpoptions" data-dcs-tip="Viewport Shading Options"><i class="di di-chevron-down"></i></button>
+              <span class="dcs-toolbar__sep"></span>
+              <span style="color:var(--dcs-text-mute);font-size:var(--dcs-fs-xs)">Render Engine</span>
+              <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-engine" data-dcs-tip="Render Engine">
+                <span class="dcs-select__label">Cycles</span>
+                <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="dcs-dockpane__shelf" hidden></div>
+        <div class="dcs-dockpane__body">
+          <div id="vp-body" data-dcs-tabpanel>
+            <div class="dn-vp-canvas" data-screen-label="3D Viewport" data-dcs-float-host>
+              <svg id="vp-scene" viewBox="0 0 1000 660" preserveAspectRatio="xMidYMid meet"></svg>
+
+              <div class="dn-vp-stats">
+                <div><b>User Perspective</b></div>
+                <div>(1) Collection | Cube</div>
+              </div>
+              <div class="dn-vp-corner">Verts 8&nbsp;&nbsp;|&nbsp;&nbsp;Faces 6&nbsp;&nbsp;|&nbsp;&nbsp;Tris 12&nbsp;&nbsp;|&nbsp;&nbsp;Objects 3/3</div>
+
+              <!-- floating tool rail -->
+              <div class="dcs-toolbar dcs-toolbar--v dcs-toolbar--sm dcs-toolbar--floating dn-toolrail"
+                   style="left:8px;top:8px" data-dcs-drag-bounds=".dn-vp-canvas">
+                <span class="dcs-grip dcs-grip--h" data-dcs-drag-handle></span>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" aria-pressed="true" data-dcs-radio="tool" data-dcs-tip="Tweak"><i class="di di-cross-target"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Cursor"><i class="di di-pen"></i></button>
+                <span class="dcs-divider"></span>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Move"><i class="di di-move"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Rotate"><i class="di di-rotate"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Scale"><i class="di di-scale"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Transform"><i class="di di-axes"></i></button>
+                <span class="dcs-divider"></span>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Annotate"><i class="di di-pen"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Measure"><i class="di di-graph"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-radio="tool" data-dcs-tip="Add Cube"><i class="di di-plus"></i></button>
+              </div>
+
+              <!-- nav gizmo + buttons -->
+              <div class="dn-navcluster">
+                <svg class="dn-gizmo" id="vp-gizmo" viewBox="0 0 100 100" aria-hidden="true"></svg>
+                <div class="dn-navbtns">
+                  <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-tip="Zoom"><i class="di di-search"></i></button>
+                  <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-tip="Move View"><i class="di di-move"></i></button>
+                  <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-tip="Camera View"><i class="di di-camera"></i></button>
+                  <button class="dcs-btn dcs-btn--icon dcs-btn--sm dcs-btn--ghost" data-dcs-tip="Toggle Perspective/Ortho"><i class="di di-grid"></i></button>
+                </div>
+              </div>
+
+              <!-- Floating N-panel: a tear-off dockpane with Item/Tool/View
+                   as three dockable tabs (the unified docking model — they
+                   can be torn off individually, re-docked elsewhere, or
+                   re-united by dragging back). -->
+              <div class="dcs-panel dcs-panel--floating dn-npanel"
+                   style="right:8px;top:8px;bottom:8px;width:220px"
+                   data-dcs-drag-bounds=".dn-vp-canvas">
+                <div class="dcs-dockpane">
+                  <div class="dcs-dockpane__tabbar" data-dcs-drag-handle>
+                    <div class="dcs-dockpane__tabs">
+                      <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#npanel-item"><i class="di di-cube"></i> Item</button>
+                      <button class="dcs-dockpane__tab" data-dcs-target="#npanel-tool"><i class="di di-axes"></i> Tool</button>
+                      <button class="dcs-dockpane__tab" data-dcs-target="#npanel-view"><i class="di di-camera"></i> View</button>
+                    </div>
+                  </div>
+                  <div class="dcs-dockpane__body">
+                  <div id="npanel-item" data-dcs-tabpanel>
+                    <div class="dcs-foldouts">
+                      <div class="dcs-foldout">
+                        <div class="dcs-foldout__header">
+                          <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                          <span class="dcs-foldout__title">Transform</span>
+                        </div>
+                        <div class="dcs-foldout__body">
+                          <div class="dcs-props">
+                            <div class="dcs-field">
+                              <span class="dcs-field__label">Location</span>
+                              <div class="dcs-vec">
+                                <div data-dcs-combo data-label="X" data-value="0" data-step="0.01" data-suffix=" m"></div>
+                                <div data-dcs-combo data-label="Y" data-value="0" data-step="0.01" data-suffix=" m"></div>
+                                <div data-dcs-combo data-label="Z" data-value="0" data-step="0.01" data-suffix=" m"></div>
+                              </div>
+                            </div>
+                            <div class="dcs-field">
+                              <span class="dcs-field__label">Dimensions</span>
+                              <div class="dcs-vec">
+                                <div data-dcs-combo data-label="X" data-value="2" data-step="0.01" data-suffix=" m"></div>
+                                <div data-dcs-combo data-label="Y" data-value="2" data-step="0.01" data-suffix=" m"></div>
+                                <div data-dcs-combo data-label="Z" data-value="2" data-step="0.01" data-suffix=" m"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="dcs-foldout">
+                        <div class="dcs-foldout__header">
+                          <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                          <span class="dcs-foldout__title">View</span>
+                        </div>
+                        <div class="dcs-foldout__body">
+                          <div class="dcs-props">
+                            <div class="dcs-field">
+                              <span class="dcs-field__label">Focal</span>
+                              <div data-dcs-combo data-label="Lens" data-min="1" data-max="250" data-step="0.5" data-value="50" data-suffix=" mm"></div>
+                            </div>
+                            <div class="dcs-field">
+                              <span class="dcs-field__label">Clip Start</span>
+                              <div data-dcs-combo data-value="0.1" data-step="0.01" data-suffix=" m"></div>
+                            </div>
+                            <div class="dcs-check">
+                              <div class="dcs-check__box"></div>
+                              <span>Lock to Object</span>
+                            </div>
+                            <span class="dcs-divider"></span>
+                            <div class="dcs-field">
+                              <span class="dcs-field__label">Transform</span>
+                              <div class="dcs-btn-group">
+                                <button class="dcs-btn dcs-btn--sm" data-dcs-radio="orient">Local</button>
+                                <button class="dcs-btn dcs-btn--sm" aria-pressed="true" data-dcs-radio="orient">Global</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="npanel-tool" data-dcs-tabpanel hidden></div>
+                  <div id="npanel-view" data-dcs-tabpanel hidden></div>
+                </div><!-- /.dcs-dockpane__body -->
+                </div><!-- /.dcs-dockpane -->
+              </div><!-- /.dcs-panel--floating .dn-npanel -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dcs-splitter" data-dcs-splitter></div>
+
+      <!-- ===== RIGHT COLUMN (outliner + properties) ===== -->
+      <div class="dcs-dock dcs-dock--v dn-right" style="flex:0 0 340px;">
+
+        <!-- OUTLINER -->
+        <div class="dcs-dockpane dn-outliner" style="flex:0 0 240px;">
+          <div class="dcs-dockpane__tabbar">
+            <div class="dcs-dockpane__tabs">
+              <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#outliner-body">
+                <i class="di di-folder-open"></i> Outliner
+              </button>
+            </div>
+            <div class="dcs-dockpane__toolbars">
+              <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#outliner-body">
+                <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-displaymode" data-dcs-tip="Display Mode">
+                  <span class="dcs-select__label">View Layer</span>
+                  <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+                </div>
+                <input class="dcs-input" type="text" placeholder="Search" style="max-width:140px" />
+                <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-toggle="menu" data-dcs-target="#menu-filter" data-dcs-tip="Filter"><i class="di di-eq"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-tip="New Collection"><i class="di di-folder"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="dcs-dockpane__shelf" hidden></div>
+          <div class="dcs-dockpane__body">
+            <div id="outliner-body" data-dcs-tabpanel>
+              <div class="dcs-tree" id="outliner-tree" data-dcs-select="multi">
+                <div class="dcs-tree__row" style="--depth:0">
+                  <span class="dcs-tree__chevron dcs-tree__chevron--open"><i class="di di-chevron-right"></i></span>
+                  <span class="dcs-tree__icon"><i class="di di-cube"></i></span>
+                  <span class="dcs-tree__label">Scene</span>
+                </div>
+                <div class="dcs-tree__row" style="--depth:1">
+                  <span class="dcs-tree__chevron dcs-tree__chevron--open"><i class="di di-chevron-right"></i></span>
+                  <span class="dcs-tree__icon"><i class="di di-folder"></i></span>
+                  <span class="dcs-tree__label">Collection</span>
+                  <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide in Viewport"></i></span>
+                </div>
+                <div class="dcs-tree__row" style="--depth:2" aria-selected="true">
+                  <span class="dcs-tree__chevron dcs-tree__chevron--open"><i class="di di-chevron-right"></i></span>
+                  <span class="dcs-tree__icon"><i class="di di-cube"></i></span>
+                  <span class="dcs-tree__label">Cube</span>
+                  <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>
+                </div>
+                <div class="dcs-tree__row" style="--depth:3">
+                  <span class="dcs-tree__chevron"></span>
+                  <span class="dcs-tree__icon" style="color:var(--dcs-good)"><i class="di di-mesh"></i></span>
+                  <span class="dcs-tree__label" style="color:var(--dcs-text-mute)">Cube</span>
+                </div>
+                <div class="dcs-tree__row" style="--depth:3">
+                  <span class="dcs-tree__chevron"></span>
+                  <span class="dcs-tree__icon"><i class="di di-droplet"></i></span>
+                  <span class="dcs-tree__label" style="color:var(--dcs-text-mute)">Material</span>
+                </div>
+                <div class="dcs-tree__row" style="--depth:2">
+                  <span class="dcs-tree__chevron"><i class="di di-chevron-right"></i></span>
+                  <span class="dcs-tree__icon" style="color:var(--dcs-warn)"><i class="di di-light"></i></span>
+                  <span class="dcs-tree__label">Light</span>
+                  <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>
+                </div>
+                <div class="dcs-tree__row" style="--depth:2">
+                  <span class="dcs-tree__chevron"><i class="di di-chevron-right"></i></span>
+                  <span class="dcs-tree__icon"><i class="di di-camera"></i></span>
+                  <span class="dcs-tree__label">Camera</span>
+                  <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>
+                </div>
+                <div class="dcs-tree__row" style="--depth:0">
+                  <span class="dcs-tree__chevron"><i class="di di-chevron-right"></i></span>
+                  <span class="dcs-tree__icon"><i class="di di-globe"></i></span>
+                  <span class="dcs-tree__label">World</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dcs-splitter dcs-splitter--h" data-dcs-splitter="h"></div>
+
+        <!-- PROPERTIES -->
+        <div class="dcs-dockpane dn-props" style="flex:1;">
+          <div class="dcs-dockpane__tabbar">
+            <div class="dcs-dockpane__tabs">
+              <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#props-body">
+                <i class="di di-cog"></i> Inspector
+              </button>
+            </div>
+            <div class="dcs-dockpane__toolbars">
+              <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#props-body">
+                <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-editortype" data-dcs-tip="Editor Type">
+                  <i class="di di-cog"></i>
+                  <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+                </div>
+                <div class="dcs-btn-group" data-dcs-tip="Inspector Layout">
+                  <button class="dcs-btn dcs-btn--sm" data-dcs-radio="proplayout" data-dcs-tip="Row"><i class="di di-eq"></i></button>
+                  <button class="dcs-btn dcs-btn--sm" aria-pressed="true" data-dcs-radio="proplayout" data-dcs-tip="Stack"><i class="di di-layers"></i></button>
+                  <button class="dcs-btn dcs-btn--sm" data-dcs-radio="proplayout" data-dcs-tip="Grid"><i class="di di-grid"></i></button>
+                </div>
+                <div class="dcs-search dn-props-search">
+                  <i class="di di-search" aria-hidden="true"></i>
+                  <input class="dcs-input dcs-input--sm" type="search" placeholder="Search inspector…">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="dcs-dockpane__shelf" hidden></div>
+          <div class="dcs-dockpane__body">
+            <div id="props-body" data-dcs-tabpanel>
+
+              <!-- vertical icon rail acting as tabs -->
+              <div class="dcs-tabs dcs-toolbar dcs-toolbar--v dcs-toolbar--sm" id="prop-tabs">
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-tool" data-dcs-tip="Active Tool"><i class="di di-axes"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-render" data-dcs-tip="Render"><i class="di di-render"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-output" data-dcs-tip="Output"><i class="di di-export"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-viewlayer" data-dcs-tip="View Layer"><i class="di di-layers"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-scene" data-dcs-tip="Scene"><i class="di di-cube"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-world" data-dcs-tip="World"><i class="di di-globe"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" aria-selected="true" data-dcs-target="#prop-object" data-dcs-tip="Object"><i class="di di-cube"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-modifiers" data-dcs-tip="Modifiers"><i class="di di-cog"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-particles" data-dcs-tip="Particles"><i class="di di-cube"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-physics" data-dcs-tip="Physics"><i class="di di-bolt"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-constraints" data-dcs-tip="Constraints"><i class="di di-link"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-data" data-dcs-tip="Object Data"><i class="di di-mesh"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-material" data-dcs-tip="Material"><i class="di di-droplet"></i></button>
+                <button class="dcs-tab dcs-btn dcs-btn--icon dcs-btn--sm" data-dcs-target="#prop-texture" data-dcs-tip="Texture"><i class="di di-texture"></i></button>
+              </div>
+
+              <div class="dn-props__sheet">
+
+                <!-- OBJECT (default visible) -->
+                <div id="prop-object" data-dcs-tabpanel>
+                  <div class="dcs-row dn-datablock" style="gap:var(--dcs-s-2);align-items:center;padding:var(--dcs-s-2)">
+                    <i class="di di-cube" id="dn-object-icon" style="color:var(--dcs-accent)"></i>
+                    <input class="dcs-input" id="dn-object-name" type="text" value="Cube" style="flex:1" />
+                    <button class="dcs-btn dcs-btn--icon" data-dcs-tip="Browse Object"><i class="di di-more-h"></i></button>
+                  </div>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Transform</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-props">
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Location</span>
+                            <div class="dcs-vec">
+                              <div data-dcs-combo data-label="X" data-value="0" data-step="0.01" data-suffix=" m"></div>
+                              <div data-dcs-combo data-label="Y" data-value="0" data-step="0.01" data-suffix=" m"></div>
+                              <div data-dcs-combo data-label="Z" data-value="0" data-step="0.01" data-suffix=" m"></div>
+                            </div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Rotation</span>
+                            <div class="dcs-vec">
+                              <div data-dcs-combo data-label="X" data-value="0" data-step="0.01" data-suffix="&deg;"></div>
+                              <div data-dcs-combo data-label="Y" data-value="0" data-step="0.01" data-suffix="&deg;"></div>
+                              <div data-dcs-combo data-label="Z" data-value="0" data-step="0.01" data-suffix="&deg;"></div>
+                            </div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Scale</span>
+                            <div class="dcs-vec">
+                              <div data-dcs-combo data-label="X" data-value="1.000" data-step="0.01"></div>
+                              <div data-dcs-combo data-label="Y" data-value="1.000" data-step="0.01"></div>
+                              <div data-dcs-combo data-label="Z" data-value="1.000" data-step="0.01"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="dcs-foldout dcs-foldout--collapsed">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Delta Transform</span>
+                      </div>
+                      <div class="dcs-foldout__body"></div>
+                    </div>
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Relations</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-props">
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Parent</span>
+                            <input class="dcs-input" type="text" placeholder="—" />
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Collection</span>
+                            <div class="dcs-select dcs-select--btn">
+                              <span class="dcs-select__label">Collection</span>
+                              <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="dcs-foldout dcs-foldout--collapsed">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Viewport Display</span>
+                      </div>
+                      <div class="dcs-foldout__body"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- MODIFIERS -->
+                <div id="prop-modifiers" data-dcs-tabpanel hidden>
+                  <div style="padding:var(--dcs-s-3)">
+                    <button class="dcs-btn dcs-btn--lg" style="width:100%"><i class="di di-plus"></i>Add Modifier</button>
+                  </div>
+                  <div class="dn-modifier">
+                    <div class="dn-modifier__head">
+                      <i class="di di-chevron-down"></i>
+                      <i class="di di-cube"></i>
+                      <span class="dn-modifier__title">Bevel</span>
+                      <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-tip="Edit Mode display"><i class="di di-mesh"></i></button>
+                      <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" aria-pressed="true" data-dcs-tip="Realtime"><i class="di di-view-solid"></i></button>
+                      <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-toggle="menu" data-dcs-target="#menu-modifier"><i class="di di-chevron-down"></i></button>
+                      <button class="dcs-btn dcs-btn--icon dcs-btn--ghost" data-dcs-tip="Delete"><i class="di di-close"></i></button>
+                    </div>
+                    <div class="dn-modifier__body">
+                      <div class="dcs-props">
+                        <div class="dcs-btn-group">
+                          <button class="dcs-btn" aria-pressed="true" data-dcs-radio="bev">Width</button>
+                          <button class="dcs-btn" data-dcs-radio="bev">Angle</button>
+                        </div>
+                        <div class="dcs-field">
+                          <span class="dcs-field__label">Amount</span>
+                          <div data-dcs-combo data-value="0.1" data-step="0.01" data-suffix=" m"></div>
+                        </div>
+                        <div class="dcs-field">
+                          <span class="dcs-field__label">Segments</span>
+                          <div data-dcs-slider data-min="1" data-max="12" data-value="2"></div>
+                        </div>
+                        <div class="dcs-check">
+                          <div class="dcs-check__box"></div>
+                          <span>Clamp Overlap</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- MATERIAL -->
+                <div id="prop-material" data-dcs-tabpanel hidden>
+                  <div class="dcs-row" style="gap:var(--dcs-s-2);align-items:center;padding:var(--dcs-s-2)">
+                    <span class="dn-mat-preview"></span>
+                    <input class="dcs-input" type="text" value="Material" style="flex:1" />
+                    <button class="dcs-btn dcs-btn--icon"><i class="di di-plus"></i></button>
+                    <button class="dcs-btn dcs-btn--icon"><i class="di di-minus"></i></button>
+                  </div>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Surface</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-props">
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Surface</span>
+                            <div class="dcs-select dcs-select--btn">
+                              <span class="dcs-select__label">Principled BSDF</span>
+                              <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+                            </div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Base Color</span>
+                            <div class="dcs-colorfield">
+                              <div class="dcs-colorfield__chip" style="background:#cf6b3a"></div>
+                            </div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Metallic</span>
+                            <div data-dcs-slider data-min="0" data-max="1" data-value="0"></div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Roughness</span>
+                            <div data-dcs-slider data-min="0" data-max="1" data-value="0.45"></div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">IOR</span>
+                            <div data-dcs-combo data-value="1.450" data-step="0.01"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- placeholders -->
+                <div id="prop-tool" data-dcs-tabpanel hidden>
+                  <div class="dn-cap">Active Tool &amp; Workspace settings.</div>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Transform</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-check">
+                          <div class="dcs-check__box"></div>
+                          <span>Affect Only Origins</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="prop-render" data-dcs-tabpanel hidden>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Sampling</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-props">
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Render</span>
+                            <div data-dcs-combo data-value="4096" data-step="1"></div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Viewport</span>
+                            <div data-dcs-combo data-value="1024" data-step="1"></div>
+                          </div>
+                          <div class="dcs-check">
+                            <div class="dcs-check__box"></div>
+                            <span>Denoise</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="prop-output" data-dcs-tabpanel hidden>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Format</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-props">
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Resolution X</span>
+                            <div data-dcs-combo data-value="1920" data-step="1" data-suffix=" px"></div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Resolution Y</span>
+                            <div data-dcs-combo data-value="1080" data-step="1" data-suffix=" px"></div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Frame Rate</span>
+                            <div class="dcs-select dcs-select--btn">
+                              <span class="dcs-select__label">24 fps</span>
+                              <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="prop-viewlayer" data-dcs-tabpanel hidden>
+                  <div class="dn-cap">View Layer passes &amp; filters.</div>
+                </div>
+
+                <div id="prop-scene" data-dcs-tabpanel hidden>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Units</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-props">
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Unit System</span>
+                            <div class="dcs-select dcs-select--btn">
+                              <span class="dcs-select__label">Metric</span>
+                              <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="prop-world" data-dcs-tabpanel hidden>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Surface</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-props">
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Color</span>
+                            <div class="dcs-colorfield">
+                              <div class="dcs-colorfield__chip" style="background:#3a3d45"></div>
+                            </div>
+                          </div>
+                          <div class="dcs-field">
+                            <span class="dcs-field__label">Strength</span>
+                            <div data-dcs-combo data-value="1.000" data-step="0.01"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="prop-particles" data-dcs-tabpanel hidden>
+                  <div class="dn-cap">No particle systems. Press + to add.</div>
+                </div>
+
+                <div id="prop-physics" data-dcs-tabpanel hidden>
+                  <div class="dn-cap" style="padding:var(--dcs-s-4)">
+                    <div class="dcs-props">
+                      <button class="dcs-btn dcs-btn--lg">Rigid Body</button>
+                      <button class="dcs-btn dcs-btn--lg">Collision</button>
+                      <button class="dcs-btn dcs-btn--lg">Cloth</button>
+                      <button class="dcs-btn dcs-btn--lg">Fluid</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="prop-constraints" data-dcs-tabpanel hidden>
+                  <div style="padding:var(--dcs-s-3)">
+                    <button class="dcs-btn dcs-btn--lg" style="width:100%"><i class="di di-plus"></i>Add Object Constraint</button>
+                  </div>
+                </div>
+
+                <div id="prop-data" data-dcs-tabpanel hidden>
+                  <div class="dcs-foldouts">
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">Normals</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-check">
+                          <div class="dcs-check__box"></div>
+                          <span>Auto Smooth</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="dcs-foldout">
+                      <div class="dcs-foldout__header">
+                        <span class="dcs-foldout__chevron"><i class="di di-chevron-right"></i></span>
+                        <span class="dcs-foldout__title">UV Maps</span>
+                      </div>
+                      <div class="dcs-foldout__body">
+                        <div class="dcs-tree" data-dcs-select="single">
+                          <div class="dcs-tree__row" style="--depth:0" aria-selected="true">
+                            <span class="dcs-tree__chevron"></span>
+                            <span class="dcs-tree__icon"><i class="di di-image"></i></span>
+                            <span class="dcs-tree__label">UVMap</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="prop-texture" data-dcs-tabpanel hidden>
+                  <div class="dn-cap">No textures in active slot.</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="dcs-splitter dcs-splitter--h" data-dcs-splitter="h"></div>
+
+    <!-- ===== TIMELINE (bottom) ===== -->
+    <div class="dcs-dockpane dn-timeline" style="flex:0 0 140px;">
+      <div class="dcs-dockpane__tabbar">
+        <div class="dcs-dockpane__tabs">
+          <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#timeline-body">
+            <i class="di di-keyframe"></i> Timeline
+          </button>
+        </div>
+        <div class="dcs-dockpane__toolbars">
+          <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#timeline-body">
+            <div class="dcs-select dcs-select--btn" data-dcs-toggle="menu" data-dcs-target="#menu-editortype" data-dcs-tip="Editor Type">
+              <i class="di di-keyframe"></i>
+              <span class="dcs-select__caret"><i class="di di-chevron-down"></i></span>
+            </div>
+            <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-tlview">View</button>
+            <button class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#menu-tlmarker">Marker</button>
+            <span class="dcs-toolbar__sep"></span>
+
+            <div class="dcs-btn-group dn-tl-controls">
+              <button class="dcs-btn dcs-btn--icon" data-dcs-tip="Jump to Start"><i class="di di-skip-back"></i></button>
+              <button class="dcs-btn dcs-btn--icon" data-dcs-tip="Previous Keyframe"><i class="di di-keyframe"></i></button>
+              <button class="dcs-btn dcs-btn--icon" data-dcs-tip="Play Reverse"><i class="di di-rewind"></i></button>
+              <button class="dcs-btn dcs-btn--icon" aria-pressed="true" id="tl-play" data-dcs-tip="Play Animation"><i class="di di-play"></i></button>
+              <button class="dcs-btn dcs-btn--icon" data-dcs-tip="Next Keyframe"><i class="di di-keyframe"></i></button>
+              <button class="dcs-btn dcs-btn--icon" data-dcs-tip="Jump to End"><i class="di di-skip-fwd"></i></button>
+            </div>
+            <div data-dcs-combo id="tl-frame" data-value="24" data-min="1" data-max="250" data-step="1" data-dec="0" style="width:72px" data-dcs-tip="Current Frame"></div>
+
+            <span class="dcs-toolbar__sep"></span>
+            <button class="dcs-btn" data-dcs-toggle="menu" data-dcs-target="#menu-keying" data-dcs-tip="Keying Set"><i class="di di-keyframe"></i>&nbsp;Keying</button>
+            <button class="dcs-btn dcs-btn--icon" aria-pressed="false" data-dcs-tip="Auto Keying"><i class="di di-record"></i></button>
+
+            <span class="dcs-toolbar__spacer"></span>
+            <div class="dcs-field" data-dcs-tip="Start Frame">
+              <span class="dcs-field__label">Start</span>
+              <div data-dcs-combo id="tl-start" data-value="1" data-min="0" data-max="9999" data-step="1" data-dec="0" style="width:72px"></div>
+            </div>
+            <div class="dcs-field" data-dcs-tip="End Frame">
+              <span class="dcs-field__label">End</span>
+              <div data-dcs-combo id="tl-end" data-value="250" data-min="1" data-max="9999" data-step="1" data-dec="0" style="width:72px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dcs-dockpane__shelf" hidden></div>
+      <div class="dcs-dockpane__body">
+        <div id="timeline-body" data-dcs-tabpanel>
+          <div class="dn-timeline-body" data-screen-label="Timeline Dopesheet">
+            <div class="dn-tl-ruler" id="tl-ruler"></div>
+            <div class="dn-tl-tracks" id="tl-tracks">
+              <div class="dn-tl-track"><span class="dn-tl-track__label">Summary</span></div>
+              <div class="dn-tl-track"><span class="dn-tl-track__label" style="color:var(--dcs-accent)">Cube</span></div>
+            </div>
+            <div class="dn-playhead" id="tl-playhead"><div class="dn-playhead__flag" id="tl-playhead-flag">24</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================ STATUS BAR ============================ -->
+  <footer class="dcs-statusbar">
+    <span class="dcs-statusbar__item"><i class="di di-cube"></i>Cube</span>
+    <span class="dcs-statusbar__spacer"></span>
+    <span class="dcs-statusbar__item">Verts <b>8</b></span>
+    <span class="dcs-statusbar__item">Faces <b>6</b></span>
+    <span class="dcs-statusbar__item">Tris <b>12</b></span>
+    <span class="dcs-statusbar__item">Objects <b>3/3</b></span>
+    <span class="dcs-statusbar__item">Memory <b>42.6 MB</b></span>
+    <span class="dcs-statusbar__item">v1.0 · DENDER</span>
+  </footer>
+
+</div>
+
+<!-- ============================ MENUS (popovers) ============================ -->
+<div class="dcs-menu" id="menu-file" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-image"></i></span><span class="dcs-menu__label-text">New</span><span class="dcs-menu__shortcut">Ctrl N</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-folder"></i></span><span class="dcs-menu__label-text">Open…</span><span class="dcs-menu__shortcut">Ctrl O</span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Open Recent</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Save</span><span class="dcs-menu__shortcut">Ctrl S</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Save As…</span><span class="dcs-menu__shortcut">Ctrl ⇧ S</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Import</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Export</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Quit</span><span class="dcs-menu__shortcut">Ctrl Q</span></div>
+</div>
+<div class="dcs-menu" id="menu-edit" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Undo</span><span class="dcs-menu__shortcut">Ctrl Z</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Redo</span><span class="dcs-menu__shortcut">Ctrl ⇧ Z</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Undo History</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Menu Search…</span><span class="dcs-menu__shortcut">F3</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Rename Active Object…</span><span class="dcs-menu__shortcut">F2</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-cog"></i></span><span class="dcs-menu__label-text">Preferences…</span></div>
+</div>
+<div class="dcs-menu" id="menu-render" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-render"></i></span><span class="dcs-menu__label-text">Render Image</span><span class="dcs-menu__shortcut">F12</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Render Animation</span><span class="dcs-menu__shortcut">Ctrl F12</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">View Render</span><span class="dcs-menu__shortcut">F11</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">View Animation</span><span class="dcs-menu__shortcut">Ctrl F11</span></div>
+</div>
+<div class="dcs-menu" id="menu-window" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">New Window</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">New Main Window</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-fullscreen"></i></span><span class="dcs-menu__label-text">Toggle Window Fullscreen</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Save Screenshot…</span></div>
+</div>
+<div class="dcs-menu" id="menu-help" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Manual</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Tutorials</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Report a Bug</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">About DENDER</span></div>
+</div>
+<div class="dcs-menu" id="menu-add" hidden>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__icon"><i class="di di-mesh"></i></span><span class="dcs-menu__label-text">Mesh</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__icon"><i class="di di-spline"></i></span><span class="dcs-menu__label-text">Curve</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Surface</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Metaball</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Text</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-arm"></i></span><span class="dcs-menu__label-text">Armature</span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__icon"><i class="di di-cross-target"></i></span><span class="dcs-menu__label-text">Empty</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__icon"><i class="di di-light"></i></span><span class="dcs-menu__label-text">Light</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-camera"></i></span><span class="dcs-menu__label-text">Camera</span></div>
+</div>
+<div class="dcs-menu" id="menu-view" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Frame All</span><span class="dcs-menu__shortcut">Home</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Frame Selected</span><span class="dcs-menu__shortcut">NumPad .</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Viewpoint</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Navigation</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__icon"><i class="di di-camera"></i></span><span class="dcs-menu__label-text">Cameras</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+</div>
+<div class="dcs-menu" id="menu-select" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">All</span><span class="dcs-menu__shortcut">A</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">None</span><span class="dcs-menu__shortcut">Alt A</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Invert</span><span class="dcs-menu__shortcut">Ctrl I</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Box Select</span><span class="dcs-menu__shortcut">B</span></div>
+</div>
+<div class="dcs-menu" id="menu-object" hidden>
+  <div class="dcs-menu__item dcs-menu__item--has-sub"><span class="dcs-menu__label-text">Set Origin</span><span class="dcs-menu__caret"><i class="di di-chevron-right"></i></span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Shade Smooth</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Shade Flat</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Duplicate Objects</span><span class="dcs-menu__shortcut">⇧ D</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Join</span><span class="dcs-menu__shortcut">Ctrl J</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Delete</span><span class="dcs-menu__shortcut">X</span></div>
+</div>
+<div class="dcs-menu" id="menu-mode" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-cube"></i></span><span class="dcs-menu__label-text">Object Mode</span><span class="dcs-menu__shortcut">Tab</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-mesh"></i></span><span class="dcs-menu__label-text">Edit Mode</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Sculpt Mode</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Vertex Paint</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Weight Paint</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Texture Paint</span></div>
+</div>
+<div class="dcs-menu" id="menu-workspace" hidden>
+  <div class="dcs-menu__item" data-dcs-value="layout"><span class="dcs-menu__label-text">Layout</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+  <div class="dcs-menu__item" data-dcs-value="modeling"><span class="dcs-menu__label-text">Modeling</span></div>
+  <div class="dcs-menu__item" data-dcs-value="sculpting"><span class="dcs-menu__label-text">Sculpting</span></div>
+  <div class="dcs-menu__item" data-dcs-value="uv"><span class="dcs-menu__label-text">UV Editing</span></div>
+  <div class="dcs-menu__item" data-dcs-value="texture"><span class="dcs-menu__label-text">Texture Paint</span></div>
+  <div class="dcs-menu__item" data-dcs-value="shading"><span class="dcs-menu__label-text">Shading</span></div>
+  <div class="dcs-menu__item" data-dcs-value="animation"><span class="dcs-menu__label-text">Animation</span></div>
+  <div class="dcs-menu__item" data-dcs-value="rendering"><span class="dcs-menu__label-text">Rendering</span></div>
+  <div class="dcs-menu__item" data-dcs-value="compositing"><span class="dcs-menu__label-text">Compositing</span></div>
+  <div class="dcs-menu__item" data-dcs-value="geometry"><span class="dcs-menu__label-text">Geometry Nodes</span></div>
+  <div class="dcs-menu__item" data-dcs-value="scripting"><span class="dcs-menu__label-text">Scripting</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item" data-dcs-value="add"><span class="dcs-menu__icon"><i class="di di-plus"></i></span><span class="dcs-menu__label-text">Add Workspace…</span></div>
+</div>
+<div class="dcs-menu" id="menu-engine" hidden>
+  <div class="dcs-menu__item" data-dcs-value="eevee"><span class="dcs-menu__label-text">Eevee</span></div>
+  <div class="dcs-menu__item" data-dcs-value="workbench"><span class="dcs-menu__label-text">Workbench</span></div>
+  <div class="dcs-menu__item" data-dcs-value="cycles"><span class="dcs-menu__label-text">Cycles</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+</div>
+<div class="dcs-menu" id="menu-scene" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-cube"></i></span><span class="dcs-menu__label-text">Scene</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-plus"></i></span><span class="dcs-menu__label-text">New Scene</span></div>
+</div>
+<div class="dcs-menu" id="menu-viewlayer" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-layers"></i></span><span class="dcs-menu__label-text">ViewLayer</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-plus"></i></span><span class="dcs-menu__label-text">Add View Layer</span></div>
+</div>
+<div class="dcs-menu" id="menu-editortype" hidden>
+  <div class="dcs-menu__label">General</div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-cube"></i></span><span class="dcs-menu__label-text">3D Viewport</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-image"></i></span><span class="dcs-menu__label-text">Image Editor</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-view-tex"></i></span><span class="dcs-menu__label-text">Shader Editor</span></div>
+  <div class="dcs-menu__label">Animation</div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-keyframe"></i></span><span class="dcs-menu__label-text">Timeline</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-eq"></i></span><span class="dcs-menu__label-text">Dope Sheet</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-spline"></i></span><span class="dcs-menu__label-text">Graph Editor</span></div>
+  <div class="dcs-menu__label">Data</div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-folder"></i></span><span class="dcs-menu__label-text">Outliner</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-cog"></i></span><span class="dcs-menu__label-text">Inspector</span></div>
+</div>
+<div class="dcs-menu" id="menu-displaymode" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Scene Collection</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">View Layer</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Blender File</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Data API</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Orphan Data</span></div>
+</div>
+<div class="dcs-menu" id="menu-orient" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Global</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Local</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Normal</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Gimbal</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">View</span></div>
+</div>
+<div class="dcs-menu" id="menu-pivot" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-pivot"></i></span><span class="dcs-menu__label-text">Median Point</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">3D Cursor</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Individual Origins</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Active Element</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Bounding Box Center</span></div>
+</div>
+<div class="dcs-menu" id="menu-vpoptions" hidden>
+  <div class="dcs-menu__label">Lighting</div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Studio</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">MatCap</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Flat</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Backface Culling</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Cavity</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Shadow</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+</div>
+<div class="dcs-menu" id="menu-filter" hidden>
+  <div class="dcs-menu__label">Restriction Toggles</div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-eye"></i></span><span class="dcs-menu__label-text">Visibility</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-render"></i></span><span class="dcs-menu__label-text">Disable in Renders</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-lock"></i></span><span class="dcs-menu__label-text">Selectable</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Filter by Type</span></div>
+</div>
+<div class="dcs-menu" id="menu-modifier" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Apply</span><span class="dcs-menu__shortcut">Ctrl A</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Duplicate</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Copy to Selected</span></div>
+  <div class="dcs-menu__sep"></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Move to First</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Move to Last</span></div>
+</div>
+<div class="dcs-menu" id="menu-keying" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Location</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Rotation</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Scale</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Location, Rotation &amp; Scale</span><span class="dcs-menu__icon"><i class="di di-check"></i></span></div>
+</div>
+<div class="dcs-menu" id="menu-tlview" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Frame All</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Frame Playback Range</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__icon"><i class="di di-check"></i></span><span class="dcs-menu__label-text">Show Seconds</span></div>
+</div>
+<div class="dcs-menu" id="menu-tlmarker" hidden>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Add Marker</span><span class="dcs-menu__shortcut">M</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Rename Marker</span></div>
+  <div class="dcs-menu__item"><span class="dcs-menu__label-text">Delete Marker</span></div>
+</div>
+
+<!-- ============================ THEME TWEAKS POPOVER ============================ -->
+<div class="dcs-popover dn-tweaks-popover" id="dn-tweaks" style="width:260px" hidden>
+  <div class="dcs-popover__header">
+    <i class="di di-cog"></i>
+    <span>Theme tweaks</span>
+  </div>
+  <div class="dcs-popover__body">
+    <div class="dcs-form">
+      <div class="dcs-field">
+        <span class="dcs-field__label">Density</span>
+        <div class="dcs-btn-group" id="density-row">
+          <button class="dcs-btn dcs-btn--sm" data-density-set="compact">S</button>
+          <button class="dcs-btn dcs-btn--sm" aria-pressed="true" data-density-set="comfortable">M</button>
+          <button class="dcs-btn dcs-btn--sm" data-density-set="spacious">L</button>
+        </div>
+      </div>
+      <div class="dcs-field">
+        <span class="dcs-field__label">Style</span>
+        <div class="dcs-btn-group" id="style-row">
+          <button class="dcs-btn dcs-btn--sm" aria-pressed="true" data-style-set="flat">Flat</button>
+          <button class="dcs-btn dcs-btn--sm" data-style-set="3d">3D</button>
+        </div>
+      </div>
+      <div class="dcs-field">
+        <span class="dcs-field__label">Accent</span>
+        <div class="dn-accent-row" id="accent-row">
+          <span class="dn-accent-dot" data-accent-set="blue"   style="background:#4f86d6"></span>
+          <span class="dn-accent-dot" data-accent-set="orange" style="background:#e8843a"></span>
+          <span class="dn-accent-dot" data-accent-set="green"  style="background:#4e9e54"></span>
+          <span class="dn-accent-dot" data-accent-set="purple" style="background:#8466cf"></span>
+          <span class="dn-accent-dot" data-accent-set="teal"   style="background:#2f9c93"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../../dist/js/decius.min.js"></script>
+<script src="app.js"></script>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#25272e"/>
+    <circle cx="50" cy="50" r="26" fill="none" stroke="#e8943c" stroke-width="6"/>
+    <circle cx="61" cy="40" r="8" fill="#e8943c"/>
+    <circle cx="61" cy="40" r="3" fill="#25272e"/>
+  </svg>
+</template>
+
+</body>
+</html>

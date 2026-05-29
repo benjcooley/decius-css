@@ -1,4 +1,4 @@
-/*! decius-css v0.5.3 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.6.0 | MIT License | https://github.com/benjcooley/decius-css */
 var decius = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -27,6 +27,12 @@ var decius = (() => {
   });
   var $ = (sel, root = document) => root.querySelector(sel);
   var $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  function $$inc(sel, root) {
+    const out = [];
+    if (root && root.nodeType === 1 && root.matches && root.matches(sel)) out.push(root);
+    if (root && root.querySelectorAll) out.push(...root.querySelectorAll(sel));
+    return out;
+  }
   var clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   var num = (el2, attr, dflt) => el2.hasAttribute(attr) ? parseFloat(el2.getAttribute(attr)) : dflt;
   var WIRED = "__dcsWired";
@@ -57,16 +63,21 @@ var decius = (() => {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   }
-  function place(node, anchor, placement = "bottom") {
+  function place(node, anchor, placement = "bottom", gap = 6) {
     node.style.visibility = "hidden";
     node.hidden = false;
     const a = anchor.getBoundingClientRect();
     const r = node.getBoundingClientRect();
-    const gap = 6;
     let top, left, pos = placement;
     if (placement === "top") {
       top = a.top - r.height - gap;
       left = a.left;
+    } else if (placement === "top-end") {
+      top = a.top - r.height - gap;
+      left = a.right - r.width;
+    } else if (placement === "bottom-end") {
+      top = a.bottom + gap;
+      left = a.right - r.width;
     } else if (placement === "left") {
       top = a.top;
       left = a.left - r.width - gap;
@@ -208,16 +219,22 @@ var decius = (() => {
       t.addEventListener("click", () => openModal(targetOf(t)));
     });
   }
-  function openMenu(menu, anchorOrPos) {
+  function openMenu(menu, anchorOrPos, anchorEl) {
     closeAllMenus();
-    if (anchorOrPos && anchorOrPos.nodeType) place(menu, anchorOrPos, "bottom");
+    if (anchorOrPos && anchorOrPos.nodeType) place(menu, anchorOrPos, "bottom", 0);
     else if (anchorOrPos) placeAt(menu, anchorOrPos.x, anchorOrPos.y);
     else menu.hidden = false;
+    if (anchorEl) anchorEl.setAttribute("aria-expanded", "true");
+    menu.__anchor = anchorEl || null;
     menu.__close = registerLayer(menu, () => closeMenu(menu));
     emit(menu, "dcs:open");
   }
   function closeMenu(menu) {
     menu.hidden = true;
+    if (menu.__anchor) {
+      menu.__anchor.setAttribute("aria-expanded", "false");
+      menu.__anchor = null;
+    }
     menu.__close?.();
     emit(menu, "dcs:close");
   }
@@ -241,10 +258,11 @@ var decius = (() => {
     $$('[data-dcs-toggle="menu"]', root).forEach((t) => {
       if (t[WIRED]) return;
       t[WIRED] = true;
+      if (!t.hasAttribute("aria-expanded")) t.setAttribute("aria-expanded", "false");
       t.addEventListener("click", (e) => {
         e.stopPropagation();
         const m = targetOf(t);
-        if (m) m.hidden ? openMenu(m, t) : closeMenu(m);
+        if (m) m.hidden ? openMenu(m, t, t) : closeMenu(m);
       });
     });
     $$("[data-dcs-menu]", root).forEach((host) => {
@@ -265,12 +283,14 @@ var decius = (() => {
     $$('[data-dcs-toggle="popover"]', root).forEach((t) => {
       if (t[WIRED]) return;
       t[WIRED] = true;
+      if (!t.hasAttribute("aria-expanded")) t.setAttribute("aria-expanded", "false");
       t.addEventListener("click", (e) => {
         e.stopPropagation();
         const p = targetOf(t);
         if (!p) return;
         if (!p.hidden) {
           p.hidden = true;
+          t.setAttribute("aria-expanded", "false");
           p.__close?.();
           return;
         }
@@ -280,13 +300,33 @@ var decius = (() => {
             o.__close?.();
           }
         });
+        $$('[data-dcs-toggle="popover"][aria-expanded="true"]').forEach((other) => {
+          if (other !== t) other.setAttribute("aria-expanded", "false");
+        });
         place(p, t, t.getAttribute("data-dcs-placement") || "bottom");
+        t.setAttribute("aria-expanded", "true");
         p.__close = registerLayer(p, () => {
           p.hidden = true;
+          t.setAttribute("aria-expanded", "false");
           p.__close?.();
         });
       });
     });
+  }
+  function syncTabToolbars(dockpane, tgtSel) {
+    if (!dockpane || !tgtSel) return;
+    $$(".dcs-dockpane__toolbar[data-dcs-tabtoolbar]", dockpane).forEach((tb) => {
+      tb.hidden = tb.getAttribute("data-dcs-tabtoolbar") !== tgtSel;
+    });
+  }
+  function closeDockpaneTab(tab) {
+    const dock = tab.closest(".dcs-dockpane");
+    const targetSel = tab.getAttribute("data-dcs-target");
+    const panel = targetSel && $(targetSel);
+    emit(tab, "dcs:tab-close", { tab, panel, dock });
+    tab.remove();
+    if (panel) panel.remove();
+    cleanupSourceDock(dock);
   }
   function initTabs(root) {
     $$(".dcs-tabs, .dcs-dockpane__tabs", root).forEach((bar) => {
@@ -306,9 +346,53 @@ var decius = (() => {
             });
             panel.hidden = false;
           }
+          syncTabToolbars(bar.closest(".dcs-dockpane"), tgtSel);
         }
         emit(bar, "dcs:tab", { value: tab.getAttribute("data-dcs-value") || tgtSel, tab });
       });
+      const sel = $(`${tabSel}[aria-selected="true"]`, bar) || $(tabSel, bar);
+      const tgt = sel && sel.getAttribute("data-dcs-target");
+      if (tgt) syncTabToolbars(bar.closest(".dcs-dockpane"), tgt);
+    });
+  }
+  function buildDefaultTabMenu() {
+    if ($("#dcs-default-tab-menu")) return;
+    const m = el("div", "dcs-menu");
+    m.id = "dcs-default-tab-menu";
+    m.innerHTML = '<div class="dcs-menu__item" data-dcs-value="close"><span class="dcs-menu__icon">' + icon("close") + '</span><span class="dcs-menu__label-text">Close tab</span></div>';
+    document.body.appendChild(m);
+    initMenu(m.parentElement);
+  }
+  function initDockpaneMenu(root) {
+    $$inc(".dcs-dockpane", root).forEach((dock) => {
+      if (dock[WIRED + "_dpmenu"]) return;
+      dock[WIRED + "_dpmenu"] = true;
+      const tabbar = $(".dcs-dockpane__tabbar", dock) || $(".dcs-dockpane__tabs", dock);
+      if (!tabbar) return;
+      if (dock.getAttribute("data-dcs-tab-menu") === "false") return;
+      if ($(":scope > .dcs-dockpane__menu", tabbar)) return;
+      const menuSel = dock.getAttribute("data-dcs-tab-menu");
+      if (!menuSel) buildDefaultTabMenu();
+      const targetMenu = menuSel || "#dcs-default-tab-menu";
+      const btn = el("button", "dcs-dockpane__menu", icon("more-v"));
+      btn.setAttribute("data-dcs-toggle", "menu");
+      btn.setAttribute("data-dcs-target", targetMenu);
+      btn.setAttribute("aria-label", "Tab actions");
+      tabbar.appendChild(btn);
+      btn.addEventListener("dcs:open", () => {
+      });
+      if (!menuSel) {
+        const defaultMenu = $("#dcs-default-tab-menu");
+        if (defaultMenu) {
+          defaultMenu.addEventListener("dcs:select", (e) => {
+            if (e.detail.value !== "close") return;
+            if (defaultMenu.__anchor !== btn) return;
+            const activeTab = $('.dcs-dockpane__tab[aria-selected="true"]', dock);
+            if (activeTab) closeDockpaneTab(activeTab);
+          });
+        }
+      }
+      initMenu(tabbar);
     });
   }
   function initToggles(root) {
@@ -424,18 +508,18 @@ var decius = (() => {
         sp.classList.add("dcs-splitter--active");
         const axis = horiz ? "clientY" : "clientX";
         const dim = horiz ? "offsetHeight" : "offsetWidth";
-        let last = e[axis];
-        const totalPx = prev[dim] + next[dim];
-        let pg = parseFloat(getComputedStyle(prev).flexGrow) || 1;
-        let ng = parseFloat(getComputedStyle(next).flexGrow) || 1;
-        const totalW = pg + ng, minW = totalW * 0.07;
+        const startPos = e[axis];
+        const prevPx = prev[dim], nextPx = next[dim];
+        const totalPx = prevPx + nextPx;
+        const minPx = 24;
+        prev.style.flex = "1 1 " + prevPx + "px";
+        next.style.flex = "1 1 " + nextPx + "px";
         drag(e, (ev) => {
-          const d = ev[axis] - last;
-          last = ev[axis];
-          pg = clamp(pg + d * (totalW / Math.max(1, totalPx)), minW, totalW - minW);
-          ng = totalW - pg;
-          prev.style.flexGrow = pg;
-          next.style.flexGrow = ng;
+          const delta = ev[axis] - startPos;
+          const newPrev = clamp(prevPx + delta, minPx, totalPx - minPx);
+          const newNext = totalPx - newPrev;
+          prev.style.flexBasis = newPrev + "px";
+          next.style.flexBasis = newNext + "px";
         }, () => sp.classList.remove("dcs-splitter--active"));
       });
     });
@@ -511,33 +595,47 @@ var decius = (() => {
       if (c[WIRED]) return;
       c[WIRED] = true;
       c.classList.add("dcs-combo");
-      const min = num(c, "data-min", 0), max = num(c, "data-max", 1), step = num(c, "data-step", 0.01);
+      const hasMin = c.hasAttribute("data-min");
+      const hasMax = c.hasAttribute("data-max");
+      const unbounded = !hasMin && !hasMax;
+      const min = unbounded ? -Infinity : num(c, "data-min", 0);
+      const max = unbounded ? Infinity : num(c, "data-max", 1);
+      const step = num(c, "data-step", 0.01);
+      const decN = num(c, "data-dec", 2);
       const label = c.getAttribute("data-label");
-      let value = num(c, "data-value", min);
+      let value = num(c, "data-value", isFinite(min) ? min : 0);
       if (!$(".dcs-combo__value", c)) {
         c.appendChild(el("div", "dcs-combo__fill"));
-        const dec = el("div", "dcs-combo__btn", icon("chevron-left"));
-        const inc = el("div", "dcs-combo__btn", icon("chevron-right"));
-        c.appendChild(dec);
+        const decBtn = el("div", "dcs-combo__btn", icon("chevron-left"));
+        const incBtn = el("div", "dcs-combo__btn", icon("chevron-right"));
+        c.appendChild(decBtn);
         if (label) c.appendChild(el("div", "dcs-combo__label", label));
         c.appendChild(el("div", "dcs-combo__value"));
-        c.appendChild(inc);
-        dec.addEventListener("pointerdown", (e) => {
+        c.appendChild(incBtn);
+        decBtn.addEventListener("pointerdown", (e) => {
           e.stopPropagation();
           set(value - step);
         });
-        inc.addEventListener("pointerdown", (e) => {
+        incBtn.addEventListener("pointerdown", (e) => {
           e.stopPropagation();
           set(value + step);
         });
       }
-      const fill = $(".dcs-combo__fill", c), valEl = $(".dcs-combo__value", c);
+      const valEl = $(".dcs-combo__value", c);
+      function formatVal(v) {
+        const fixed = v.toFixed(decN);
+        if (fixed.indexOf(".") < 0) return fixed;
+        return fixed.replace(/0+$/, "").replace(/\.$/, "");
+      }
       const render = () => {
-        c.style.setProperty("--fill", `${(value - min) / (max - min) * 100}%`);
-        valEl.textContent = value.toFixed(2);
+        if (!unbounded) c.style.setProperty("--fill", `${(value - min) / (max - min) * 100}%`);
+        valEl.textContent = formatVal(value);
       };
       function set(v) {
-        value = clamp(step ? Math.round(v / step) * step : v, min, max);
+        let next = step ? Math.round(v / step) * step : v;
+        if (decN >= 0) next = parseFloat(next.toFixed(decN + 6));
+        if (!unbounded) next = clamp(next, min, max);
+        value = next;
         c.setAttribute("data-value", value);
         render();
         emit(c, "input", { value });
@@ -545,11 +643,21 @@ var decius = (() => {
       render();
       c.addEventListener("pointerdown", (e) => {
         if (e.target.closest(".dcs-combo__btn")) return;
-        const rect = c.getBoundingClientRect(), startX = e.clientX, startVal = value, range = max - min;
+        const startX = e.clientX, startVal = value;
+        const rect = c.getBoundingClientRect();
+        let lastX = startX;
         let dragged = false;
         drag(e, (ev) => {
           if (Math.abs(ev.clientX - startX) > 3) dragged = true;
-          set(startVal + (ev.clientX - startX) / rect.width * range * (ev.shiftKey ? 4 : 1));
+          const mult = ev.shiftKey ? 4 : 1;
+          if (unbounded) {
+            const dx = ev.clientX - lastX;
+            const scaledStep = Math.max(step, Math.abs(value) / 100);
+            set(value + dx * scaledStep * mult);
+          } else {
+            set(startVal + (ev.clientX - startX) / rect.width * (max - min) * mult);
+          }
+          lastX = ev.clientX;
         }, () => {
           if (!dragged) startEdit();
         });
@@ -557,7 +665,7 @@ var decius = (() => {
       function startEdit() {
         c.classList.add("dcs-combo--editing");
         const input = el("input", "dcs-combo__edit");
-        input.value = String(value);
+        input.value = formatVal(value);
         c.appendChild(input);
         input.focus();
         input.select();
@@ -673,6 +781,769 @@ var decius = (() => {
       });
     });
   }
+  function initVecLayout(root) {
+    $$inc(".dcs-vec", root).forEach((vec) => {
+      if (vec[WIRED + "_vec"]) return;
+      vec[WIRED + "_vec"] = true;
+      const field = vec.closest(".dcs-field");
+      const update = () => {
+        const cs = getComputedStyle(vec);
+        const minS = parseFloat(cs.getPropertyValue("--dcs-xform-minwidth")) || 72;
+        const gap = parseFloat(cs.gap) || 0;
+        const n = vec.children.length || 1;
+        const needed = n * minS + (n - 1) * gap;
+        let avail = vec.clientWidth;
+        if (field) {
+          const fCs = getComputedStyle(field);
+          const fGap = parseFloat(fCs.columnGap) || parseFloat(fCs.gap) || 0;
+          let used = 0, extras = 0;
+          Array.from(field.children).forEach((c) => {
+            if (c === vec) return;
+            used += c.offsetWidth;
+            extras++;
+          });
+          avail = field.clientWidth - used - extras * fGap;
+        }
+        vec.classList.toggle("dcs-vec--stacked", avail + 1 < needed);
+      };
+      const ro = new ResizeObserver(update);
+      ro.observe(vec);
+      if (field) ro.observe(field);
+      update();
+    });
+  }
+  function initRadioGroups(root) {
+    $$("[data-dcs-radio]", root).forEach((btn) => {
+      if (btn[WIRED + "_radio"]) return;
+      btn[WIRED + "_radio"] = true;
+      btn.addEventListener("click", () => {
+        const name = btn.getAttribute("data-dcs-radio");
+        const scope = btn.closest(".dcs-btn-group, .dcs-toolbar, .dcs-dockpane, [data-dcs-radio-scope]") || document;
+        $$(`[data-dcs-radio="${name}"]`, scope).forEach((b) => {
+          b.setAttribute("aria-pressed", String(b === btn));
+        });
+        emit(btn, "dcs:radio", { name, value: btn.getAttribute("data-dcs-value") || btn.id || null });
+      });
+    });
+  }
+  function refreshTreeVisibility(tree) {
+    const rows = $$(".dcs-tree__row", tree);
+    const openByDepth = [];
+    rows.forEach((row) => {
+      const depth = parseInt(row.style.getPropertyValue("--depth") || "0", 10);
+      let visible = true;
+      for (let d = 0; d < depth; d++) {
+        if (openByDepth[d] === false) {
+          visible = false;
+          break;
+        }
+      }
+      row.hidden = !visible;
+      const chev = $(".dcs-tree__chevron", row);
+      openByDepth[depth] = chev ? chev.classList.contains("dcs-tree__chevron--open") : true;
+      openByDepth.length = depth + 1;
+    });
+  }
+  function refreshTreeLeaves(tree) {
+    const rows = $$(".dcs-tree__row", tree);
+    rows.forEach((row, i) => {
+      const depth = depthOf(row);
+      let hasChild = false;
+      for (let j = i + 1; j < rows.length; j++) {
+        const d = depthOf(rows[j]);
+        if (d <= depth) break;
+        if (d === depth + 1) {
+          hasChild = true;
+          break;
+        }
+      }
+      const chev = $(".dcs-tree__chevron", row);
+      if (!chev) return;
+      if (hasChild) {
+        chev.classList.remove("dcs-tree__chevron--leaf");
+        if (!chev.children.length && !chev.textContent.trim()) {
+          chev.innerHTML = icon("chevron-right");
+        }
+      } else {
+        chev.classList.add("dcs-tree__chevron--leaf");
+        chev.innerHTML = "";
+      }
+    });
+  }
+  function initTreeChevrons(root) {
+    $$(".dcs-tree", root).forEach((tree) => {
+      if (tree[WIRED + "_tree"]) return;
+      tree[WIRED + "_tree"] = true;
+      tree.addEventListener("click", (e) => {
+        const chev = e.target.closest(".dcs-tree__chevron");
+        if (!chev || !tree.contains(chev) || chev.classList.contains("dcs-tree__chevron--leaf")) return;
+        e.stopPropagation();
+        chev.classList.toggle("dcs-tree__chevron--open");
+        refreshTreeVisibility(tree);
+        emit(tree, "dcs:tree-toggle", { row: chev.closest(".dcs-tree__row") });
+      });
+      refreshTreeLeaves(tree);
+      refreshTreeVisibility(tree);
+    });
+  }
+  function depthOf(row) {
+    return parseInt(row.style && row.style.getPropertyValue("--depth") || "0", 10);
+  }
+  function subtreeOf(row) {
+    const out = [row];
+    const d = depthOf(row);
+    let n = row.nextElementSibling;
+    while (n && n.classList && n.classList.contains("dcs-tree__row") && depthOf(n) > d) {
+      out.push(n);
+      n = n.nextElementSibling;
+    }
+    return out;
+  }
+  function shiftSubtreeDepth(rows, delta) {
+    if (!delta) return;
+    rows.forEach((r) => r.style.setProperty("--depth", String(depthOf(r) + delta)));
+  }
+  function initTreeDnd(root) {
+    const ZONES = ["dcs-tree__row--drop-before", "dcs-tree__row--drop-after", "dcs-tree__row--drop-into"];
+    $$(".dcs-tree", root).forEach((tree) => {
+      if (tree[WIRED + "_treednd"]) return;
+      tree[WIRED + "_treednd"] = true;
+      let draggedRow = null;
+      let lastHi = null;
+      const clearHi = () => {
+        if (lastHi) lastHi.classList.remove(...ZONES);
+        lastHi = null;
+      };
+      $$(".dcs-tree__row", tree).forEach((row) => row.setAttribute("draggable", "true"));
+      tree.addEventListener("dragstart", (e) => {
+        const row = e.target.closest(".dcs-tree__row");
+        if (!row || !tree.contains(row)) return;
+        draggedRow = row;
+        e.dataTransfer.effectAllowed = "move";
+        try {
+          e.dataTransfer.setData("text/plain", row.textContent.trim());
+        } catch (_) {
+        }
+        row.classList.add("dcs-tree__row--draggable");
+      });
+      tree.addEventListener("dragover", (e) => {
+        if (!draggedRow) return;
+        const row = e.target.closest(".dcs-tree__row");
+        if (!row || row === draggedRow) return;
+        const dragSubtree = subtreeOf(draggedRow);
+        if (dragSubtree.indexOf(row) >= 0) {
+          clearHi();
+          return;
+        }
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        const rect = row.getBoundingClientRect();
+        const y = e.clientY - rect.top, h = rect.height;
+        const zone = y < h * 0.3 ? "before" : y > h * 0.7 ? "after" : "into";
+        clearHi();
+        row.classList.add(`dcs-tree__row--drop-${zone}`);
+        lastHi = row;
+      });
+      tree.addEventListener("dragleave", (e) => {
+        if (e.relatedTarget && tree.contains(e.relatedTarget)) return;
+        clearHi();
+      });
+      tree.addEventListener("drop", (e) => {
+        if (!draggedRow) return;
+        const row = e.target.closest(".dcs-tree__row");
+        if (!row || row === draggedRow) {
+          clearHi();
+          draggedRow = null;
+          return;
+        }
+        e.preventDefault();
+        const rect = row.getBoundingClientRect();
+        const y = e.clientY - rect.top, h = rect.height;
+        const zone = y < h * 0.3 ? "before" : y > h * 0.7 ? "after" : "into";
+        const targetDepth = depthOf(row);
+        const newRootDepth = zone === "into" ? targetDepth + 1 : targetDepth;
+        const subtree = subtreeOf(draggedRow);
+        const deltaDepth = newRootDepth - depthOf(draggedRow);
+        const evt = new CustomEvent("dcs:tree-reorder", {
+          detail: { row: draggedRow, subtree, target: row, zone, newDepth: newRootDepth },
+          bubbles: true,
+          cancelable: true
+        });
+        tree.dispatchEvent(evt);
+        if (evt.defaultPrevented) {
+          clearHi();
+          return;
+        }
+        shiftSubtreeDepth(subtree, deltaDepth);
+        let anchor = zone === "before" ? row : zone === "after" ? subtreeOf(row).slice(-1)[0].nextElementSibling : row.nextElementSibling;
+        const parent = row.parentElement;
+        subtree.forEach((r) => parent.insertBefore(r, anchor));
+        clearHi();
+        refreshTreeVisibility(tree);
+      });
+      tree.addEventListener("dragend", () => {
+        if (draggedRow) draggedRow.classList.remove("dcs-tree__row--draggable");
+        draggedRow = null;
+        clearHi();
+      });
+    });
+  }
+  var DRAG_TARGET = ".dcs-panel--floating, .dcs-toolbar--floating";
+  var DRAG_IGNORE = "button, a, input, select, textarea, label, .dcs-check, .dcs-radio, .dcs-switch, .dcs-slider, .dcs-fader, .dcs-knob, .dcs-combo, .dcs-dockpane__tab, .dcs-dockpane__tab-close, .dcs-tab, [data-dcs-toggle], [data-dcs-dismiss], .dcs-dockpane__body, .dcs-panel__body";
+  function beginPanelDrag(e, target) {
+    const boundsSel = target.getAttribute("data-dcs-drag-bounds");
+    const bounds = (boundsSel ? $(boundsSel) : null) || target.offsetParent || document.body;
+    e.preventDefault();
+    const br = bounds.getBoundingClientRect();
+    const tr = target.getBoundingClientRect();
+    target.style.width = tr.width + "px";
+    target.style.height = tr.height + "px";
+    target.style.left = tr.left - br.left + "px";
+    target.style.top = tr.top - br.top + "px";
+    target.style.right = "auto";
+    target.style.bottom = "auto";
+    target.style.transform = "none";
+    const ox = e.clientX - tr.left;
+    const oy = e.clientY - tr.top;
+    target.classList.add("dcs--dragging");
+    const margin = 4;
+    const pid = e.pointerId;
+    try {
+      target.setPointerCapture(pid);
+    } catch (_) {
+    }
+    let dragLive = true;
+    const move = (ev) => {
+      if (!dragLive || ev.pointerId !== pid) return;
+      const w = target.offsetWidth, h = target.offsetHeight;
+      let left = ev.clientX - br.left - ox;
+      let top = ev.clientY - br.top - oy;
+      left = clamp(left, margin, Math.max(margin, br.width - w - margin));
+      top = clamp(top, margin, Math.max(margin, br.height - h - margin));
+      target.style.left = left + "px";
+      target.style.top = top + "px";
+    };
+    const up = (ev) => {
+      if (!dragLive || ev.pointerId !== pid) return;
+      dragLive = false;
+      target.removeEventListener("pointermove", move);
+      target.removeEventListener("pointerup", up);
+      target.removeEventListener("pointercancel", up);
+      window.removeEventListener("pointermove", move, true);
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", up, true);
+      try {
+        target.releasePointerCapture(pid);
+      } catch (_) {
+      }
+      target.classList.remove("dcs--dragging");
+    };
+    target.addEventListener("pointermove", move);
+    target.addEventListener("pointerup", up);
+    target.addEventListener("pointercancel", up);
+    window.addEventListener("pointermove", move, true);
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", up, true);
+  }
+  function initDraggable(root) {
+    $$inc("[data-dcs-drag-handle]", root).forEach((handle) => {
+      if (handle[WIRED]) return;
+      handle[WIRED] = true;
+      handle.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(DRAG_IGNORE)) return;
+        const target = handle.closest(DRAG_TARGET);
+        if (!target) return;
+        e.stopPropagation();
+        beginPanelDrag(e, target);
+      });
+    });
+    $$inc(DRAG_TARGET, root).forEach((floater) => {
+      const key = WIRED + "_floatauto";
+      if (floater[key]) return;
+      floater[key] = true;
+      floater.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(DRAG_IGNORE)) return;
+        beginPanelDrag(e, floater);
+      });
+    });
+  }
+  function dockAt(x, y) {
+    const el2 = document.elementFromPoint(x, y);
+    return el2 ? el2.closest(".dcs-dockpane") : null;
+  }
+  function edgeOwnerDock(edge) {
+    const horizontal = edge === "left" || edge === "right";
+    const wantV = !horizontal;
+    const docks = $$(".dcs-dock");
+    const isMatch = (d) => d.classList && d.classList.contains("dcs-dock") && d.classList.contains("dcs-dock--v") === wantV;
+    const matching = docks.filter(isMatch);
+    const outermost = matching.find((d) => {
+      let p = d.parentElement;
+      while (p) {
+        if (isMatch(p)) return false;
+        p = p.parentElement;
+      }
+      return true;
+    });
+    return outermost || matching[0] || docks.find((d) => !d.parentElement || !d.parentElement.closest(".dcs-dock")) || docks[0] || null;
+  }
+  function windowEdge(x, y) {
+    const BAND = 32;
+    if (x < BAND) return "left";
+    if (x > window.innerWidth - BAND) return "right";
+    if (y < BAND) return "top";
+    if (y > window.innerHeight - BAND) return "bottom";
+    return null;
+  }
+  function dockKind(dock) {
+    if (!dock) return null;
+    return dock.getAttribute("data-dcs-dock-kind") || (dock.classList.contains("dcs-dockpane--center") ? "documents" : "panels");
+  }
+  function tearoffAllowed(dock) {
+    if (!dock) return false;
+    return dock.getAttribute("data-dcs-dock-tearoff") !== "false";
+  }
+  function activateTabInDock(dock, tab) {
+    $$(".dcs-dockpane__tab", dock).forEach((t) => t.setAttribute("aria-selected", String(t === tab)));
+    const sel = tab.getAttribute("data-dcs-target");
+    if (sel) {
+      const panel = $(sel);
+      if (panel && panel.parentElement) {
+        $$("[data-dcs-tabpanel]", panel.parentElement).forEach((p) => {
+          p.hidden = p !== panel;
+        });
+        panel.hidden = false;
+      }
+      syncTabToolbars(dock, sel);
+    }
+  }
+  function unsplitFromLayout(node) {
+    const parent = node.parentElement;
+    const prev = node.previousElementSibling;
+    const next = node.nextElementSibling;
+    if (prev && prev.classList && prev.classList.contains("dcs-splitter")) prev.remove();
+    else if (next && next.classList && next.classList.contains("dcs-splitter")) next.remove();
+    node.remove();
+    if (!parent || !parent.classList || !parent.classList.contains("dcs-dock")) return;
+    const live = Array.from(parent.children).filter((c) => !c.classList.contains("dcs-splitter"));
+    if (live.length === 0) {
+      unsplitFromLayout(parent);
+      return;
+    }
+    live.forEach((c) => {
+      c.style.flex = "1 1 0";
+    });
+  }
+  function cleanupSourceDock(dock) {
+    if (!dock) return;
+    const remainingTabs = $$(".dcs-dockpane__tab", dock);
+    if (!remainingTabs.length) {
+      const floater = dock.closest(".dcs-panel--floating");
+      if (floater) {
+        floater.remove();
+        return;
+      }
+      unsplitFromLayout(dock);
+      return;
+    }
+    if (!remainingTabs.some((t) => t.getAttribute("aria-selected") === "true")) {
+      activateTabInDock(dock, remainingTabs[0]);
+    }
+  }
+  function moveTabTo(tab, panel, targetDock) {
+    const tabs = $(".dcs-dockpane__tabs", targetDock);
+    const body = $(".dcs-dockpane__body", targetDock);
+    const toolbars = $(".dcs-dockpane__toolbars", targetDock);
+    if (!tabs || !body) return false;
+    const tgtSel = tab.getAttribute("data-dcs-target");
+    if (tgtSel && toolbars) {
+      try {
+        const matchingToolbar = $(`.dcs-dockpane__toolbar[data-dcs-tabtoolbar="${CSS.escape(tgtSel)}"]`);
+        if (matchingToolbar) toolbars.appendChild(matchingToolbar);
+      } catch (_) {
+        const safe = tgtSel.replace(/"/g, '\\"');
+        const matchingToolbar = $(`.dcs-dockpane__toolbar[data-dcs-tabtoolbar="${safe}"]`);
+        if (matchingToolbar) toolbars.appendChild(matchingToolbar);
+      }
+    }
+    tabs.appendChild(tab);
+    body.appendChild(panel);
+    activateTabInDock(targetDock, tab);
+    reflowDockpane(targetDock);
+    return true;
+  }
+  var DOCK_EDGE_PCT = 0.22;
+  function edgeZone(x, y, rect) {
+    const dx = x - rect.left, dy = y - rect.top;
+    const w = rect.width, h = rect.height;
+    const xBand = w * DOCK_EDGE_PCT;
+    const yBand = h * DOCK_EDGE_PCT;
+    const nearL = dx < xBand, nearR = dx > w - xBand;
+    const nearT = dy < yBand, nearB = dy > h - yBand;
+    if (!(nearL || nearR || nearT || nearB)) return "center";
+    const dists = [
+      { e: "left", d: nearL ? dx : Infinity },
+      { e: "right", d: nearR ? w - dx : Infinity },
+      { e: "top", d: nearT ? dy : Infinity },
+      { e: "bottom", d: nearB ? h - dy : Infinity }
+    ];
+    dists.sort((a, b) => a.d - b.d);
+    return dists[0].e;
+  }
+  function showEdgePreview(dock, edge) {
+    let ov = dock.__edgePreview;
+    if (!ov) {
+      ov = el("div", "dcs-dockpane__edge-preview");
+      const cs = getComputedStyle(dock);
+      if (cs.position === "static") dock.__restorePos = true, dock.style.position = "relative";
+      dock.appendChild(ov);
+      dock.__edgePreview = ov;
+    }
+    ov.setAttribute("data-edge", edge);
+  }
+  function clearEdgePreview(dock) {
+    if (!dock || !dock.__edgePreview) return;
+    dock.__edgePreview.remove();
+    dock.__edgePreview = null;
+    if (dock.__restorePos) {
+      dock.style.position = "";
+      dock.__restorePos = false;
+    }
+  }
+  function showCenterPreview(dock) {
+    if (dock.__centerPreview) return;
+    const ov = el("div", "dcs-dockpane__center-preview");
+    const cs = getComputedStyle(dock);
+    if (cs.position === "static") dock.__centerRestorePos = true, dock.style.position = "relative";
+    dock.appendChild(ov);
+    dock.__centerPreview = ov;
+  }
+  function clearCenterPreview(dock) {
+    if (!dock || !dock.__centerPreview) return;
+    dock.__centerPreview.remove();
+    dock.__centerPreview = null;
+    if (dock.__centerRestorePos) {
+      dock.style.position = "";
+      dock.__centerRestorePos = false;
+    }
+  }
+  var DOCK_NEW_PX_H = 320;
+  var DOCK_NEW_PX_V = 220;
+  function splitDock(target, edge, newDock, opts) {
+    const horizontal = edge === "left" || edge === "right";
+    const desiredCls = horizontal ? "dcs-dock" : "dcs-dock dcs-dock--v";
+    const splitterCls = horizontal ? "dcs-splitter" : "dcs-splitter dcs-splitter--h";
+    const parent = target.parentElement;
+    const parentIsDock = parent && parent.classList.contains("dcs-dock");
+    const parentDir = parentIsDock && parent.classList.contains("dcs-dock--v") ? "v" : "h";
+    const needDir = horizontal ? "h" : "v";
+    const dim = horizontal ? "offsetWidth" : "offsetHeight";
+    const isWindowEdge = !!(opts && opts.windowEdge);
+    const tSize = target[dim] || 0;
+    const defaultNewPx = horizontal ? DOCK_NEW_PX_H : DOCK_NEW_PX_V;
+    const cap = Math.max(120, tSize * 0.4);
+    const newPx = isWindowEdge ? Math.min(defaultNewPx, cap) : Math.max(20, (tSize - 1) / 2);
+    const targetPx = isWindowEdge ? Math.max(120, tSize - newPx - 1) : newPx;
+    if (parentIsDock && parentDir === needDir) {
+      Array.from(parent.children).forEach((c) => {
+        if (c === target || c.classList.contains("dcs-splitter")) return;
+        const sz = c[dim];
+        if (sz > 0) c.style.flex = `1 1 ${sz}px`;
+      });
+      target.style.flex = `1 1 ${targetPx}px`;
+      newDock.style.flex = `1 1 ${newPx}px`;
+      const split = el("div", splitterCls);
+      if (horizontal) split.setAttribute("data-dcs-splitter", "");
+      else split.setAttribute("data-dcs-splitter", "h");
+      if (edge === "left" || edge === "top") {
+        parent.insertBefore(newDock, target);
+        parent.insertBefore(split, target);
+      } else {
+        target.after(split);
+        split.after(newDock);
+      }
+    } else {
+      const wrap = el("div", desiredCls);
+      wrap.style.flex = target.style.flex || "1";
+      target.replaceWith(wrap);
+      target.style.flex = `1 1 ${targetPx}px`;
+      newDock.style.flex = `1 1 ${newPx}px`;
+      const split = el("div", splitterCls);
+      if (horizontal) split.setAttribute("data-dcs-splitter", "");
+      else split.setAttribute("data-dcs-splitter", "h");
+      if (edge === "left" || edge === "top") {
+        wrap.appendChild(newDock);
+        wrap.appendChild(split);
+        wrap.appendChild(target);
+      } else {
+        wrap.appendChild(target);
+        wrap.appendChild(split);
+        wrap.appendChild(newDock);
+      }
+    }
+    init(newDock.parentElement);
+  }
+  function floatHost(sourceDock) {
+    const explicit = document.querySelector("[data-dcs-float-host]");
+    if (explicit) return explicit;
+    const center = document.querySelector(".dcs-dockpane--center");
+    if (center) return $(".dcs-dockpane__body", center) || center;
+    let p = sourceDock && sourceDock.offsetParent;
+    while (p && p.closest && p.closest(".dcs-panel--floating")) {
+      const wrap = p.closest(".dcs-panel--floating");
+      p = wrap.parentElement && wrap.parentElement.offsetParent;
+    }
+    return p || document.body;
+  }
+  function spawnFloatingPanel(tab, panel, x, y, w, h, kind, sourceDock) {
+    const host = floatHost(sourceDock);
+    const hostRect = host.getBoundingClientRect();
+    const fp = el("div", "dcs-panel dcs-panel--floating");
+    const fw = w || 320, fh = h || 220;
+    const left = clamp(x - hostRect.left - 60, 8, Math.max(8, hostRect.width - fw - 8));
+    const top = clamp(y - hostRect.top - 12, 8, Math.max(8, hostRect.height - fh - 8));
+    fp.style.left = left + "px";
+    fp.style.top = top + "px";
+    fp.style.width = fw + "px";
+    fp.style.height = fh + "px";
+    const kindAttr = kind ? ` data-dcs-dock-kind="${kind}"` : "";
+    fp.innerHTML = '<div class="dcs-dockpane"' + kindAttr + '><div class="dcs-dockpane__tabbar" data-dcs-drag-handle><div class="dcs-dockpane__tabs"></div><div class="dcs-dockpane__toolbars"></div></div><div class="dcs-dockpane__shelf" hidden></div><div class="dcs-dockpane__body"></div></div>';
+    const dock = $(".dcs-dockpane", fp);
+    moveTabTo(tab, panel, dock);
+    host.appendChild(fp);
+    init(fp);
+    return fp;
+  }
+  function initDockTearoff(root) {
+    const TEAR_WIRED = "__dcsTearWired";
+    $$(".dcs-dockpane__tab", root).forEach((tab) => {
+      if (tab[TEAR_WIRED]) return;
+      tab[TEAR_WIRED] = true;
+      tab.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(".dcs-dockpane__tab-close")) return;
+        const sourceDock = tab.closest(".dcs-dockpane");
+        if (!sourceDock) return;
+        if (!tearoffAllowed(sourceDock)) return;
+        if (dockKind(sourceDock) === "documents") {
+          const docTabs = $$(".dcs-dockpane__tab", sourceDock);
+          if (docTabs.length <= 1) return;
+          const tabsContainer = $(".dcs-dockpane__tabs", sourceDock);
+          if (!tabsContainer) return;
+          const startX2 = e.clientX, startY2 = e.clientY;
+          let started2 = false;
+          drag(e, (ev) => {
+            if (!started2) {
+              if (Math.hypot(ev.clientX - startX2, ev.clientY - startY2) < 6) return;
+              started2 = true;
+            }
+            const overEl = document.elementFromPoint(ev.clientX, ev.clientY);
+            const overTab = overEl && overEl.closest(".dcs-dockpane__tab");
+            if (!overTab || overTab === tab || !tabsContainer.contains(overTab)) return;
+            const r = overTab.getBoundingClientRect();
+            const insertBefore = ev.clientX < r.left + r.width / 2 ? overTab : overTab.nextSibling;
+            if (insertBefore !== tab && insertBefore !== tab.nextSibling) {
+              tabsContainer.insertBefore(tab, insertBefore);
+            }
+          }, () => {
+            if (started2) emit(sourceDock, "dcs:tab-reorder", { tab });
+          });
+          return;
+        }
+        const tgtSel = tab.getAttribute("data-dcs-target");
+        const panel = tgtSel && $(tgtSel);
+        if (!sourceDock || !panel) return;
+        const startX = e.clientX, startY = e.clientY;
+        let ghost = null;
+        let lastHi = null;
+        let started = false;
+        const sourceKind = dockKind(sourceDock);
+        let lastEdgeDock = null;
+        function dropDecision(x, y) {
+          const we = windowEdge(x, y);
+          if (we) {
+            const t = edgeOwnerDock(we);
+            if (t) return { kind: we, target: t, windowEdge: true };
+          }
+          const hovered = dockAt(x, y);
+          if (!hovered) return null;
+          const kindOK = hovered !== sourceDock && dockKind(hovered) === sourceKind;
+          if (!kindOK) return null;
+          const elPt = document.elementFromPoint(x, y);
+          if (elPt && elPt.closest(".dcs-dockpane__tabbar, .dcs-dockpane__tabs, .dcs-dockpane__tab, .dcs-dockpane__toolbars, .dcs-dockpane__shelf")) {
+            return { kind: "center", target: hovered };
+          }
+          const zone = edgeZone(x, y, hovered.getBoundingClientRect());
+          return { kind: zone, target: hovered };
+        }
+        drag(e, (ev) => {
+          if (!started) {
+            if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
+            started = true;
+            ghost = el("div", "dcs-dockpane__tab-ghost");
+            ghost.textContent = tab.textContent.trim();
+            document.body.appendChild(ghost);
+          }
+          ghost.style.left = ev.clientX + 10 + "px";
+          ghost.style.top = ev.clientY + 8 + "px";
+          const intent = dropDecision(ev.clientX, ev.clientY);
+          if (lastHi && (!intent || lastHi !== intent.target || intent.kind !== "center")) {
+            clearCenterPreview(lastHi);
+            lastHi = null;
+          }
+          if (lastEdgeDock && (!intent || lastEdgeDock !== intent.target || intent.kind === "center")) {
+            clearEdgePreview(lastEdgeDock);
+            lastEdgeDock = null;
+          }
+          if (!intent) return;
+          if (intent.kind === "center") {
+            showCenterPreview(intent.target);
+            lastHi = intent.target;
+          } else {
+            showEdgePreview(intent.target, intent.kind);
+            lastEdgeDock = intent.target;
+          }
+        }, (ev) => {
+          if (lastHi) clearCenterPreview(lastHi);
+          if (lastEdgeDock) clearEdgePreview(lastEdgeDock);
+          if (ghost) ghost.remove();
+          if (!started) return;
+          const intent = dropDecision(ev.clientX, ev.clientY);
+          if (intent && intent.kind === "center") {
+            moveTabTo(tab, panel, intent.target);
+            emit(intent.target, "dcs:dock", { tab, panel, from: sourceDock });
+            cleanupSourceDock(sourceDock);
+          } else if (intent) {
+            const fresh = el("div", "dcs-dockpane");
+            if (sourceKind && sourceKind !== "panels") fresh.setAttribute("data-dcs-dock-kind", sourceKind);
+            fresh.innerHTML = '<div class="dcs-dockpane__tabbar"><div class="dcs-dockpane__tabs"></div><div class="dcs-dockpane__toolbars"></div></div><div class="dcs-dockpane__shelf" hidden></div><div class="dcs-dockpane__body"></div>';
+            moveTabTo(tab, panel, fresh);
+            splitDock(intent.target, intent.kind, fresh, { windowEdge: intent.windowEdge });
+            emit(fresh, "dcs:edge-dock", { tab, panel, edge: intent.kind, target: intent.target, from: sourceDock });
+            cleanupSourceDock(sourceDock);
+            init(fresh);
+          } else {
+            const sourceFloater = sourceDock.closest(".dcs-panel--floating");
+            const onlyTab = sourceFloater && $$(".dcs-dockpane__tab", sourceDock).length === 1;
+            if (onlyTab) {
+              const fhost = sourceFloater.offsetParent || document.body;
+              const fr = fhost.getBoundingClientRect();
+              sourceFloater.style.left = Math.max(8, ev.clientX - fr.left - 60) + "px";
+              sourceFloater.style.top = Math.max(8, ev.clientY - fr.top - 12) + "px";
+              sourceFloater.style.right = "auto";
+              sourceFloater.style.bottom = "auto";
+              emit(sourceFloater, "dcs:move", { x: ev.clientX, y: ev.clientY });
+            } else {
+              const w = sourceDock.offsetWidth ? Math.min(420, sourceDock.offsetWidth) : 320;
+              const h = sourceDock.offsetHeight ? Math.min(360, sourceDock.offsetHeight) : 240;
+              const fp = spawnFloatingPanel(tab, panel, ev.clientX, ev.clientY, w, h, sourceKind, sourceDock);
+              emit(fp, "dcs:tearoff", { tab, panel, kind: sourceKind, from: sourceDock });
+              cleanupSourceDock(sourceDock);
+            }
+          }
+        });
+      });
+    });
+  }
+  var RESIZE_DIRS = ["n", "s", "w", "e", "nw", "ne", "sw", "se"];
+  function initResizable(root) {
+    $$inc('.dcs-panel--floating, .dcs-toolbar--floating[data-dcs-resize="true"]', root).forEach((panel) => {
+      if (panel[WIRED + "_resize"]) return;
+      panel[WIRED + "_resize"] = true;
+      if (panel.getAttribute("data-dcs-resize") === "false") return;
+      if ($(":scope > .dcs-panel__resize-zones", panel)) return;
+      const zones = el("div", "dcs-panel__resize-zones");
+      RESIZE_DIRS.forEach((dir) => {
+        const z = el("div", "dcs-panel__resize-zone dcs-panel__resize-zone--" + dir);
+        z.dataset.dir = dir;
+        zones.appendChild(z);
+      });
+      panel.appendChild(zones);
+      if (!$(":scope > .dcs-panel__resize", panel)) {
+        panel.appendChild(el("div", "dcs-panel__resize"));
+      }
+      zones.addEventListener("pointerdown", (e) => {
+        const zone = e.target.closest("[data-dir]");
+        if (!zone) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const dir = zone.dataset.dir;
+        const host = panel.offsetParent || document.body;
+        const br = host.getBoundingClientRect();
+        const tr = panel.getBoundingClientRect();
+        const startW = tr.width, startH = tr.height;
+        const startL = tr.left - br.left, startT = tr.top - br.top;
+        const startX = e.clientX, startY = e.clientY;
+        panel.style.left = startL + "px";
+        panel.style.top = startT + "px";
+        panel.style.width = startW + "px";
+        panel.style.height = startH + "px";
+        panel.style.right = "auto";
+        panel.style.bottom = "auto";
+        panel.style.transform = "none";
+        panel.classList.add("dcs--dragging");
+        const minW = 160, minH = 80;
+        drag(e, (ev) => {
+          const dx = ev.clientX - startX, dy = ev.clientY - startY;
+          let newW = startW, newH = startH, newL = startL, newT = startT;
+          if (dir.indexOf("e") >= 0) newW = Math.max(minW, startW + dx);
+          if (dir.indexOf("w") >= 0) {
+            newW = Math.max(minW, startW - dx);
+            newL = startL + (startW - newW);
+          }
+          if (dir.indexOf("s") >= 0) newH = Math.max(minH, startH + dy);
+          if (dir.indexOf("n") >= 0) {
+            newH = Math.max(minH, startH - dy);
+            newT = startT + (startH - newH);
+          }
+          panel.style.width = newW + "px";
+          panel.style.height = newH + "px";
+          panel.style.left = newL + "px";
+          panel.style.top = newT + "px";
+        }, () => panel.classList.remove("dcs--dragging"));
+      });
+    });
+  }
+  function activeToolbar(dock) {
+    return $$(".dcs-dockpane__toolbar[data-dcs-tabtoolbar]", dock).find((t) => !t.hidden) || $(".dcs-dockpane__toolbar", dock);
+  }
+  function reflowDockpane(dock) {
+    const tabbar = $(".dcs-dockpane__tabbar", dock);
+    const tabs = $(".dcs-dockpane__tabs", tabbar);
+    const slot = $(".dcs-dockpane__toolbars", tabbar);
+    const shelf = $(".dcs-dockpane__shelf", dock);
+    if (!tabbar || !tabs || !slot) return;
+    const tb = activeToolbar(dock);
+    const tabsW = tabs.scrollWidth;
+    const slotMin = tb ? Math.min(160, tb.scrollWidth) : 0;
+    const isFloating = !!dock.closest(".dcs-panel--floating");
+    const overflowed = isFloating || tabsW + slotMin + 8 > tabbar.clientWidth;
+    if (overflowed && shelf) {
+      if (tb && tb.parentElement !== shelf) shelf.appendChild(tb);
+      shelf.hidden = !tb;
+      dock.classList.add("dcs-dockpane--shelved");
+    } else {
+      if (tb && tb.parentElement !== slot) slot.appendChild(tb);
+      if (shelf) shelf.hidden = true;
+      dock.classList.remove("dcs-dockpane--shelved");
+    }
+  }
+  function initDockpane(root) {
+    $$inc(".dcs-dockpane", root).forEach((dock) => {
+      if (dock[WIRED]) return;
+      dock[WIRED] = true;
+      if (!$(".dcs-dockpane__tabbar", dock)) return;
+      const slot = $(".dcs-dockpane__toolbars", dock);
+      if (slot) $$(":scope > .dcs-dockpane__toolbar", slot).forEach((tb) => slot.appendChild(tb));
+      const activeTab = $('.dcs-dockpane__tab[aria-selected="true"]', dock) || $(".dcs-dockpane__tab", dock);
+      const activeTgt = activeTab && activeTab.getAttribute("data-dcs-target");
+      if (activeTgt) syncTabToolbars(dock, activeTgt);
+      const obs = new ResizeObserver(() => reflowDockpane(dock));
+      obs.observe(dock);
+      reflowDockpane(dock);
+      requestAnimationFrame(() => reflowDockpane(dock));
+      dock.addEventListener("dcs:tab", () => reflowDockpane(dock));
+    });
+  }
   function init(root = document) {
     initCollapse(root);
     initDismiss(root);
@@ -687,10 +1558,19 @@ var decius = (() => {
     initKnob(root);
     initCombo(root);
     initSplitter(root);
+    initDraggable(root);
+    initResizable(root);
+    initDockpane(root);
+    initDockpaneMenu(root);
+    initDockTearoff(root);
+    initRadioGroups(root);
+    initTreeChevrons(root);
+    initTreeDnd(root);
+    initVecLayout(root);
     return decius;
   }
   var decius = {
-    version: "0.5.3",
+    version: "0.6.0",
     init,
     toast,
     modal: { open: openModal, close: (id) => {
@@ -727,8 +1607,13 @@ var decius = (() => {
  *   [data-dcs-splitter]   (resize previous/next flex siblings)
  *   [data-dcs-select] / [data-dcs-select="multi"]  (row selection on list/tree)
  *   [data-dcs-drag] [data-dcs-drag-type] / [data-dcs-drop] [data-dcs-accept]  (typed DnD)
+ *   [data-dcs-drag-handle] [data-dcs-drag-bounds="sel"]   (move a floating panel/toolbar)
+ *   [data-dcs-tabtoolbar="#tabpanel-id"]   (toolbar shown when that tab is active)
+ *   [data-dcs-radio="group-name"]   (button radio group — one pressed at a time)
+ *   .dcs-dockpane (auto-observed: collapses tabbar toolbar slot to shelf on overflow)
  *   .dcs-subpanel__header / .dcs-foldout__header   (collapse, zero-config)
  *   .dcs-check / .dcs-radio / .dcs-switch          (toggle, zero-config)
+ *   .dcs-tree__chevron   (expand/collapse rows; uses --depth on flat siblings)
  *
  * Scope note: this runtime covers per-component behavior (menus, modals,
  * popovers, tabs, toasts, collapse, the drag controls, and splitter resize).

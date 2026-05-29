@@ -96,3 +96,10 @@
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
   background: var(--dcs-bg);
 }
+
+/* Tab panels: ensure `[hidden]` actually hides the panel even when its
+   body sets `display: flex` (or grid) via a class — otherwise content
+   from the inactive tab can bleed through under the active tab. Two
+   attribute selectors give us specificity (0,2,0) which beats any
+   single-class layout rule (0,1,0) without needing !important. */
+[data-dcs-tabpanel][hidden] { display: none; }

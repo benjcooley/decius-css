@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decius Photo</title>
+<link rel="stylesheet" href="../../dist/css/decius.bundle.min.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="dcs" data-dcs-density="comfortable" data-dcs-accent="blue">
+
+<div class="ps-app" data-screen-label="Decius Photo">
+
+  <!-- ============================ MENUBAR ============================ -->
+  <div class="dcs-menubar ps-menubar">
+    <div class="ps-brand">
+      <i class="di di-decius ps-brand__mark" aria-hidden="true"></i>
+      <span class="ps-brand__name">Decius&nbsp;Photo</span>
+    </div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-file">File</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-edit">Edit</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-image">Image</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-layer">Layer</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-select">Select</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-filter">Filter</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-view">View</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-window">Window</div>
+    <div class="dcs-menubar__item" data-dcs-toggle="menu" data-dcs-target="#m-help">Help</div>
+    <div class="dcs-menubar__spacer"></div>
+    <div class="dcs-menubar__meta ps-doc-name"><span id="ps-titlebar">Untitled-1 @ 67% (RGB/8)</span></div>
+
+    <span class="dcs-divider dcs-divider--v"></span>
+
+    <!-- Theme tweaks (density / style / accent) — far-right corner,
+         bottom-end placement so the popover's right edge stays flush
+         with the menubar's edge. -->
+    <button class="dcs-btn dcs-btn--icon dcs-btn--ghost ps-settings" data-dcs-toggle="popover" data-dcs-target="#ps-tweaks" data-dcs-placement="bottom-end" data-dcs-tip="Theme tweaks">
+      <i class="di di-cog"></i>
+    </button>
+  </div>
+
+  <!-- ============================ OPTIONS BAR ============================ -->
+  <div class="ps-options" id="ps-options">
+    <span class="ps-tool-glyph" id="ps-opt-glyph"><i class="di di-brush"></i></span>
+    <span class="ps-tool-name" id="ps-opt-name">Brush Tool</span>
+    <div class="dcs-divider dcs-divider--v"></div>
+    <div class="ps-grow" id="ps-opt-slot"></div>
+    <div class="dcs-divider dcs-divider--v"></div>
+    <button class="dcs-btn dcs-btn--ghost dcs-btn--sm" id="ps-btn-reset-view"><i class="di di-fit"></i> Fit</button>
+  </div>
+
+  <!-- ===================== BODY — dock-hosted workspace ===================== -->
+  <!-- The body is a horizontal .dcs-dock wrapping a single documents
+       dockpane (the "image" tab strip + stage). Tear-off panels can be
+       docked to its window edges; document tabs (Untitled-1…) live in
+       the dockpane's tab strip. The body is also flagged as the
+       [data-dcs-float-host] so floating panels position above it. -->
+  <div class="ps-body" id="ps-body" data-dcs-float-host>
+    <div class="dcs-dock ps-doc-dock" id="ps-doc-dock">
+      <div class="dcs-dockpane dcs-dockpane--center" data-dcs-dock-kind="documents" data-dcs-dock-tearoff="false" data-dcs-tab-menu="false">
+        <div class="dcs-dockpane__tabbar">
+          <div class="dcs-dockpane__tabs" id="ps-doc-tabs">
+            <div class="dcs-dockpane__tab" data-dcs-target="#ps-doc-untitled1" aria-selected="true">
+              <i class="di di-image"></i> Untitled-1 @ 67% (RGB/8)
+              <button class="dcs-dockpane__tab-close" title="Close" aria-label="Close">&times;</button>
+            </div>
+          </div>
+          <div class="dcs-dockpane__toolbars"></div>
+        </div>
+        <div class="dcs-dockpane__body">
+          <div id="ps-doc-untitled1" data-dcs-tabpanel>
+            <div class="ps-stagewrap">
+              <div class="ps-ruler-corner"></div>
+              <div class="ps-ruler ps-ruler--h"><canvas id="ps-ruler-h"></canvas></div>
+              <div class="ps-ruler ps-ruler--v"><canvas id="ps-ruler-v"></canvas></div>
+              <div class="ps-stage" id="ps-stage">
+                <div class="ps-doc" id="ps-doc">
+                  <div class="ps-marquee ps-hidden" id="ps-marquee"></div>
+                </div>
+                <div class="dcs-viewport__overlay dcs-viewport__overlay--bl" style="position:absolute;left:8px;bottom:8px;">
+                  <span class="dcs-badge dcs-badge--soft" id="ps-ov-cursor">0, 0 px</span>
+                </div>
+                <div class="dcs-viewport__overlay dcs-viewport__overlay--tr" style="position:absolute;right:8px;top:8px;">
+                  <span class="dcs-badge dcs-badge--soft" id="ps-ov-doc">1280 × 800</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING: Tools (detached vertical toolbar) -->
+    <div class="dcs-toolbar dcs-toolbar--v dcs-toolbar--floating ps-toolstrip" id="ps-toolstrip" style="left:12px;top:12px;">
+      <span class="dcs-grip" data-dcs-drag-handle title="Drag tools"></span>
+      <div id="ps-tools"></div>
+      <div class="ps-toolsep"></div>
+      <div class="ps-colorchips" title="Foreground / Background color">
+        <span class="ps-reset" id="ps-color-reset" title="Default colors (D)">⬚</span>
+        <span class="ps-swap" id="ps-color-swap" title="Swap colors (X)">⇄</span>
+        <div class="ps-colorchip ps-colorchip--bg" id="ps-chip-bg" data-dcs-toggle="popover" data-dcs-target="#ps-color-picker" data-dcs-placement="right"></div>
+        <div class="ps-colorchip ps-colorchip--fg" id="ps-chip-fg" data-dcs-toggle="popover" data-dcs-target="#ps-color-picker" data-dcs-placement="right"></div>
+      </div>
+      <div class="ps-tool" id="ps-quickmask" title="Edit in Quick Mask Mode (Q)"><i class="di di-layer-mask"></i></div>
+    </div>
+
+    <!-- FLOATING: Navigator -->
+    <section class="dcs-panel dcs-panel--floating ps-navigator" id="ps-navigator" style="right:12px;top:12px;width:214px;">
+      <header class="dcs-panel__header" data-dcs-drag-handle>
+        <span class="dcs-panel__title"><i class="di di-globe"></i> Navigator</span>
+        <div class="dcs-panel__tools">
+          
+        </div>
+      </header>
+      <div class="dcs-panel__body dcs-panel__body--pad-sm">
+        <div class="ps-nav-thumb" id="ps-nav-thumb"><canvas id="ps-nav-canvas"></canvas><div class="ps-nav-view" id="ps-nav-view"></div></div>
+        <div class="dcs-row" style="gap:var(--dcs-s-3);align-items:center;margin-top:var(--dcs-s-3);">
+          <i class="di di-zoom-out" style="color:var(--dcs-text-mute);"></i>
+          <div class="dcs-slider ps-grow" id="ps-nav-zoom" data-dcs-slider data-min="5" data-max="800" data-value="80"></div>
+          <i class="di di-zoom-in" style="color:var(--dcs-text-mute);"></i>
+          <span class="ps-prop-val" id="ps-nav-pct" style="width:42px;">80%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLOATING: Color / Swatches -->
+    <section class="dcs-panel dcs-panel--floating ps-float-panel" id="panel-color" style="right:12px;top:226px;width:268px;">
+      <div class="dcs-dockpane">
+        <div class="dcs-dockpane__tabs" data-dcs-drag-handle>
+          <div class="dcs-dockpane__tab" data-dcs-target="#p-color" aria-selected="true"><i class="di di-palette"></i> Color</div>
+          <div class="dcs-dockpane__tab" data-dcs-target="#p-swatches"><i class="di di-grid"></i> Swatches</div>
+          <div style="flex:1"></div>
+          
+        </div>
+        <div class="dcs-dockpane__body">
+          <div id="p-color" data-dcs-tabpanel>
+            <div class="ps-colorpanel">
+              <div class="dcs-color-square ps-sv" id="ps-sv"><div class="ps-sv-dot" id="ps-sv-dot"></div></div>
+              <div class="dcs-hue-bar ps-hue" id="ps-hue"><div class="ps-hue-dot" id="ps-hue-dot"></div></div>
+              <input class="dcs-input" id="ps-hex" style="width:100%;font-family:var(--dcs-font-mono);" value="#000000">
+              <div class="dcs-row" id="ps-rgb-row" style="gap:var(--dcs-s-2);align-items:center;">
+                <div class="dcs-field dcs-field--row" style="flex:1;min-width:0;"><span class="dcs-field__label">R</span><input class="dcs-input dcs-input--num" id="ps-r" value="0" style="width:100%;min-width:0;"></div>
+                <div class="dcs-field dcs-field--row" style="flex:1;min-width:0;"><span class="dcs-field__label">G</span><input class="dcs-input dcs-input--num" id="ps-g" value="0" style="width:100%;min-width:0;"></div>
+                <div class="dcs-field dcs-field--row" style="flex:1;min-width:0;"><span class="dcs-field__label">B</span><input class="dcs-input dcs-input--num" id="ps-b" value="0" style="width:100%;min-width:0;"></div>
+              </div>
+            </div>
+          </div>
+          <div id="p-swatches" data-dcs-tabpanel hidden>
+            <div class="ps-colorpanel"><div class="ps-swatches" id="ps-swatches"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLOATING: Layers / Channels / Paths / Comps (tab group) -->
+    <section class="dcs-panel dcs-panel--floating ps-float-panel" id="panel-layers" style="right:12px;top:486px;bottom:12px;width:300px;">
+      <div class="dcs-dockpane">
+        <div class="dcs-dockpane__tabs" data-dcs-drag-handle>
+          <div class="dcs-dockpane__tab" data-dcs-target="#p-layers" aria-selected="true"><i class="di di-layers"></i> Layers</div>
+          <div class="dcs-dockpane__tab" data-dcs-target="#p-channels"><i class="di di-eq"></i> Channels</div>
+          <div class="dcs-dockpane__tab" data-dcs-target="#p-paths"><i class="di di-spline"></i> Paths</div>
+          <div class="dcs-dockpane__tab" data-dcs-target="#p-comps"><i class="di di-filmstrip"></i> Comps</div>
+          <div style="flex:1"></div>
+          
+        </div>
+        <div class="dcs-dockpane__body" style="display:flex;flex-direction:column;min-height:0;">
+
+          <div id="p-layers" data-dcs-tabpanel class="ps-layers">
+            <!-- filter bar -->
+            <div class="ps-layer-filter">
+              <select class="dcs-select" id="ps-layer-kind" title="Filter type" style="width:62px;">
+                <option>Kind</option><option>Name</option><option>Effect</option><option>Mode</option><option>Attribute</option><option>Color</option>
+              </select>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Pixel layers"><i class="di di-image"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Adjustment layers"><i class="di di-color-grade"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Type layers"><span class="ps-tcap">T</span></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Shape layers"><i class="di di-poly"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Smart objects"><i class="di di-cube"></i></button>
+              <div class="dcs-toolbar__spacer"></div>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-filter-toggle" title="Turn layer filtering on/off"><i class="di di-bolt"></i></button>
+            </div>
+            <!-- blend + opacity -->
+            <div class="ps-layer-bo">
+              <select class="dcs-select" id="ps-blend" style="flex:1;min-width:0;">
+                <option value="source-over">Normal</option>
+                <option value="multiply">Multiply</option>
+                <option value="screen">Screen</option>
+                <option value="overlay">Overlay</option>
+                <option value="darken">Darken</option>
+                <option value="lighten">Lighten</option>
+                <option value="color-dodge">Color Dodge</option>
+                <option value="color-burn">Color Burn</option>
+                <option value="hard-light">Hard Light</option>
+                <option value="soft-light">Soft Light</option>
+                <option value="difference">Difference</option>
+                <option value="hue">Hue</option>
+                <option value="saturation">Saturation</option>
+                <option value="color">Color</option>
+                <option value="luminosity">Luminosity</option>
+              </select>
+              <span class="ps-amt-label">Opacity:</span>
+              <span class="ps-amt" id="ps-op-amt" data-amt="opacity" title="Drag to scrub">100%</span>
+            </div>
+            <!-- lock + fill -->
+            <div class="ps-layer-lock-row">
+              <span class="ps-amt-label">Lock:</span>
+              <div class="ps-lock-group">
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-lock="transparency" aria-pressed="false" title="Lock transparent pixels"><i class="di di-grid"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-lock="image" aria-pressed="false" title="Lock image pixels"><i class="di di-brush"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-lock="position" aria-pressed="false" title="Lock position"><i class="di di-move"></i></button>
+                <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-lock="all" aria-pressed="false" title="Lock all"><i class="di di-lock"></i></button>
+              </div>
+              <div class="dcs-toolbar__spacer"></div>
+              <span class="ps-amt-label">Fill:</span>
+              <span class="ps-amt" id="ps-fill-amt" data-amt="fill" title="Drag to scrub">100%</span>
+            </div>
+            <div class="ps-layer-list ps-grow" id="ps-layer-list"></div>
+            <!-- footer -->
+            <div class="ps-layer-footer">
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-link" title="Link layers"><i class="di di-link"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-fx" title="Add a layer style"><span class="ps-fx">fx</span></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-mask" title="Add layer mask"><i class="di di-layer-mask"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-adjust" title="Create new fill or adjustment layer"><i class="di di-color-grade"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-group" title="Create a new group"><i class="di di-folder"></i></button>
+              <div class="dcs-toolbar__spacer"></div>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-new" title="Create a new layer"><i class="di di-plus"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-dup" title="Duplicate layer"><i class="di di-duplicate"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" id="ps-l-del" title="Delete layer"><i class="di di-trash"></i></button>
+            </div>
+          </div>
+
+          <div id="p-channels" data-dcs-tabpanel hidden><div id="ps-channels"></div></div>
+
+          <div id="p-paths" data-dcs-tabpanel hidden>
+            <div class="dcs-note dcs-note--mute" style="margin:var(--dcs-s-5);">No paths. Use the Pen tool to create a work path.</div>
+          </div>
+
+          <div id="p-comps" data-dcs-tabpanel hidden class="ps-comps">
+            <div class="ps-comp-row is-active"><i class="di di-cross-target"></i><span class="ps-layer-name">Last Document State</span></div>
+            <div class="ps-comp-row"><i class="di di-filmstrip"></i><span class="ps-layer-name">Hero — sunrise</span><span class="dcs-tree__meta">V P A</span></div>
+            <div class="ps-comp-row"><i class="di di-filmstrip"></i><span class="ps-layer-name">Hero — dusk</span><span class="dcs-tree__meta">V P A</span></div>
+            <div class="ps-comp-row"><i class="di di-filmstrip"></i><span class="ps-layer-name">No title text</span><span class="dcs-tree__meta">V · ·</span></div>
+            <div class="ps-layer-footer" style="margin-top:auto;">
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Apply selected comp"><i class="di di-check"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Update comp"><i class="di di-redo"></i></button>
+              <div class="dcs-toolbar__spacer"></div>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Create new layer comp"><i class="di di-plus"></i></button>
+              <button class="dcs-btn dcs-btn--icon dcs-btn--sm" title="Delete comp"><i class="di di-trash"></i></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- FLOATING: Adjustments -->
+    <section class="dcs-panel dcs-panel--floating ps-float-panel" id="panel-adjust" style="right:324px;top:12px;width:236px;">
+      <header class="dcs-panel__header" data-dcs-drag-handle>
+        <span class="dcs-panel__title"><i class="di di-color-grade"></i> Adjustments</span>
+        <div class="dcs-panel__tools"></div>
+      </header>
+      <div class="dcs-panel__body dcs-panel__body--pad-sm">
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:var(--dcs-s-2);" id="ps-adjust-grid"></div>
+      </div>
+    </section>
+
+    <!-- FLOATING: History -->
+    <section class="dcs-panel dcs-panel--floating ps-float-panel" id="panel-history" style="right:324px;top:152px;bottom:12px;width:236px;">
+      <header class="dcs-panel__header" data-dcs-drag-handle>
+        <span class="dcs-panel__title"><i class="di di-history-brush"></i> History</span>
+        <div class="dcs-panel__tools"></div>
+      </header>
+      <div class="dcs-panel__body dcs-panel__body--pad-0" style="flex:1;min-height:0;overflow:auto;">
+        <div id="ps-history-list"></div>
+      </div>
+    </section>
+
+    <!-- FLOATING: quick toolbar -->
+    <div class="dcs-toolbar dcs-toolbar--floating ps-floatbar" id="ps-floatbar" style="left:50%;bottom:18px;">
+      <span class="dcs-grip" data-dcs-drag-handle></span>
+      <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-act="undo" title="Undo"><i class="di di-undo"></i></button>
+      <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-act="redo" title="Redo"><i class="di di-redo"></i></button>
+      <div class="dcs-toolbar__sep"></div>
+      <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-act="zoomout" title="Zoom out"><i class="di di-zoom-out"></i></button>
+      <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-act="fit" title="Fit on screen"><i class="di di-fit"></i></button>
+      <button class="dcs-btn dcs-btn--icon dcs-btn--sm" data-act="zoomin" title="Zoom in"><i class="di di-zoom-in"></i></button>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- ============================ STATUSBAR ============================ -->
+  <div class="dcs-statusbar ps-statusbar">
+    <input class="dcs-input ps-zoom-field" id="ps-zoom-field" value="67%" style="width:62px;text-align:center;">
+    <div class="dcs-statusbar__sep"></div>
+    <span class="dcs-statusbar__item">Doc: <span id="ps-st-doc">3.91M / 11.7M</span></span>
+    <div class="dcs-statusbar__sep"></div>
+    <span class="dcs-statusbar__item" id="ps-st-tip">Brush: drag on the canvas to paint with the foreground color.</span>
+    <div class="dcs-statusbar__spacer"></div>
+    <span class="dcs-statusbar__item dcs-statusbar__item--ok"><i class="di di-check-circle"></i> Ready</span>
+    <div class="dcs-statusbar__sep"></div>
+    <span class="dcs-statusbar__item">RGB/8 · 72 ppi</span>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ============================ MENUS ============================ -->
+<div id="ps-menus"></div>
+
+<!-- ============================ MODALS ============================ -->
+<div id="ps-modals"></div>
+
+<!-- ============================ COLOR PICKER POPOVER ============================ -->
+<!-- Opens from either the FG or BG color chip in the floating toolstrip.
+     Wired by ui.js — `PS.cpTarget` is set on chip pointerdown so the
+     picker knows which swatch its edits should write to, and the popover
+     UI (SV square + hue bar + hex) shares the same hsvToRgb /
+     setColorAtTarget plumbing as the Color floating panel. -->
+<div class="dcs-popover ps-color-picker-popover" id="ps-color-picker" style="width:220px" hidden>
+  <div class="dcs-popover__body" style="padding:var(--dcs-s-3);">
+    <div class="ps-colorpanel" style="gap:var(--dcs-s-2);">
+      <div class="dcs-color-square ps-sv" id="ps-cp-sv"><div class="ps-sv-dot" id="ps-cp-sv-dot"></div></div>
+      <div class="dcs-hue-bar ps-hue" id="ps-cp-hue"><div class="ps-hue-dot" id="ps-cp-hue-dot"></div></div>
+      <input class="dcs-input" id="ps-cp-hex" style="width:100%;font-family:var(--dcs-font-mono);" value="#000000">
+    </div>
+  </div>
+</div>
+
+<!-- ============================ THEME TWEAKS POPOVER ============================ -->
+<!-- Mirrors Dender's #dn-tweaks layout: Density / Style / Accent. The
+     same data-*-set hooks are read by app.js so the framework-level
+     theming attributes (data-dcs-density / data-dcs-style /
+     data-dcs-accent) switch in unison across both sample apps. -->
+<div class="dcs-popover ps-tweaks-popover" id="ps-tweaks" style="width:260px" hidden>
+  <div class="dcs-popover__header">
+    <i class="di di-cog"></i>
+    <span>Theme tweaks</span>
+  </div>
+  <div class="dcs-popover__body">
+    <div class="dcs-form">
+      <div class="dcs-field">
+        <span class="dcs-field__label">Density</span>
+        <div class="dcs-btn-group" id="ps-density-row">
+          <button class="dcs-btn dcs-btn--sm" data-density-set="compact">S</button>
+          <button class="dcs-btn dcs-btn--sm" aria-pressed="true" data-density-set="comfortable">M</button>
+          <button class="dcs-btn dcs-btn--sm" data-density-set="spacious">L</button>
+        </div>
+      </div>
+      <div class="dcs-field">
+        <span class="dcs-field__label">Style</span>
+        <div class="dcs-btn-group" id="ps-style-row">
+          <button class="dcs-btn dcs-btn--sm" aria-pressed="true" data-style-set="flat">Flat</button>
+          <button class="dcs-btn dcs-btn--sm" data-style-set="3d">3D</button>
+        </div>
+      </div>
+      <div class="dcs-field">
+        <span class="dcs-field__label">Accent</span>
+        <div class="ps-accent-row" id="ps-accent-row">
+          <span class="ps-accent-dot" data-accent-set="blue"   style="background:#4f86d6"></span>
+          <span class="ps-accent-dot" data-accent-set="orange" style="background:#e8843a"></span>
+          <span class="ps-accent-dot" data-accent-set="green"  style="background:#4e9e54"></span>
+          <span class="ps-accent-dot" data-accent-set="purple" style="background:#8466cf"></span>
+          <span class="ps-accent-dot" data-accent-set="teal"   style="background:#2f9c93"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ SCRIPTS ============================ -->
+<script src="../../dist/js/decius.min.js"></script>
+<script src="tools.js"></script>
+<script src="engine.js"></script>
+<script src="paint.js"></script>
+<script src="ui.js"></script>
+<script src="dialogs.js"></script>
+<script src="panels.js"></script>
+
+<!-- Tweaks (isolated React overlay → drives decius data-dcs-* theming) -->
+<div id="ps-tweaks-root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="tweaks.jsx"></script>
+</body>
+</html>

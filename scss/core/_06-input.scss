@@ -23,6 +23,40 @@
 }
 .dcs-input--num { font-family: var(--dcs-font-num); font-variant-numeric: tabular-nums lining-nums; text-align: right; }
 
+/* ── Search input ──────────────────────────────────────────────
+   A standard text input dressed as a search field: a leading
+   magnifier icon (`<i class="di di-search">` inside) and a
+   placeholder. The icon is absolutely positioned inside the
+   wrapper so the input itself stays a stock `.dcs-input` — apps
+   can use any of the input variants inside (compact, etc.).
+
+   Markup:
+     <div class="dcs-search">
+       <i class="di di-search" aria-hidden="true"></i>
+       <input class="dcs-input" type="search" placeholder="Search…">
+     </div>
+*/
+.dcs-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+.dcs-search > .di {
+  position: absolute;
+  left: var(--dcs-s-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dcs-text-mute);
+  pointer-events: none;
+  font-size: 13px;
+  line-height: 1;
+}
+.dcs-search > .dcs-input {
+  padding-left: calc(var(--dcs-s-3) + 18px);
+  width: 100%;
+}
+
 /* Enum dropdown trigger — a select-styled button that opens a .dcs-menu of
    options. The full form of a "choose one of N" enum; the segmented
    button-group is its shorthand for when the options fit inline. */
@@ -37,8 +71,13 @@
 }
 .dcs-select--btn .dcs-select__caret { flex: 0 0 auto; color: var(--dcs-text-mute); margin-right: calc(var(--dcs-s-1) * -1); }
 .dcs-select--btn:hover { border-color: var(--dcs-line-strong); }
-.dcs-select--btn.dcs-select--open { border-color: var(--dcs-accent); box-shadow: 0 0 0 2px var(--dcs-accent-haze); }
-.dcs-select--btn.dcs-select--open .dcs-select__caret { color: var(--dcs-accent); }
+.dcs-select--btn.dcs-select--open,
+.dcs-select--btn[aria-expanded="true"] {
+  border-color: var(--dcs-accent);
+  box-shadow: 0 0 0 2px var(--dcs-accent-haze);
+}
+.dcs-select--btn.dcs-select--open .dcs-select__caret,
+.dcs-select--btn[aria-expanded="true"] .dcs-select__caret { color: var(--dcs-accent); }
 
 /* ── Field row primitive ──────────────────────────────────────────
    `.dcs-field` is one label-plus-control row. On its own it's just a
@@ -184,9 +223,86 @@
   min-width: 0;
   height: var(--dcs-h-in);
 }
+.dcs-props > .dcs-field > .dcs-btn-group {
+  /* Never shrink a button-group past its natural content size — Local /
+     Global / Local-Global rows get illegible when they squeeze under
+     an icon-only floor. Keeps flex:1 so the group still stretches to
+     fill the channel column when there's room. */
+  min-width: max-content;
+}
 .dcs-props > .dcs-field > .dcs-btn-group .dcs-btn {
   height: calc(var(--dcs-h-in) - 6px);
   min-width: calc(var(--dcs-h-in) - 6px);
+  padding: 0 var(--dcs-s-3);
+}
+
+/* ── Vector row primitive ──────────────────────────────────────
+   `.dcs-vec` is a flex row of equal-width controls — typically the
+   X/Y/Z numeric editors of a Location / Rotation / Scale channel.
+   Children share row width evenly but won't shrink below
+   `--dcs-xform-minwidth` (default 48px) so labels stay readable; below
+   that floor the row overflows rather than crushing the values.
+   Drops into a `.dcs-props > .dcs-field` slot and stretches to fill
+   the channel column.
+
+   Combos inside a `.dcs-vec` drop the range-fill bar — XYZ values
+   are coordinates, not a range, so a left-to-right fill would be
+   meaningless (and visually confused with a slider). */
+.dcs-vec {
+  --dcs-xform-minwidth: 72px;
+  display: flex;
+  gap: var(--dcs-s-1);
+  min-width: 0;
+}
+.dcs-vec > * {
+  flex: 1 1 0;
+  min-width: var(--dcs-xform-minwidth);
+  min-height: var(--dcs-h-in);   /* never collapse to thin horizontal lines */
+}
+.dcs-vec > .dcs-combo .dcs-combo__fill { display: none; }
+/* Override the stock `.dcs-combo { min-width: 96px }` so the combo
+   inside a vec respects the vec's per-item floor (`--dcs-xform-minwidth`).
+   Without this, combos refuse to shrink past 96px and the JS observer
+   can never observe a constrained width — the synchronized flip
+   threshold is meaningless if the children block the shrink. */
+.dcs-vec > .dcs-combo {
+  min-width: var(--dcs-xform-minwidth);
+}
+.dcs-props > .dcs-field > .dcs-vec {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Field hosting a vec — anchor the prompt to the TOP of the row so a
+   stacked vec keeps its label at the upper-left where the eye lands. */
+.dcs-field:has(> .dcs-vec) {
+  align-items: flex-start;
+}
+.dcs-field:has(> .dcs-vec) > .dcs-field__label {
+  padding-top: 3px;
+}
+
+/* When the vec can't fit its N children at `--dcs-xform-minwidth` apiece, JS
+   (initVecLayout, ResizeObserver-driven) toggles `.dcs-vec--stacked`.
+   The flip threshold is computed from the SAME `--dcs-xform-minwidth` that
+   sets the horizontal floor, so changing the floor automatically
+   adjusts the flip point — they stay synchronized. */
+.dcs-vec--stacked {
+  flex-direction: column;
+}
+.dcs-vec--stacked > * {
+  min-width: 0;
+  width: 100%;
+}
+/* Field gets `height: auto` so it can grow tall when its vec stacks
+   three combos vertically — otherwise the fixed channel-row height
+   (var(--dcs-h-in)) collides with the per-combo min-height and the
+   row content gets crushed. */
+.dcs-props > .dcs-field:has(> .dcs-vec.dcs-vec--stacked) {
+  height: auto;
+}
+.dcs-props > .dcs-field:has(> .dcs-vec) {
+  min-height: var(--dcs-h-in);
 }
 
 /* ── Standalone note / info / warning row ────────────────────────

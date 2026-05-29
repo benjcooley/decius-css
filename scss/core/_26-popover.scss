@@ -12,7 +12,7 @@
   max-width: 320px;
   background: var(--dcs-bg);
   border: 1px solid var(--dcs-line-soft);
-  border-radius: var(--dcs-r-3);
+  border-radius: 0;       /* flat square popups */
   box-shadow: var(--dcs-shadow-pop);
   color: var(--dcs-text);
   font-size: var(--dcs-fs-sm);
@@ -24,7 +24,7 @@
   padding: 0 var(--dcs-s-4);
   background: var(--dcs-surface-1);
   border-bottom: 1px solid var(--dcs-line);
-  border-radius: var(--dcs-r-3) var(--dcs-r-3) 0 0;
+  border-radius: 0;
   font-size: var(--dcs-fs-sm);
   font-weight: 500;
 }

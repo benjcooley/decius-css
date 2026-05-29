@@ -514,6 +514,13 @@ $silk-ink: rgba(236, 230, 214, .62);   /* off-white silkscreen ink */
 .dcs-dockpane__tab-close {
   display: flex; align-items: center; justify-content: center;
   width: 14px; height: 14px;
+  /* Reset the default <button> chrome so a close authored as either
+     a <span> or a <button> renders identically — no browser-default
+     border / background / padding bleeding through. */
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
   border-radius: var(--dcs-r-1);
   color: var(--dcs-text-mute);
   opacity: 0;
@@ -564,15 +571,23 @@ $silk-ink: rgba(236, 230, 214, .62);   /* off-white silkscreen ink */
 .dcs-menubar__brand svg { color: var(--dcs-accent); }
 .dcs-menubar__item {
   display: inline-flex; align-items: center;
-  padding: 0 var(--dcs-s-4);
+  padding: var(--dcs-text-nudge) var(--dcs-s-4) 0;
   background: none;
   border: none;
   color: var(--dcs-text-dim);
   font: inherit;
+  line-height: 1;
   cursor: pointer;
   transition: background var(--dcs-t-fast), color var(--dcs-t-fast);
 }
 .dcs-menubar__item:hover { background: var(--dcs-surface-2); color: var(--dcs-text); }
+/* Active (menu open) — solid accent, matches the toolbar "selected tool"
+   contract so the user can see which dropdown is owning the screen. */
+.dcs-menubar__item[aria-expanded="true"] {
+  background: var(--dcs-accent);
+  color: #0a1220;
+}
+.dcs-menubar__item[aria-expanded="true"]:hover { background: var(--dcs-accent-hi); }
 .dcs-menubar__spacer { flex: 1; }
 .dcs-menubar__meta {
   display: flex; align-items: center; gap: var(--dcs-s-3);

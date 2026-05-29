@@ -13,7 +13,7 @@
   padding: var(--dcs-s-2);
   background: var(--dcs-surface-1);
   border: 1px solid var(--dcs-line);
-  border-radius: var(--dcs-r-3);
+  border-radius: 0;       /* flat square popups — no soft corners */
   box-shadow: var(--dcs-shadow-pop);
   color: var(--dcs-text);
   font-size: var(--dcs-fs-sm);
@@ -39,22 +39,46 @@
   display: flex;
   align-items: center;
   gap: var(--dcs-s-3);
-  height: var(--dcs-h);
-  padding: 0 var(--dcs-s-3);
-  border-radius: var(--dcs-r-2);
+  height: var(--dcs-h-in);
+  padding: var(--dcs-text-nudge) var(--dcs-s-3) 0;
+  border-radius: 0;                       /* flat square selection rect */
   color: var(--dcs-text-dim);
   cursor: default;
   white-space: nowrap;
+  line-height: 1;
 }
+/* :hover is the transient mouse highlight; --active is the transient
+   keyboard-focus highlight (arrow keys). Neither is a "checked" state —
+   for persistent selection, use the `.dcs-menu__check` slot to render
+   a check icon. Dark text on accent reads better than white at decius
+   accent brightness, so we use --dcs-text-inv across the board. */
 .dcs-menu__item:hover,
 .dcs-menu__item--active {
   background: var(--dcs-accent);
-  color: #fff;
+  color: var(--dcs-text-inv);
 }
 .dcs-menu__item:hover .dcs-menu__shortcut,
-.dcs-menu__item--active .dcs-menu__shortcut { color: rgba(255,255,255,.7); }
+.dcs-menu__item--active .dcs-menu__shortcut { color: color-mix(in srgb, var(--dcs-text-inv) 70%, transparent); }
 .dcs-menu__item--danger { color: var(--dcs-danger); }
-.dcs-menu__item--danger:hover { background: var(--dcs-danger); color: #fff; }
+.dcs-menu__item--danger:hover { background: var(--dcs-danger); color: var(--dcs-text-inv); }
+
+/* Persistent "currently active / window shown" indicator — a small
+   accent bullet in the leading padding, with text in the body color.
+   Distinct from --active (transient keyboard focus, accent fill) and
+   from :hover (transient pointer highlight). Use for menu items like
+   "Layers", "Color", etc. when their panel is currently visible. */
+.dcs-menu__item--checked::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dcs-accent);
+  transform: translateY(-50%);
+}
+.dcs-menu__item--checked:hover::before { background: var(--dcs-text-inv); }
 .dcs-menu__item[aria-disabled="true"],
 .dcs-menu__item--disabled {
   color: var(--dcs-text-mute);

@@ -1,4 +1,4 @@
-/*! decius-css v0.5.3 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.6.0 | MIT License | https://github.com/benjcooley/decius-css */
 
 /* ===== decius-fonts.css ===== */
 /* decius self-hosted text webfonts — IBM Plex Sans + JetBrains Mono (SIL OFL 1.1) */
@@ -369,6 +369,19 @@
     widget always reads one shade darker than
     whatever panel surface it lands on. */
   --dcs-rail: #181a21; /* deepest separator */
+  --dcs-stage: #4a5160; /* "main view" surface — Photoshop-style:
+    one step LIGHTER than the dock chrome
+    so the editor (canvas / 3D viewport)
+    reads as the focal surface of the app.
+    Used by .dcs-dockpane--center. */
+  /* Optical text-centering nudge — IBM Plex Sans and most pro fonts have
+     ascender + cap-height occupying the top ~92% of the em with the
+     descender slot mostly empty, so `align-items: center` lands the
+     glyphs ~1–2px above the visual midline of the row. Applied as
+     padding-top on tight, single-line-of-text rows (menubar items,
+     menu items, brand labels) to push the glyphs onto the optical
+     midline. Adjust per-theme if your font has different metrics. */
+  --dcs-text-nudge: 2px;
   /* Borders */
   --dcs-line: #14161c; /* hard, dark separator */
   --dcs-line-soft: #3a3f4c;
@@ -523,6 +536,14 @@
   --dcs-accent-haze: rgba(0,184,212,.35);
 }
 
+[data-dcs-accent=teal] {
+  --dcs-accent: #2f9c93;
+  --dcs-accent-hi:#3fb8ad;
+  --dcs-accent-lo:#247b73;
+  --dcs-accent-dim: rgba(47,156,147,.18);
+  --dcs-accent-haze: rgba(47,156,147,.35);
+}
+
 [data-dcs-accent=orange] {
   --dcs-accent: #ff8a3a;
   --dcs-accent-hi:#ffa566;
@@ -537,6 +558,14 @@
   --dcs-accent-lo:#6f4eea;
   --dcs-accent-dim: rgba(139,109,255,.18);
   --dcs-accent-haze: rgba(139,109,255,.35);
+}
+
+[data-dcs-accent=purple] {
+  --dcs-accent: #8466cf;
+  --dcs-accent-hi:#9d83df;
+  --dcs-accent-lo:#6a4eb3;
+  --dcs-accent-dim: rgba(132,102,207,.18);
+  --dcs-accent-haze: rgba(132,102,207,.35);
 }
 
 [data-dcs-accent=green] {
@@ -555,6 +584,7 @@
   --dcs-surface-2: #2e323e;
   --dcs-surface-3: #383d4a;
   --dcs-well: #14161c;
+  --dcs-stage: #3a4150;
 }
 
 [data-dcs-dark=lighter] {
@@ -564,6 +594,7 @@
   --dcs-surface-2: #4a5161;
   --dcs-surface-3: #555d6e;
   --dcs-well: #22252e; /* darker than lighter-mode bg-app */
+  --dcs-stage: #5e6577;
 }
 
 /* ------------------------------------------------------------
@@ -752,6 +783,15 @@
   bottom: -1px;
   height: 1px;
   background: var(--dcs-bg);
+}
+
+/* Tab panels: ensure `[hidden]` actually hides the panel even when its
+   body sets `display: flex` (or grid) via a class — otherwise content
+   from the inactive tab can bleed through under the active tab. Two
+   attribute selectors give us specificity (0,2,0) which beats any
+   single-class layout rule (0,1,0) without needing !important. */
+[data-dcs-tabpanel][hidden] {
+  display: none;
 }
 
 /* ------------------------------------------------------------
@@ -1026,6 +1066,42 @@
   text-align: right;
 }
 
+/* ── Search input ──────────────────────────────────────────────
+   A standard text input dressed as a search field: a leading
+   magnifier icon (`<i class="di di-search">` inside) and a
+   placeholder. The icon is absolutely positioned inside the
+   wrapper so the input itself stays a stock `.dcs-input` — apps
+   can use any of the input variants inside (compact, etc.).
+
+   Markup:
+     <div class="dcs-search">
+       <i class="di di-search" aria-hidden="true"></i>
+       <input class="dcs-input" type="search" placeholder="Search…">
+     </div>
+*/
+.dcs-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.dcs-search > .di {
+  position: absolute;
+  left: var(--dcs-s-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dcs-text-mute);
+  pointer-events: none;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.dcs-search > .dcs-input {
+  padding-left: calc(var(--dcs-s-3) + 18px);
+  width: 100%;
+}
+
 /* Enum dropdown trigger — a select-styled button that opens a .dcs-menu of
    options. The full form of a "choose one of N" enum; the segmented
    button-group is its shorthand for when the options fit inline. */
@@ -1057,12 +1133,14 @@
   border-color: var(--dcs-line-strong);
 }
 
-.dcs-select--btn.dcs-select--open {
+.dcs-select--btn.dcs-select--open,
+.dcs-select--btn[aria-expanded=true] {
   border-color: var(--dcs-accent);
   box-shadow: 0 0 0 2px var(--dcs-accent-haze);
 }
 
-.dcs-select--btn.dcs-select--open .dcs-select__caret {
+.dcs-select--btn.dcs-select--open .dcs-select__caret,
+.dcs-select--btn[aria-expanded=true] .dcs-select__caret {
   color: var(--dcs-accent);
 }
 
@@ -1231,9 +1309,98 @@
   height: var(--dcs-h-in);
 }
 
+.dcs-props > .dcs-field > .dcs-btn-group {
+  /* Never shrink a button-group past its natural content size — Local /
+     Global / Local-Global rows get illegible when they squeeze under
+     an icon-only floor. Keeps flex:1 so the group still stretches to
+     fill the channel column when there's room. */
+  min-width: -moz-max-content;
+  min-width: max-content;
+}
+
 .dcs-props > .dcs-field > .dcs-btn-group .dcs-btn {
   height: calc(var(--dcs-h-in) - 6px);
   min-width: calc(var(--dcs-h-in) - 6px);
+  padding: 0 var(--dcs-s-3);
+}
+
+/* ── Vector row primitive ──────────────────────────────────────
+   `.dcs-vec` is a flex row of equal-width controls — typically the
+   X/Y/Z numeric editors of a Location / Rotation / Scale channel.
+   Children share row width evenly but won't shrink below
+   `--dcs-xform-minwidth` (default 48px) so labels stay readable; below
+   that floor the row overflows rather than crushing the values.
+   Drops into a `.dcs-props > .dcs-field` slot and stretches to fill
+   the channel column.
+
+   Combos inside a `.dcs-vec` drop the range-fill bar — XYZ values
+   are coordinates, not a range, so a left-to-right fill would be
+   meaningless (and visually confused with a slider). */
+.dcs-vec {
+  --dcs-xform-minwidth: 72px;
+  display: flex;
+  gap: var(--dcs-s-1);
+  min-width: 0;
+}
+
+.dcs-vec > * {
+  flex: 1 1 0;
+  min-width: var(--dcs-xform-minwidth);
+  min-height: var(--dcs-h-in); /* never collapse to thin horizontal lines */
+}
+
+.dcs-vec > .dcs-combo .dcs-combo__fill {
+  display: none;
+}
+
+/* Override the stock `.dcs-combo { min-width: 96px }` so the combo
+   inside a vec respects the vec's per-item floor (`--dcs-xform-minwidth`).
+   Without this, combos refuse to shrink past 96px and the JS observer
+   can never observe a constrained width — the synchronized flip
+   threshold is meaningless if the children block the shrink. */
+.dcs-vec > .dcs-combo {
+  min-width: var(--dcs-xform-minwidth);
+}
+
+.dcs-props > .dcs-field > .dcs-vec {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Field hosting a vec — anchor the prompt to the TOP of the row so a
+   stacked vec keeps its label at the upper-left where the eye lands. */
+.dcs-field:has(> .dcs-vec) {
+  align-items: flex-start;
+}
+
+.dcs-field:has(> .dcs-vec) > .dcs-field__label {
+  padding-top: 3px;
+}
+
+/* When the vec can't fit its N children at `--dcs-xform-minwidth` apiece, JS
+   (initVecLayout, ResizeObserver-driven) toggles `.dcs-vec--stacked`.
+   The flip threshold is computed from the SAME `--dcs-xform-minwidth` that
+   sets the horizontal floor, so changing the floor automatically
+   adjusts the flip point — they stay synchronized. */
+.dcs-vec--stacked {
+  flex-direction: column;
+}
+
+.dcs-vec--stacked > * {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Field gets `height: auto` so it can grow tall when its vec stacks
+   three combos vertically — otherwise the fixed channel-row height
+   (var(--dcs-h-in)) collides with the per-combo min-height and the
+   row content gets crushed. */
+.dcs-props > .dcs-field:has(> .dcs-vec.dcs-vec--stacked) {
+  height: auto;
+}
+
+.dcs-props > .dcs-field:has(> .dcs-vec) {
+  min-height: var(--dcs-h-in);
 }
 
 /* ── Standalone note / info / warning row ────────────────────────
@@ -2255,6 +2422,13 @@
 .dcs-tree__row:hover {
   background: var(--dcs-surface-1);
   color: var(--dcs-text);
+}
+
+/* Collapsing a tree branch hides descendant rows via `[hidden]`. Override
+   the default class-driven `display: flex` so the hidden state wins. */
+.dcs-list__item[hidden],
+.dcs-tree__row[hidden] {
+  display: none;
 }
 
 .dcs-list__item[aria-selected=true],
@@ -3707,6 +3881,13 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
   justify-content: center;
   width: 14px;
   height: 14px;
+  /* Reset the default <button> chrome so a close authored as either
+     a <span> or a <button> renders identically — no browser-default
+     border / background / padding bleeding through. */
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
   border-radius: var(--dcs-r-1);
   color: var(--dcs-text-mute);
   opacity: 0;
@@ -3781,11 +3962,12 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
 .dcs-menubar__item {
   display: inline-flex;
   align-items: center;
-  padding: 0 var(--dcs-s-4);
+  padding: var(--dcs-text-nudge) var(--dcs-s-4) 0;
   background: none;
   border: none;
   color: var(--dcs-text-dim);
   font: inherit;
+  line-height: 1;
   cursor: pointer;
   transition: background var(--dcs-t-fast), color var(--dcs-t-fast);
 }
@@ -3793,6 +3975,17 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
 .dcs-menubar__item:hover {
   background: var(--dcs-surface-2);
   color: var(--dcs-text);
+}
+
+/* Active (menu open) — solid accent, matches the toolbar "selected tool"
+   contract so the user can see which dropdown is owning the screen. */
+.dcs-menubar__item[aria-expanded=true] {
+  background: var(--dcs-accent);
+  color: #0a1220;
+}
+
+.dcs-menubar__item[aria-expanded=true]:hover {
+  background: var(--dcs-accent-hi);
 }
 
 .dcs-menubar__spacer {
@@ -4091,7 +4284,7 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
   padding: var(--dcs-s-2);
   background: var(--dcs-surface-1);
   border: 1px solid var(--dcs-line);
-  border-radius: var(--dcs-r-3);
+  border-radius: 0; /* flat square popups — no soft corners */
   box-shadow: var(--dcs-shadow-pop);
   color: var(--dcs-text);
   font-size: var(--dcs-fs-sm);
@@ -4125,23 +4318,29 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
   display: flex;
   align-items: center;
   gap: var(--dcs-s-3);
-  height: var(--dcs-h);
-  padding: 0 var(--dcs-s-3);
-  border-radius: var(--dcs-r-2);
+  height: var(--dcs-h-in);
+  padding: var(--dcs-text-nudge) var(--dcs-s-3) 0;
+  border-radius: 0; /* flat square selection rect */
   color: var(--dcs-text-dim);
   cursor: default;
   white-space: nowrap;
+  line-height: 1;
 }
 
+/* :hover is the transient mouse highlight; --active is the transient
+   keyboard-focus highlight (arrow keys). Neither is a "checked" state —
+   for persistent selection, use the `.dcs-menu__check` slot to render
+   a check icon. Dark text on accent reads better than white at decius
+   accent brightness, so we use --dcs-text-inv across the board. */
 .dcs-menu__item:hover,
 .dcs-menu__item--active {
   background: var(--dcs-accent);
-  color: #fff;
+  color: var(--dcs-text-inv);
 }
 
 .dcs-menu__item:hover .dcs-menu__shortcut,
 .dcs-menu__item--active .dcs-menu__shortcut {
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--dcs-text-inv) 70%, transparent);
 }
 
 .dcs-menu__item--danger {
@@ -4150,7 +4349,28 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
 
 .dcs-menu__item--danger:hover {
   background: var(--dcs-danger);
-  color: #fff;
+  color: var(--dcs-text-inv);
+}
+
+/* Persistent "currently active / window shown" indicator — a small
+   accent bullet in the leading padding, with text in the body color.
+   Distinct from --active (transient keyboard focus, accent fill) and
+   from :hover (transient pointer highlight). Use for menu items like
+   "Layers", "Color", etc. when their panel is currently visible. */
+.dcs-menu__item--checked::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dcs-accent);
+  transform: translateY(-50%);
+}
+
+.dcs-menu__item--checked:hover::before {
+  background: var(--dcs-text-inv);
 }
 
 .dcs-menu__item[aria-disabled=true],
@@ -4239,7 +4459,7 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
   max-width: 320px;
   background: var(--dcs-bg);
   border: 1px solid var(--dcs-line-soft);
-  border-radius: var(--dcs-r-3);
+  border-radius: 0; /* flat square popups */
   box-shadow: var(--dcs-shadow-pop);
   color: var(--dcs-text);
   font-size: var(--dcs-fs-sm);
@@ -4254,7 +4474,7 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
   padding: 0 var(--dcs-s-4);
   background: var(--dcs-surface-1);
   border-bottom: 1px solid var(--dcs-line);
-  border-radius: var(--dcs-r-3) var(--dcs-r-3) 0 0;
+  border-radius: 0;
   font-size: var(--dcs-fs-sm);
   font-weight: 500;
 }
@@ -4503,4 +4723,629 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
 
 .dcs-statusbar__spacer {
   flex: 1;
+}
+
+/* ============================================================
+   29 · FLOATING PANELS & TOOLBARS
+   ------------------------------------------------------------
+   Detached surfaces that hover over a host stage — a tear-off
+   panel, a floating toolbar pill, an inspector ripped out of a
+   dock. Host positions them via left/top in inline style; drag
+   handlers add the `dcs--dragging` state hook to raise elevation
+   while pointer drag is active.
+
+   These are the building blocks for tear-off / re-dock chrome.
+   The actual drag-to-move behaviour is wired by decius.js when an
+   element inside a floating surface has [data-dcs-drag-handle].
+   ============================================================ */
+/* ---- detached panel ----------------------------------------- */
+.dcs-panel--floating {
+  position: absolute; /* host positions via left/top */
+  min-width: 160px;
+  background: var(--dcs-bg);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-4);
+  box-shadow: var(--dcs-shadow-pop);
+  overflow: hidden;
+  z-index: 60;
+}
+
+.dcs-panel--floating > .dcs-panel__header {
+  cursor: grab;
+  background: var(--dcs-surface-2);
+  border-bottom: 1px solid var(--dcs-line);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.dcs-panel--floating.dcs--dragging > .dcs-panel__header {
+  cursor: grabbing;
+}
+
+.dcs-panel--floating > .dcs-panel__header .dcs-panel__title {
+  pointer-events: none;
+}
+
+/* A floating panel that wraps a dockpane (tear-off of a tab group)
+   uses the tab strip itself as the drag handle — both the wrapped
+   `__tabbar` form AND the bare `__tabs` form (Photo's tearoffs skip
+   the tabbar wrapper). Any empty area in the strip — the spacer
+   between the last tab and the hamburger, padding around tabs —
+   shows the grab cursor so users see it's draggable. Individual
+   tabs / the hamburger button restore their own pointer cursors. */
+.dcs-panel--floating > .dcs-dockpane > .dcs-dockpane__tabbar,
+.dcs-panel--floating > .dcs-dockpane > .dcs-dockpane__tabs,
+.dcs-panel--floating > .dcs-dockpane__tabbar,
+.dcs-panel--floating > .dcs-dockpane__tabs {
+  cursor: grab;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane > .dcs-dockpane__tabbar,
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane > .dcs-dockpane__tabs,
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane__tabbar,
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane__tabs {
+  cursor: grabbing;
+}
+
+/* ---- detached toolbar -------------------------------------- */
+/* Extends the minimal _15 floating toolbar rule with absolute
+   positioning, intrinsic sizing, and the same shadow as panels. */
+.dcs-toolbar.dcs-toolbar--floating {
+  position: absolute; /* host positions via left/top */
+  height: auto;
+  width: auto;
+  border: 1px solid var(--dcs-line-soft);
+  border-radius: var(--dcs-r-4);
+  box-shadow: var(--dcs-shadow-pop);
+  background: var(--dcs-surface-1);
+  padding: var(--dcs-s-2);
+  gap: var(--dcs-s-1);
+  z-index: 60;
+}
+
+.dcs-toolbar--floating.dcs-toolbar--v {
+  padding: var(--dcs-s-2);
+}
+
+/* ---- shared elevation while dragging ------------------------ */
+.dcs--dragging {
+  box-shadow: var(--dcs-shadow-3), 0 0 0 1px var(--dcs-accent-haze) !important;
+}
+
+/* ---- floating-panel resize: any edge or corner --------------
+   Eight invisible hit zones around the panel perimeter handle the
+   actual pointer events; each just sets the matching native resize
+   cursor. The visible SE grip is a decorative affordance only
+   (pointer-events: none, z-index: 1) so anything above — scrollbar
+   thumb, content overflow, badges — draws over it cleanly. */
+.dcs-panel__resize-zones {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.dcs-panel__resize-zone {
+  position: absolute;
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Edges — 5px wide strips along each side. */
+.dcs-panel__resize-zone--n {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  cursor: ns-resize;
+}
+
+.dcs-panel__resize-zone--s {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  cursor: ns-resize;
+}
+
+.dcs-panel__resize-zone--w {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+}
+
+.dcs-panel__resize-zone--e {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+}
+
+/* Corners — 12px squares; overlap the edge zones so the diagonal
+   cursor wins at the four corners. */
+.dcs-panel__resize-zone--nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+.dcs-panel__resize-zone--ne {
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+
+.dcs-panel__resize-zone--sw {
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+
+.dcs-panel__resize-zone--se {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+/* Decorative SE grip — visual only. Bottom of the z-stack so scrollbars
+   and overflowing content overlay it naturally. Hit zones above handle
+   the actual pointer. */
+.dcs-panel__resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--dcs-line-strong);
+  opacity: 0.6;
+  transition: opacity var(--dcs-t-fast);
+}
+
+.dcs-panel--floating:hover .dcs-panel__resize {
+  opacity: 1;
+}
+
+.dcs-panel__resize::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  border-bottom-right-radius: 2px;
+}
+
+/* ---- reusable drag-handle grip ------------------------------
+   A dotted "drag from here" texture that tiles cleanly to whatever
+   space the grippable area gives it. Two knobs:
+     • `--dcs-grip-unit`  — pattern grid (one dot per cell). Defaults
+       to 4px so 3-up / 4-up grids feel natural.
+     • `--dcs-grip-thick` — the short-axis thickness (perpendicular
+       to the drag direction). Defaults to 12px.
+   `background-repeat: round` makes the browser slightly re-tune the
+   tile size so a whole number of dots fits — no clipped half-dots at
+   the edges, regardless of the host bar's measure.
+   Orientation: `.dcs-grip` is the default VERTICAL strip (narrow in
+   width, stretches in height — sits at the start of a horizontal
+   bar). `.dcs-grip--h` is the HORIZONTAL strip (narrow in height,
+   stretches in width — sits at the start of a vertical bar). Both
+   default to `align-self: stretch` so a single flex item fills the
+   bar's cross axis without further CSS. */
+.dcs-grip {
+  --dcs-grip-unit: 4px;
+  --dcs-grip-thick: 16px;
+  flex: none;
+  align-self: stretch;
+  width: var(--dcs-grip-thick);
+  min-height: var(--dcs-grip-thick);
+  /* Small separator gap between the grip and the first toolbar item
+     so the handle reads as a distinct affordance rather than as
+     another tool slot. */
+  margin-right: var(--dcs-s-2);
+  color: var(--dcs-line-strong);
+  /* Slightly inset surface, then two stacked radial gradients per cell:
+     a top-left highlight + a crisp dot face. The hard transition
+     (currentColor → transparent at 90%/100%) gives a near-pixel edge so
+     each dot reads as a small RAISED bead — not the soft anti-aliased
+     circles we had before. `repeat` (not `round`) leaves the tile size
+     fixed so dots stay perfectly square; we intentionally don't clip the
+     box with a border-radius so corner dots stay whole. */
+  background-color: rgba(0, 0, 0, 0.18);
+  background-image: radial-gradient(closest-side at 35% 30%, rgba(255, 255, 255, 0.35) 55%, transparent 85%), radial-gradient(closest-side, currentColor 88%, transparent 100%);
+  background-size: var(--dcs-grip-unit) var(--dcs-grip-unit);
+  background-position: 0 0;
+  background-repeat: repeat;
+  cursor: grab;
+  transition: color var(--dcs-t-fast);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.dcs-grip:hover {
+  color: var(--dcs-text-mute);
+}
+
+.dcs-grip--h {
+  width: auto;
+  height: var(--dcs-grip-thick);
+  min-width: var(--dcs-grip-thick);
+  min-height: 0;
+  /* Horizontal grip sits at the START of a column-flex toolbar, so
+     the separator gap goes UNDER it instead of to the right. */
+  margin-right: 0;
+  margin-bottom: var(--dcs-s-2);
+}
+
+.dcs--dragging .dcs-grip {
+  cursor: grabbing;
+}
+
+/* Floating vertical toolbar with a first-child grip: a narrow band
+   spanning LEFT→RIGHT across the top of the toolbar. The short axis is
+   pinned to exactly 3 dot cells (3 × 4px = 12px) so the dot pattern
+   tiles cleanly vertically. The long axis stretches, with `background-
+   repeat: round` on X so the browser auto-fits an integer number of
+   cells across — no half-dots clipped at the rect edges. Pattern
+   anchored at (0,0) so the first cell is flush with the top-left. */
+.dcs-toolbar--v.dcs-toolbar--floating > .dcs-grip:first-child {
+  align-self: stretch;
+  width: auto;
+  height: 12px; /* 3 rows × 4px */
+  min-height: 0;
+  margin: var(--dcs-s-2); /* inset on all sides */
+  border-radius: 0;
+  background-position: 0 0;
+  background-repeat: round repeat; /* X auto-fit, Y exact */
+}
+
+/* Floating HORIZONTAL toolbar with a first-child grip: the symmetric
+   case — a narrow band running TOP→BOTTOM down the left. 3 dot cells
+   wide (12px), height stretches with `background-repeat: repeat round`
+   so an integer number of cells fits the long axis. */
+.dcs-toolbar--floating:not(.dcs-toolbar--v) > .dcs-grip:first-child {
+  align-self: stretch;
+  width: 12px; /* 3 cols × 4px */
+  height: auto;
+  min-height: 0;
+  margin: var(--dcs-s-2); /* inset on all sides */
+  border-radius: 0;
+  background-position: 0 0;
+  background-repeat: repeat round; /* X exact, Y auto-fit */
+}
+
+/* ============================================================
+   30 · DOCKPANE EXTENSIONS — tabbar with toolbar slot, shelf
+   ------------------------------------------------------------
+   A DCC-tool dockpane uses every pixel: the unused portion of
+   the tab strip carries the active tab's toolbar (Blender-style)
+   instead of wasting it. When tabs grow wide enough to crowd
+   the toolbar, the toolbar drops to a SHELF row underneath.
+
+   Markup:
+     <div class="dcs-dockpane">
+       <div class="dcs-dockpane__tabbar">
+         <div class="dcs-dockpane__tabs"> …tabs… </div>
+         <div class="dcs-dockpane__toolbars">
+           <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#panel-a"> …controls for A… </div>
+           <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#panel-b" hidden> …controls for B… </div>
+         </div>
+       </div>
+       <div class="dcs-dockpane__shelf" hidden></div>   \3c !-- target when overflowed -->
+       <div class="dcs-dockpane__body"> …tabpanels… </div>
+     </div>
+
+   decius.js manages tab activation and the overflow class
+   (`.dcs-dockpane--shelved`), which CSS uses to swap the
+   visible toolbar from the tabbar to the shelf row.
+
+   The dockpane may also designate a CENTER panel — the main
+   editor surface (image canvas, 3D viewport) other panes
+   surround — via `.dcs-dockpane--center`.
+   ============================================================ */
+/* ---- tabbar wrapper (tabs + toolbar share one row) --------- */
+.dcs-dockpane__tabbar {
+  display: flex;
+  align-items: stretch;
+  height: var(--dcs-h);
+  min-width: 0;
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  flex-shrink: 0;
+}
+
+/* When wrapped in __tabbar, the tabs strip itself loses its own
+   chrome and shrinks to its natural width so the toolbar slot
+   takes the rest. The standalone .dcs-dockpane > .dcs-dockpane__tabs
+   case (no toolbar) is unchanged. */
+.dcs-dockpane__tabbar > .dcs-dockpane__tabs {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: auto;
+  background: transparent;
+  border-bottom: none;
+  overflow: hidden;
+}
+
+/* ---- toolbar slot inside the tabbar ------------------------ */
+.dcs-dockpane__toolbars {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 var(--dcs-s-2);
+  margin-left: var(--dcs-s-2);
+  border-left: 1px solid var(--dcs-line);
+}
+
+.dcs-dockpane__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.dcs-dockpane__toolbar[hidden] {
+  display: none;
+}
+
+/* ---- shelf row (active toolbar drops here when overflowed) - */
+.dcs-dockpane__shelf {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  padding: 0 var(--dcs-s-3);
+  height: var(--dcs-h);
+  min-height: var(--dcs-h);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dcs-dockpane__shelf[hidden],
+.dcs-dockpane:not(.dcs-dockpane--shelved) > .dcs-dockpane__shelf {
+  display: none;
+}
+
+.dcs-dockpane--shelved > .dcs-dockpane__tabbar > .dcs-dockpane__toolbars {
+  display: none;
+}
+
+/* ---- center "Document" pane (image canvas / 3D viewport) ---
+   The "main view" surface in a Photoshop-/Blender-style app: the
+   multi-tabbed editor area where each tab is a document (image,
+   scene, file) — NOT interchangeable with the surrounding dock
+   tabs (Layers, Tools, Outliner). Reads one shade LIGHTER than
+   the chrome via `--dcs-stage`, so the editor is the focal
+   surface and the dock chrome recedes.
+
+   `.dcs-dockpane--center` implies `data-dcs-dock-kind="documents"`
+   for the tear-off/re-dock kind system below; any dockpane can
+   opt in explicitly via that attribute. Game-editor-style apps
+   that have no distinct center can simply not use this marker. */
+.dcs-dockpane--center,
+.dcs-dockpane[data-dcs-dock-kind=documents] {
+  background: var(--dcs-stage);
+}
+
+.dcs-dockpane--center > .dcs-dockpane__body,
+.dcs-dockpane[data-dcs-dock-kind=documents] > .dcs-dockpane__body {
+  position: relative;
+  overflow: hidden;
+  background: var(--dcs-stage);
+}
+
+.dcs-dockpane--center > .dcs-dockpane__tabbar,
+.dcs-dockpane[data-dcs-dock-kind=documents] > .dcs-dockpane__tabbar {
+  background: color-mix(in srgb, var(--dcs-stage) 88%, #000 12%);
+  border-bottom-color: color-mix(in srgb, var(--dcs-stage) 70%, #000 30%);
+}
+
+/* Document tabs — wider, flat, the active tab IS the stage color
+   so the editor reads as one continuous surface from header to body. */
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab,
+.dcs-dockpane[data-dcs-dock-kind=documents] > .dcs-dockpane__tabbar .dcs-dockpane__tab {
+  padding: 0 var(--dcs-s-4);
+  min-width: 110px;
+  max-width: 260px;
+  background: color-mix(in srgb, var(--dcs-stage) 78%, #000 22%);
+  color: var(--dcs-text-dim);
+  border-right: 1px solid color-mix(in srgb, var(--dcs-stage) 55%, #000 45%);
+  font-weight: 500;
+}
+
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab:hover,
+.dcs-dockpane[data-dcs-dock-kind=documents] > .dcs-dockpane__tabbar .dcs-dockpane__tab:hover {
+  background: color-mix(in srgb, var(--dcs-stage) 88%, #000 12%);
+  color: var(--dcs-text);
+}
+
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected=true],
+.dcs-dockpane[data-dcs-dock-kind=documents] > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected=true] {
+  background: var(--dcs-stage);
+  color: var(--dcs-text);
+}
+
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected=true]::after,
+.dcs-dockpane[data-dcs-dock-kind=documents] > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected=true]::after {
+  background: var(--dcs-stage);
+}
+
+/* ---- tear-off chrome --------------------------------------- */
+/* Ghost pill that follows the pointer while a tab is being dragged. */
+.dcs-dockpane__tab-ghost {
+  position: fixed;
+  z-index: 1000;
+  padding: 0 var(--dcs-s-3);
+  height: var(--dcs-h);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line-soft);
+  border-radius: var(--dcs-r-2);
+  font-size: var(--dcs-fs-sm);
+  color: var(--dcs-text);
+  pointer-events: none;
+  opacity: 0.92;
+  box-shadow: var(--dcs-shadow-pop);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+/* Center drop preview — a translucent accent wash + 2px ring covering
+   the WHOLE dockpane (tabbar, toolbars, shelf, body, content). Sits
+   ON TOP of everything via high z-index, but is `pointer-events:none`
+   so the user can still drag through it without it intercepting any
+   events. Translucency makes the underlying content readable through
+   the wash, so you can still see what tabs and foldouts are in the
+   pane you're about to drop into. */
+.dcs-dockpane__center-preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--dcs-accent-dim);
+  box-shadow: inset 0 0 0 2px var(--dcs-accent);
+  z-index: 100;
+}
+
+/* ---- single-tab tear-off → continuous title strip ----------
+   When a floating dockpane holds exactly one tab, the floater IS
+   that panel — there's nothing to dock to or from. Drop the tab
+   chrome entirely so the lone tab BLENDS with the tabbar and the
+   whole strip reads as one window title (text + icon on the left,
+   hamburger menu on the right). Drag still works (the tabbar is
+   the drag handle); JS suppresses tear-off (no point tearing the
+   only tab off itself). When a second tab joins the floater (e.g.
+   via re-dock), `:only-child` no longer matches and the standard
+   tab chrome comes back automatically. */
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child {
+  background: transparent;
+  color: var(--dcs-text);
+  font-weight: 500;
+  border-right: none;
+  padding: 0 var(--dcs-s-3);
+  cursor: grab;
+}
+
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child:hover {
+  background: transparent;
+}
+
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child::before,
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child::after {
+  display: none;
+}
+
+.dcs-panel--floating.dcs--dragging .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child {
+  cursor: grabbing;
+}
+
+/* ---- per-pane hamburger menu --------------------------------
+   Auto-injected by decius.js at the right edge of every tabbar.
+   Holds Close / Detach / etc. for the currently active tab. Apps
+   can supply their own via `data-dcs-tab-menu="#menu-id"` or hide
+   it with `data-dcs-tab-menu="false"`. Small (icon-sized) and
+   flat so it doesn't compete with the active tab. */
+.dcs-dockpane__menu {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dcs-h);
+  padding: 0;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--dcs-text-mute);
+  font: inherit;
+  font-size: var(--dcs-fs-sm);
+  cursor: pointer;
+  transition: background var(--dcs-t-fast), color var(--dcs-t-fast);
+}
+
+.dcs-dockpane__menu:hover {
+  background: var(--dcs-surface-2);
+  color: var(--dcs-text);
+}
+
+.dcs-dockpane__menu[aria-expanded=true] {
+  background: var(--dcs-surface-2);
+  color: var(--dcs-text);
+}
+
+/* ---- edge-dock drop zones ----------------------------------
+   While a tab is being dragged, a translucent half-pane preview
+   appears against the edge it would split into when released —
+   left/right halve the target horizontally, top/bottom halve it
+   vertically. The preview is painted into a single overlay node
+   the runtime parents to the target dockpane during drag. */
+.dcs-dockpane__edge-preview {
+  position: absolute;
+  pointer-events: none;
+  background: var(--dcs-accent-dim);
+  box-shadow: inset 0 0 0 2px var(--dcs-accent);
+  z-index: 50;
+  transition: top var(--dcs-t-fast), left var(--dcs-t-fast), width var(--dcs-t-fast), height var(--dcs-t-fast);
+}
+
+.dcs-dockpane__edge-preview[data-edge=left] {
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+}
+
+.dcs-dockpane__edge-preview[data-edge=right] {
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  left: auto;
+}
+
+.dcs-dockpane__edge-preview[data-edge=top] {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 50%;
+}
+
+.dcs-dockpane__edge-preview[data-edge=bottom] {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 50%;
+  top: auto;
+}
+
+.dcs-dockpane__edge-preview[data-edge=center] {
+  inset: 0;
 }

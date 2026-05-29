@@ -228,7 +228,149 @@ function SectionDock() {
     </section>
   );
 }
-Object.assign(window, { SectionPanels, SectionDock, SectionSubpanels, SectionFoldouts });
+/* ------------------------------------------------------------
+   Center "Document" pane + tear-off dockable panels.
+   Pure stock decius markup + behaviour: no React DockLayout.
+   ------------------------------------------------------------ */
+function SectionTearoff() {
+  // Use a ref-based mount: render an empty container and inject the
+  // workspace HTML into it once. decius.js will pick up the tabs,
+  // tear-off behaviour, drag handles, etc. on init().
+  const hostRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!hostRef.current || hostRef.current.dataset.mounted) return;
+    hostRef.current.dataset.mounted = '1';
+    hostRef.current.innerHTML = TEAROFF_WORKSPACE_HTML;
+    if (window.decius && window.decius.init) window.decius.init(hostRef.current);
+  }, []);
+
+  return (
+    <section className="dw-section" id="tearoff">
+      <div className="dw-section__eyebrow">Layout · 05</div>
+      <h2>Document pane &amp; tear-off panels</h2>
+      <p className="dw-section__lead">
+        A Photoshop-style workspace built from stock decius components only — no React docking
+        engine. The <strong>center "Document" pane</strong> (<code>.dcs-dockpane--center</code>) holds the
+        editor, with a multi-tab document strip that's <em>locked in place</em>: documents aren't
+        interchangeable with side-panel tabs. The <strong>side panels</strong> ("Tools", "Layers",
+        "Properties") are regular <code>.dcs-dockpane</code>s — drag any of their tabs out and you get
+        a <code>.dcs-panel--floating</code> hovering over the document; drag it back over another side
+        pane's tab strip to re-dock. Document tabs stay put.
+      </p>
+      <div className="dcs-alert dcs-alert--info" style={{ marginBottom: 20 }}>
+        <div className="dcs-alert__icon"><Icon name="info" /></div>
+        <div className="dcs-alert__body">
+          <div className="dcs-alert__title">How it's wired</div>
+          <div className="dcs-alert__msg">
+            <code>data-dcs-dock-kind</code> segregates pools: "documents" tabs only re-dock to documents
+            panes, "panels" tabs only to panels panes. <code>data-dcs-dock-tearoff="false"</code> (implied by
+            <code> .dcs-dockpane--center</code>) locks a pane's tabs in place. Floating panels are parented
+            to the workspace's positioned ancestor, so they hover over the document but don't scroll
+            with the page — and on <a href="https://github.com/benjcooley/affineui">affineui</a> the
+            host can promote them to real OS child windows instead.
+          </div>
+        </div>
+      </div>
+      <Demo frame="app" inset noDensity minw={760} caption="Drag a side-panel tab anywhere to tear it off · drag it back over another tab strip to re-dock · document tabs stay put">
+        <div
+          ref={hostRef}
+          style={{ position: 'relative', height: 470, overflow: 'hidden', background: 'var(--dcs-bg-app)' }}
+        />
+      </Demo>
+    </section>
+  );
+}
+
+const TEAROFF_WORKSPACE_HTML = `
+<div class="dw-workspace" style="position:absolute;inset:0;display:grid;grid-template-columns:220px 1fr 240px;gap:1px;background:var(--dcs-line);">
+
+  <!-- LEFT side dock — Tools / Outliner -->
+  <div class="dcs-dockpane" style="background:var(--dcs-bg);">
+    <div class="dcs-dockpane__tabbar">
+      <div class="dcs-dockpane__tabs">
+        <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#dw-tear-tools"><i class="di di-cube"></i> Tools</button>
+        <button class="dcs-dockpane__tab" data-dcs-target="#dw-tear-outliner"><i class="di di-folder-open"></i> Outliner</button>
+      </div>
+    </div>
+    <div class="dcs-dockpane__body" style="padding:var(--dcs-s-3);">
+      <div id="dw-tear-tools" data-dcs-tabpanel>
+        <div class="dcs-col" style="gap:var(--dcs-s-3);">
+          <div class="dcs-row" style="gap:var(--dcs-s-2);flex-wrap:wrap;">
+            <button class="dcs-btn dcs-btn--icon" aria-pressed="true"><i class="di di-move"></i></button>
+            <button class="dcs-btn dcs-btn--icon"><i class="di di-rotate"></i></button>
+            <button class="dcs-btn dcs-btn--icon"><i class="di di-scale"></i></button>
+            <button class="dcs-btn dcs-btn--icon"><i class="di di-marquee"></i></button>
+            <button class="dcs-btn dcs-btn--icon"><i class="di di-lasso"></i></button>
+            <button class="dcs-btn dcs-btn--icon"><i class="di di-brush"></i></button>
+            <button class="dcs-btn dcs-btn--icon"><i class="di di-eraser"></i></button>
+            <button class="dcs-btn dcs-btn--icon"><i class="di di-fill"></i></button>
+          </div>
+          <div class="dcs-note dcs-note--mute" style="font-size:var(--dcs-fs-xs);padding:0 var(--dcs-s-1);">Drag the "Tools" tab onto the document.</div>
+        </div>
+      </div>
+      <div id="dw-tear-outliner" data-dcs-tabpanel hidden>
+        <div class="dcs-tree" data-dcs-select>
+          <div class="dcs-tree__row" style="--depth:0;"><span class="dcs-tree__chevron dcs-tree__chevron--open"><i class="di di-chevron-right"></i></span><span class="dcs-tree__icon"><i class="di di-folder-open"></i></span><span class="dcs-tree__label">Scene</span></div>
+          <div class="dcs-tree__row" style="--depth:1;"><span class="dcs-tree__chevron"></span><span class="dcs-tree__icon"><i class="di di-cube"></i></span><span class="dcs-tree__label">Cube</span></div>
+          <div class="dcs-tree__row" aria-selected="true" style="--depth:1;"><span class="dcs-tree__chevron"></span><span class="dcs-tree__icon"><i class="di di-light"></i></span><span class="dcs-tree__label">Key Light</span></div>
+          <div class="dcs-tree__row" style="--depth:1;"><span class="dcs-tree__chevron"></span><span class="dcs-tree__icon"><i class="di di-camera"></i></span><span class="dcs-tree__label">Camera</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: locked Document pane (multi-tabbed) -->
+  <div class="dcs-dockpane dcs-dockpane--center">
+    <div class="dcs-dockpane__tabbar">
+      <div class="dcs-dockpane__tabs">
+        <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#dw-tear-doc-1"><i class="di di-image"></i> hero.psd <span class="dcs-dockpane__tab-close"><i class="di di-close"></i></span></button>
+        <button class="dcs-dockpane__tab" data-dcs-target="#dw-tear-doc-2"><i class="di di-image"></i> banner.png <span class="dcs-dockpane__tab-close"><i class="di di-close"></i></span></button>
+        <button class="dcs-dockpane__tab" data-dcs-target="#dw-tear-doc-3"><i class="di di-image"></i> Untitled-3 <span class="dcs-dockpane__tab-close"><i class="di di-close"></i></span></button>
+      </div>
+    </div>
+    <div class="dcs-dockpane__body">
+      <div id="dw-tear-doc-1" data-dcs-tabpanel style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+        <div style="width:60%;max-width:340px;aspect-ratio:16/10;border-radius:6px;background:linear-gradient(135deg,#ff8a3a 0%,#ff6b9d 40%,#7e4fff 100%);box-shadow:0 14px 40px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.3);"></div>
+      </div>
+      <div id="dw-tear-doc-2" data-dcs-tabpanel hidden style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+        <div style="width:60%;max-width:340px;aspect-ratio:16/10;border-radius:6px;background:radial-gradient(circle at 30% 30%, #4dffd2, #2a8efa 60%, #1c2870);box-shadow:0 14px 40px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.3);"></div>
+      </div>
+      <div id="dw-tear-doc-3" data-dcs-tabpanel hidden style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dcs-text-mute);">
+        <div style="width:60%;max-width:340px;aspect-ratio:16/10;border-radius:6px;background-image:repeating-conic-gradient(#cfcfcf 0 90deg,#fff 90deg 180deg);background-size:18px 18px;box-shadow:0 14px 40px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.3);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT side dock — Layers / Properties -->
+  <div class="dcs-dockpane" style="background:var(--dcs-bg);">
+    <div class="dcs-dockpane__tabbar">
+      <div class="dcs-dockpane__tabs">
+        <button class="dcs-dockpane__tab" aria-selected="true" data-dcs-target="#dw-tear-layers"><i class="di di-layers"></i> Layers</button>
+        <button class="dcs-dockpane__tab" data-dcs-target="#dw-tear-props"><i class="di di-cog"></i> Properties</button>
+      </div>
+    </div>
+    <div class="dcs-dockpane__body" style="padding:0;">
+      <div id="dw-tear-layers" data-dcs-tabpanel>
+        <div class="dcs-list" data-dcs-select>
+          <div class="dcs-list__item" aria-selected="true"><i class="di di-eye"></i><span style="flex:1;">Hero Layer</span><span style="color:var(--dcs-text-mute);font-size:var(--dcs-fs-xs);">Normal</span></div>
+          <div class="dcs-list__item"><i class="di di-eye"></i><span style="flex:1;">Title text</span><span style="color:var(--dcs-text-mute);font-size:var(--dcs-fs-xs);">Mult</span></div>
+          <div class="dcs-list__item"><i class="di di-eye-off"></i><span style="flex:1;color:var(--dcs-text-mute);">Sketch</span><span style="color:var(--dcs-text-mute);font-size:var(--dcs-fs-xs);">Normal</span></div>
+          <div class="dcs-list__item"><i class="di di-eye"></i><span style="flex:1;">Background</span><span style="color:var(--dcs-text-mute);font-size:var(--dcs-fs-xs);">Normal</span></div>
+        </div>
+      </div>
+      <div id="dw-tear-props" data-dcs-tabpanel hidden style="padding:var(--dcs-s-3);">
+        <div class="dcs-props">
+          <div class="dcs-field"><span class="dcs-field__label">Opacity</span><div data-dcs-slider data-min="0" data-max="1" data-value="0.85"></div></div>
+          <div class="dcs-field"><span class="dcs-field__label">Fill</span><div data-dcs-slider data-min="0" data-max="1" data-value="1"></div></div>
+          <div class="dcs-field"><span class="dcs-field__label">Locked</span><div class="dcs-check"><div class="dcs-check__box"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+Object.assign(window, { SectionPanels, SectionDock, SectionSubpanels, SectionFoldouts, SectionTearoff });
 
 function SectionFoldouts() {
   return (

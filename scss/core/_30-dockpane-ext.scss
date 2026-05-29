@@ -1,0 +1,260 @@
+/* ============================================================
+   30 · DOCKPANE EXTENSIONS — tabbar with toolbar slot, shelf
+   ------------------------------------------------------------
+   A DCC-tool dockpane uses every pixel: the unused portion of
+   the tab strip carries the active tab's toolbar (Blender-style)
+   instead of wasting it. When tabs grow wide enough to crowd
+   the toolbar, the toolbar drops to a SHELF row underneath.
+
+   Markup:
+     <div class="dcs-dockpane">
+       <div class="dcs-dockpane__tabbar">
+         <div class="dcs-dockpane__tabs"> …tabs… </div>
+         <div class="dcs-dockpane__toolbars">
+           <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#panel-a"> …controls for A… </div>
+           <div class="dcs-dockpane__toolbar" data-dcs-tabtoolbar="#panel-b" hidden> …controls for B… </div>
+         </div>
+       </div>
+       <div class="dcs-dockpane__shelf" hidden></div>   <!-- target when overflowed -->
+       <div class="dcs-dockpane__body"> …tabpanels… </div>
+     </div>
+
+   decius.js manages tab activation and the overflow class
+   (`.dcs-dockpane--shelved`), which CSS uses to swap the
+   visible toolbar from the tabbar to the shelf row.
+
+   The dockpane may also designate a CENTER panel — the main
+   editor surface (image canvas, 3D viewport) other panes
+   surround — via `.dcs-dockpane--center`.
+   ============================================================ */
+
+/* ---- tabbar wrapper (tabs + toolbar share one row) --------- */
+.dcs-dockpane__tabbar {
+  display: flex;
+  align-items: stretch;
+  height: var(--dcs-h);
+  min-width: 0;
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  flex-shrink: 0;
+}
+
+/* When wrapped in __tabbar, the tabs strip itself loses its own
+   chrome and shrinks to its natural width so the toolbar slot
+   takes the rest. The standalone .dcs-dockpane > .dcs-dockpane__tabs
+   case (no toolbar) is unchanged. */
+.dcs-dockpane__tabbar > .dcs-dockpane__tabs {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: auto;
+  background: transparent;
+  border-bottom: none;
+  overflow: hidden;
+}
+
+/* ---- toolbar slot inside the tabbar ------------------------ */
+.dcs-dockpane__toolbars {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 var(--dcs-s-2);
+  margin-left: var(--dcs-s-2);
+  border-left: 1px solid var(--dcs-line);
+}
+.dcs-dockpane__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.dcs-dockpane__toolbar[hidden] { display: none; }
+
+/* ---- shelf row (active toolbar drops here when overflowed) - */
+.dcs-dockpane__shelf {
+  display: flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  padding: 0 var(--dcs-s-3);
+  height: var(--dcs-h);
+  min-height: var(--dcs-h);
+  background: var(--dcs-surface-1);
+  border-bottom: 1px solid var(--dcs-line);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.dcs-dockpane__shelf[hidden],
+.dcs-dockpane:not(.dcs-dockpane--shelved) > .dcs-dockpane__shelf { display: none; }
+.dcs-dockpane--shelved > .dcs-dockpane__tabbar > .dcs-dockpane__toolbars { display: none; }
+
+/* ---- center "Document" pane (image canvas / 3D viewport) ---
+   The "main view" surface in a Photoshop-/Blender-style app: the
+   multi-tabbed editor area where each tab is a document (image,
+   scene, file) — NOT interchangeable with the surrounding dock
+   tabs (Layers, Tools, Outliner). Reads one shade LIGHTER than
+   the chrome via `--dcs-stage`, so the editor is the focal
+   surface and the dock chrome recedes.
+
+   `.dcs-dockpane--center` implies `data-dcs-dock-kind="documents"`
+   for the tear-off/re-dock kind system below; any dockpane can
+   opt in explicitly via that attribute. Game-editor-style apps
+   that have no distinct center can simply not use this marker. */
+.dcs-dockpane--center,
+.dcs-dockpane[data-dcs-dock-kind="documents"] {
+  background: var(--dcs-stage);
+}
+.dcs-dockpane--center > .dcs-dockpane__body,
+.dcs-dockpane[data-dcs-dock-kind="documents"] > .dcs-dockpane__body {
+  position: relative;
+  overflow: hidden;
+  background: var(--dcs-stage);
+}
+.dcs-dockpane--center > .dcs-dockpane__tabbar,
+.dcs-dockpane[data-dcs-dock-kind="documents"] > .dcs-dockpane__tabbar {
+  background: color-mix(in srgb, var(--dcs-stage) 88%, #000 12%);
+  border-bottom-color: color-mix(in srgb, var(--dcs-stage) 70%, #000 30%);
+}
+
+/* Document tabs — wider, flat, the active tab IS the stage color
+   so the editor reads as one continuous surface from header to body. */
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab,
+.dcs-dockpane[data-dcs-dock-kind="documents"] > .dcs-dockpane__tabbar .dcs-dockpane__tab {
+  padding: 0 var(--dcs-s-4);
+  min-width: 110px;
+  max-width: 260px;
+  background: color-mix(in srgb, var(--dcs-stage) 78%, #000 22%);
+  color: var(--dcs-text-dim);
+  border-right: 1px solid color-mix(in srgb, var(--dcs-stage) 55%, #000 45%);
+  font-weight: 500;
+}
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab:hover,
+.dcs-dockpane[data-dcs-dock-kind="documents"] > .dcs-dockpane__tabbar .dcs-dockpane__tab:hover {
+  background: color-mix(in srgb, var(--dcs-stage) 88%, #000 12%);
+  color: var(--dcs-text);
+}
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected="true"],
+.dcs-dockpane[data-dcs-dock-kind="documents"] > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected="true"] {
+  background: var(--dcs-stage);
+  color: var(--dcs-text);
+}
+.dcs-dockpane--center > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected="true"]::after,
+.dcs-dockpane[data-dcs-dock-kind="documents"] > .dcs-dockpane__tabbar .dcs-dockpane__tab[aria-selected="true"]::after {
+  background: var(--dcs-stage);
+}
+
+/* ---- tear-off chrome --------------------------------------- */
+/* Ghost pill that follows the pointer while a tab is being dragged. */
+.dcs-dockpane__tab-ghost {
+  position: fixed;
+  z-index: 1000;
+  padding: 0 var(--dcs-s-3);
+  height: var(--dcs-h);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dcs-s-2);
+  background: var(--dcs-surface-1);
+  border: 1px solid var(--dcs-line-soft);
+  border-radius: var(--dcs-r-2);
+  font-size: var(--dcs-fs-sm);
+  color: var(--dcs-text);
+  pointer-events: none;
+  opacity: .92;
+  box-shadow: var(--dcs-shadow-pop);
+  user-select: none;
+}
+/* Center drop preview — a translucent accent wash + 2px ring covering
+   the WHOLE dockpane (tabbar, toolbars, shelf, body, content). Sits
+   ON TOP of everything via high z-index, but is `pointer-events:none`
+   so the user can still drag through it without it intercepting any
+   events. Translucency makes the underlying content readable through
+   the wash, so you can still see what tabs and foldouts are in the
+   pane you're about to drop into. */
+.dcs-dockpane__center-preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--dcs-accent-dim);
+  box-shadow: inset 0 0 0 2px var(--dcs-accent);
+  z-index: 100;
+}
+
+/* ---- single-tab tear-off → continuous title strip ----------
+   When a floating dockpane holds exactly one tab, the floater IS
+   that panel — there's nothing to dock to or from. Drop the tab
+   chrome entirely so the lone tab BLENDS with the tabbar and the
+   whole strip reads as one window title (text + icon on the left,
+   hamburger menu on the right). Drag still works (the tabbar is
+   the drag handle); JS suppresses tear-off (no point tearing the
+   only tab off itself). When a second tab joins the floater (e.g.
+   via re-dock), `:only-child` no longer matches and the standard
+   tab chrome comes back automatically. */
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child {
+  background: transparent;
+  color: var(--dcs-text);
+  font-weight: 500;
+  border-right: none;
+  padding: 0 var(--dcs-s-3);
+  cursor: grab;
+}
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child:hover {
+  background: transparent;
+}
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child::before,
+.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child::after {
+  display: none;
+}
+.dcs-panel--floating.dcs--dragging .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child {
+  cursor: grabbing;
+}
+
+/* ---- per-pane hamburger menu --------------------------------
+   Auto-injected by decius.js at the right edge of every tabbar.
+   Holds Close / Detach / etc. for the currently active tab. Apps
+   can supply their own via `data-dcs-tab-menu="#menu-id"` or hide
+   it with `data-dcs-tab-menu="false"`. Small (icon-sized) and
+   flat so it doesn't compete with the active tab. */
+.dcs-dockpane__menu {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dcs-h);
+  padding: 0;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--dcs-text-mute);
+  font: inherit;
+  font-size: var(--dcs-fs-sm);
+  cursor: pointer;
+  transition: background var(--dcs-t-fast), color var(--dcs-t-fast);
+}
+.dcs-dockpane__menu:hover { background: var(--dcs-surface-2); color: var(--dcs-text); }
+.dcs-dockpane__menu[aria-expanded="true"] { background: var(--dcs-surface-2); color: var(--dcs-text); }
+
+/* ---- edge-dock drop zones ----------------------------------
+   While a tab is being dragged, a translucent half-pane preview
+   appears against the edge it would split into when released —
+   left/right halve the target horizontally, top/bottom halve it
+   vertically. The preview is painted into a single overlay node
+   the runtime parents to the target dockpane during drag. */
+.dcs-dockpane__edge-preview {
+  position: absolute;
+  pointer-events: none;
+  background: var(--dcs-accent-dim);
+  box-shadow: inset 0 0 0 2px var(--dcs-accent);
+  z-index: 50;
+  transition: top var(--dcs-t-fast), left var(--dcs-t-fast),
+              width var(--dcs-t-fast), height var(--dcs-t-fast);
+}
+.dcs-dockpane__edge-preview[data-edge="left"]   { left: 0; top: 0; width: 50%;  height: 100%; }
+.dcs-dockpane__edge-preview[data-edge="right"]  { right: 0; top: 0; width: 50%; height: 100%; left: auto; }
+.dcs-dockpane__edge-preview[data-edge="top"]    { left: 0; top: 0; width: 100%; height: 50%; }
+.dcs-dockpane__edge-preview[data-edge="bottom"] { left: 0; bottom: 0; width: 100%; height: 50%; top: auto; }
+.dcs-dockpane__edge-preview[data-edge="center"] { inset: 0; }

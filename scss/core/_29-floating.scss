@@ -1,0 +1,220 @@
+/* ============================================================
+   29 · FLOATING PANELS & TOOLBARS
+   ------------------------------------------------------------
+   Detached surfaces that hover over a host stage — a tear-off
+   panel, a floating toolbar pill, an inspector ripped out of a
+   dock. Host positions them via left/top in inline style; drag
+   handlers add the `dcs--dragging` state hook to raise elevation
+   while pointer drag is active.
+
+   These are the building blocks for tear-off / re-dock chrome.
+   The actual drag-to-move behaviour is wired by decius.js when an
+   element inside a floating surface has [data-dcs-drag-handle].
+   ============================================================ */
+
+/* ---- detached panel ----------------------------------------- */
+.dcs-panel--floating {
+  position: absolute;                /* host positions via left/top */
+  min-width: 160px;
+  background: var(--dcs-bg);
+  border: 1px solid var(--dcs-line);
+  border-radius: var(--dcs-r-4);
+  box-shadow: var(--dcs-shadow-pop);
+  overflow: hidden;
+  z-index: 60;
+}
+.dcs-panel--floating > .dcs-panel__header {
+  cursor: grab;
+  background: var(--dcs-surface-2);
+  border-bottom: 1px solid var(--dcs-line);
+  user-select: none;
+}
+.dcs-panel--floating.dcs--dragging > .dcs-panel__header { cursor: grabbing; }
+.dcs-panel--floating > .dcs-panel__header .dcs-panel__title { pointer-events: none; }
+
+/* A floating panel that wraps a dockpane (tear-off of a tab group)
+   uses the tab strip itself as the drag handle — both the wrapped
+   `__tabbar` form AND the bare `__tabs` form (Photo's tearoffs skip
+   the tabbar wrapper). Any empty area in the strip — the spacer
+   between the last tab and the hamburger, padding around tabs —
+   shows the grab cursor so users see it's draggable. Individual
+   tabs / the hamburger button restore their own pointer cursors. */
+.dcs-panel--floating > .dcs-dockpane > .dcs-dockpane__tabbar,
+.dcs-panel--floating > .dcs-dockpane > .dcs-dockpane__tabs,
+.dcs-panel--floating > .dcs-dockpane__tabbar,
+.dcs-panel--floating > .dcs-dockpane__tabs { cursor: grab; user-select: none; }
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane > .dcs-dockpane__tabbar,
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane > .dcs-dockpane__tabs,
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane__tabbar,
+.dcs-panel--floating.dcs--dragging > .dcs-dockpane__tabs { cursor: grabbing; }
+
+/* ---- detached toolbar -------------------------------------- */
+/* Extends the minimal _15 floating toolbar rule with absolute
+   positioning, intrinsic sizing, and the same shadow as panels. */
+.dcs-toolbar.dcs-toolbar--floating {
+  position: absolute;                /* host positions via left/top */
+  height: auto;
+  width: auto;
+  border: 1px solid var(--dcs-line-soft);
+  border-radius: var(--dcs-r-4);
+  box-shadow: var(--dcs-shadow-pop);
+  background: var(--dcs-surface-1);
+  padding: var(--dcs-s-2);
+  gap: var(--dcs-s-1);
+  z-index: 60;
+}
+.dcs-toolbar--floating.dcs-toolbar--v { padding: var(--dcs-s-2); }
+
+/* ---- shared elevation while dragging ------------------------ */
+.dcs--dragging {
+  box-shadow: var(--dcs-shadow-3), 0 0 0 1px var(--dcs-accent-haze) !important;
+}
+
+/* ---- floating-panel resize: any edge or corner --------------
+   Eight invisible hit zones around the panel perimeter handle the
+   actual pointer events; each just sets the matching native resize
+   cursor. The visible SE grip is a decorative affordance only
+   (pointer-events: none, z-index: 1) so anything above — scrollbar
+   thumb, content overflow, badges — draws over it cleanly. */
+.dcs-panel__resize-zones {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.dcs-panel__resize-zone {
+  position: absolute;
+  pointer-events: auto;
+  background: transparent;
+}
+/* Edges — 5px wide strips along each side. */
+.dcs-panel__resize-zone--n { top: 0; left: 0; right: 0; height: 5px; cursor: ns-resize; }
+.dcs-panel__resize-zone--s { bottom: 0; left: 0; right: 0; height: 5px; cursor: ns-resize; }
+.dcs-panel__resize-zone--w { top: 0; left: 0; bottom: 0; width: 5px; cursor: ew-resize; }
+.dcs-panel__resize-zone--e { top: 0; right: 0; bottom: 0; width: 5px; cursor: ew-resize; }
+/* Corners — 12px squares; overlap the edge zones so the diagonal
+   cursor wins at the four corners. */
+.dcs-panel__resize-zone--nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+.dcs-panel__resize-zone--ne { top: 0; right: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+.dcs-panel__resize-zone--sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+.dcs-panel__resize-zone--se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+
+/* Decorative SE grip — visual only. Bottom of the z-stack so scrollbars
+   and overflowing content overlay it naturally. Hit zones above handle
+   the actual pointer. */
+.dcs-panel__resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--dcs-line-strong);
+  opacity: .6;
+  transition: opacity var(--dcs-t-fast);
+}
+.dcs-panel--floating:hover .dcs-panel__resize { opacity: 1; }
+.dcs-panel__resize::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  border-bottom-right-radius: 2px;
+}
+
+/* ---- reusable drag-handle grip ------------------------------
+   A dotted "drag from here" texture that tiles cleanly to whatever
+   space the grippable area gives it. Two knobs:
+     • `--dcs-grip-unit`  — pattern grid (one dot per cell). Defaults
+       to 4px so 3-up / 4-up grids feel natural.
+     • `--dcs-grip-thick` — the short-axis thickness (perpendicular
+       to the drag direction). Defaults to 12px.
+   `background-repeat: round` makes the browser slightly re-tune the
+   tile size so a whole number of dots fits — no clipped half-dots at
+   the edges, regardless of the host bar's measure.
+   Orientation: `.dcs-grip` is the default VERTICAL strip (narrow in
+   width, stretches in height — sits at the start of a horizontal
+   bar). `.dcs-grip--h` is the HORIZONTAL strip (narrow in height,
+   stretches in width — sits at the start of a vertical bar). Both
+   default to `align-self: stretch` so a single flex item fills the
+   bar's cross axis without further CSS. */
+.dcs-grip {
+  --dcs-grip-unit: 4px;
+  --dcs-grip-thick: 16px;
+  flex: none;
+  align-self: stretch;
+  width: var(--dcs-grip-thick);
+  min-height: var(--dcs-grip-thick);
+  /* Small separator gap between the grip and the first toolbar item
+     so the handle reads as a distinct affordance rather than as
+     another tool slot. */
+  margin-right: var(--dcs-s-2);
+  color: var(--dcs-line-strong);
+  /* Slightly inset surface, then two stacked radial gradients per cell:
+     a top-left highlight + a crisp dot face. The hard transition
+     (currentColor → transparent at 90%/100%) gives a near-pixel edge so
+     each dot reads as a small RAISED bead — not the soft anti-aliased
+     circles we had before. `repeat` (not `round`) leaves the tile size
+     fixed so dots stay perfectly square; we intentionally don't clip the
+     box with a border-radius so corner dots stay whole. */
+  background-color: rgba(0, 0, 0, .18);
+  background-image:
+    radial-gradient(closest-side at 35% 30%, rgba(255, 255, 255, .35) 55%, transparent 85%),
+    radial-gradient(closest-side, currentColor 88%, transparent 100%);
+  background-size: var(--dcs-grip-unit) var(--dcs-grip-unit);
+  background-position: 0 0;
+  background-repeat: repeat;
+  cursor: grab;
+  transition: color var(--dcs-t-fast);
+  user-select: none;
+}
+.dcs-grip:hover { color: var(--dcs-text-mute); }
+.dcs-grip--h {
+  width: auto;
+  height: var(--dcs-grip-thick);
+  min-width: var(--dcs-grip-thick);
+  min-height: 0;
+  /* Horizontal grip sits at the START of a column-flex toolbar, so
+     the separator gap goes UNDER it instead of to the right. */
+  margin-right: 0;
+  margin-bottom: var(--dcs-s-2);
+}
+.dcs--dragging .dcs-grip { cursor: grabbing; }
+
+/* Floating vertical toolbar with a first-child grip: a narrow band
+   spanning LEFT→RIGHT across the top of the toolbar. The short axis is
+   pinned to exactly 3 dot cells (3 × 4px = 12px) so the dot pattern
+   tiles cleanly vertically. The long axis stretches, with `background-
+   repeat: round` on X so the browser auto-fits an integer number of
+   cells across — no half-dots clipped at the rect edges. Pattern
+   anchored at (0,0) so the first cell is flush with the top-left. */
+.dcs-toolbar--v.dcs-toolbar--floating > .dcs-grip:first-child {
+  align-self: stretch;
+  width: auto;
+  height: 12px;                                      /* 3 rows × 4px */
+  min-height: 0;
+  margin: var(--dcs-s-2);                            /* inset on all sides */
+  border-radius: 0;
+  background-position: 0 0;
+  background-repeat: round repeat;                   /* X auto-fit, Y exact */
+}
+
+/* Floating HORIZONTAL toolbar with a first-child grip: the symmetric
+   case — a narrow band running TOP→BOTTOM down the left. 3 dot cells
+   wide (12px), height stretches with `background-repeat: repeat round`
+   so an integer number of cells fits the long axis. */
+.dcs-toolbar--floating:not(.dcs-toolbar--v) > .dcs-grip:first-child {
+  align-self: stretch;
+  width: 12px;                                       /* 3 cols × 4px */
+  height: auto;
+  min-height: 0;
+  margin: var(--dcs-s-2);                            /* inset on all sides */
+  border-radius: 0;
+  background-position: 0 0;
+  background-repeat: repeat round;                   /* X exact, Y auto-fit */
+}

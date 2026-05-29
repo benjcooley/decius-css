@@ -13,6 +13,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 const NAV = [
   { group: 'Overview', items: [
     { id: 'top',    label: 'Introduction',  icon: 'decius' },
+    { id: 'sample-apps', label: 'Live apps',  icon: 'rocket' },
     { id: 'why',    label: 'Why decius',    icon: 'help' },
     { id: 'install',label: 'Install',       icon: 'rocket' },
     { id: 'javascript', label: 'JavaScript', icon: 'cpu' },
@@ -36,6 +37,7 @@ const NAV = [
     { id: 'subpanels', label: 'Subpanels', icon: 'menu' },
     { id: 'foldouts',  label: 'Foldouts',  icon: 'chevron-down' },
     { id: 'dock',    label: 'Dock panels', icon: 'layers' },
+    { id: 'tearoff', label: 'Tear-off &amp; document pane', icon: 'export' },
   ]},
   { group: 'Data', items: [
     { id: 'lists',  label: 'Lists',  icon: 'menu' },
@@ -95,7 +97,7 @@ function TopBar({ onMenu }) {
           <Icon name="decius" size="lg" />
         </span>
         <span>decius<span style={{ color: 'var(--dw-accent-lo)' }}>.css</span></span>
-        <span className="dw-brand__version">v0.5.3 Mus</span>
+        <span className="dw-brand__version">v0.6.0</span>
       </a>
       <nav className="dw-nav">
         <a href="#install" className="active">Docs</a>
@@ -236,6 +238,7 @@ function App() {
       {navOpen && <div className="dw-scrim" onClick={() => setNavOpen(false)} />}
       <main className="dw-main">
         <SectionHero />
+        <SectionLiveApps />
         <SectionWhy />
         <SectionInstall />
         <SectionJavaScript />
@@ -259,6 +262,7 @@ function App() {
         <SectionSubpanels />
         <SectionFoldouts />
         <SectionDock />
+        <SectionTearoff />
 
         <hr />
         <SectionLists />
@@ -293,11 +297,13 @@ function App() {
             <span className="dw-brand__mark" style={{ width: 24, height: 24 }}><Icon name="decius" /></span>
             decius.css
           </span>
-          <span>v0.5.3 "Mus" · MIT</span>
+          <span>v0.6.0 · MIT</span>
           <span style={{ flex: 1 }} />
           <a href="#install">Install</a>
           <a href="#colors">Tokens</a>
           <a href="#sample-dcc">Showpieces</a>
+          <a href={`${import.meta.env.BASE_URL}dender/index.html`} target="_blank" rel="noreferrer noopener">Dender</a>
+          <a href={`${import.meta.env.BASE_URL}photoedit/index.html`} target="_blank" rel="noreferrer noopener">Photo Edit</a>
           <a href={REPO_URL} target="_blank" rel="noreferrer noopener">GitHub</a>
           <a href={`${REPO_URL}/releases`} target="_blank" rel="noreferrer noopener">Changelog</a>
         </footer>
