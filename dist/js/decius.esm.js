@@ -1030,9 +1030,10 @@ function initDraggable(root) {
     if (handle[WIRED]) return;
     handle[WIRED] = true;
     handle.addEventListener("pointerdown", (e) => {
-      if (e.target.closest(DRAG_IGNORE)) return;
       const target = handle.closest(DRAG_TARGET);
       if (!target) return;
+      const ignored = e.target.closest(DRAG_IGNORE);
+      if (ignored && target.contains(ignored)) return;
       beginPanelDrag(e, target);
     });
   });
@@ -1041,7 +1042,8 @@ function initDraggable(root) {
     if (floater[key]) return;
     floater[key] = true;
     floater.addEventListener("pointerdown", (e) => {
-      if (e.target.closest(DRAG_IGNORE)) return;
+      const ignored = e.target.closest(DRAG_IGNORE);
+      if (ignored && floater.contains(ignored)) return;
       beginPanelDrag(e, floater);
     });
   });

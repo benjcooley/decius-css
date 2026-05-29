@@ -1110,9 +1110,14 @@ function initDraggable(root) {
   $$inc('[data-dcs-drag-handle]', root).forEach((handle) => {
     if (handle[WIRED]) return; handle[WIRED] = true;
     handle.addEventListener('pointerdown', (e) => {
-      if (e.target.closest(DRAG_IGNORE)) return;
       const target = handle.closest(DRAG_TARGET);
       if (!target) return;
+      // Only ignore controls/body INSIDE this floater — not an ignored
+      // ancestor the floater happens to be nested within (e.g. a floating
+      // overlay living inside a `.dcs-dockpane__body`), which would
+      // otherwise veto every drag.
+      const ignored = e.target.closest(DRAG_IGNORE);
+      if (ignored && target.contains(ignored)) return;
       beginPanelDrag(e, target);
     });
   });
@@ -1130,7 +1135,10 @@ function initDraggable(root) {
     const key = WIRED + '_floatauto';
     if (floater[key]) return; floater[key] = true;
     floater.addEventListener('pointerdown', (e) => {
-      if (e.target.closest(DRAG_IGNORE)) return;
+      // As above: only veto when the ignored control/body is inside THIS
+      // floater, so a floater nested in a dockpane body still drags.
+      const ignored = e.target.closest(DRAG_IGNORE);
+      if (ignored && floater.contains(ignored)) return;
       beginPanelDrag(e, floater);
     });
   });

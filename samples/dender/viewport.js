@@ -350,8 +350,18 @@
 
     const tc = new TransformControls(camera, renderer.domElement);
     tc.setSize(0.9);
-    scene.add(tc);
-    tc.addEventListener('dragging-changed', (e) => { controls.enabled = !e.value; });
+    // three r160+ : TransformControls is a Controls, not an Object3D — its
+    // visible gizmo is a separate helper that must be added to the scene.
+    // (scene.add(tc) silently no-ops, which is why no move/rotate/scale
+    // gizmo ever appeared.)
+    scene.add(typeof tc.getHelper === 'function' ? tc.getHelper() : tc);
+    let suppressClickUntil = 0;
+    tc.addEventListener('dragging-changed', (e) => {
+      controls.enabled = !e.value;
+      // When a gizmo drag ends, swallow the click that the canvas picker
+      // would otherwise treat as a select/deselect.
+      if (!e.value) suppressClickUntil = performance.now() + 250;
+    });
     tc.addEventListener('objectChange', () => {
       if (selected) { updateSelectionBox(); emit('transform', selected); }
     });
@@ -384,7 +394,9 @@
       const dx = e.clientX - downAt.x, dy = e.clientY - downAt.y;
       const dt = performance.now() - downAt.t;
       downAt = null;
-      // Ignore clicks that were actually an orbit drag.
+      // Ignore the click that just ended a gizmo drag, and clicks that
+      // were actually an orbit drag.
+      if (performance.now() < suppressClickUntil) return;
       if (Math.hypot(dx, dy) > 4 || dt > 600) return;
       // Convert client to NDC.
       const rect = canvas.getBoundingClientRect();
@@ -439,6 +451,7 @@
           mesh: built.mesh || null,
           helper: built.helper || null,
           lightObj: built.lightObj || null,
+          parentObj: null,
         };
         // Apply optional initial transform.
         if (opts.position) obj.root.position.fromArray(opts.position);
@@ -453,6 +466,11 @@
       remove(idOrObj) {
         const obj = this._resolve(idOrObj);
         if (!obj) return;
+        // Re-home direct children up to this object's parent so they
+        // survive the delete (and aren't disposed with the subtree below).
+        objects.filter((o) => o.parentObj === obj).forEach((child) => {
+          this.reparent(child, obj.parentObj || null);
+        });
         if (selected === obj) this.deselect();
         multiSel.delete(obj);
         scene.remove(obj.root);
@@ -510,6 +528,25 @@
       setTransformMode(mode) {
         if (!['translate', 'rotate', 'scale'].includes(mode)) return;
         tc.setMode(mode);
+        emit('mode', mode);
+      },
+
+      get mode() { return tc.getMode ? tc.getMode() : tc.mode; },
+
+      /* Re-parent `child` under `parent` (or to the scene root when parent
+         is null), preserving the child's world transform via Object3D.attach.
+         Refuses cycles (parenting to self or a descendant). */
+      reparent(childRef, parentRef) {
+        const child = this._resolve(childRef);
+        if (!child) return;
+        const parent = parentRef ? this._resolve(parentRef) : null;
+        if (parent === child) return;
+        for (let p = parent; p; p = p.parentObj || null) if (p === child) return;
+        if (parent) parent.root.attach(child.root);
+        else scene.attach(child.root);
+        child.parentObj = parent || null;
+        if (selected) updateSelectionBox();
+        emit('reparent', child);
       },
 
       setTransform(idOrObj, t) {

@@ -502,38 +502,73 @@
        every add / remove / rename. Static Scene / Collection / World rows
        in the HTML are left alone. */
     var tree = document.getElementById("outliner-tree");
+    var structuralLabel = function (row) {
+      var l = row && row.querySelector(".dcs-tree__label");
+      return l ? l.textContent.trim() : "";
+    };
+    var makeRow = function (obj, depth, hasKids) {
+      var row = document.createElement("div");
+      row.className = "dcs-tree__row";
+      row.setAttribute("style", "--depth:" + depth);
+      row.setAttribute("data-vp-row", obj.id);
+      row.setAttribute("draggable", "true");
+      if (VP.selected && VP.selected.id === obj.id) row.setAttribute("aria-selected", "true");
+      var icon = ICON_FOR[obj.type] || "cube";
+      row.innerHTML =
+        '<span class="dcs-tree__chevron' + (hasKids ? " dcs-tree__chevron--open" : "") + '">' +
+          (hasKids ? '<i class="di di-chevron-right"></i>' : "") + '</span>' +
+        '<span class="dcs-tree__icon"><i class="di di-' + icon + '"></i></span>' +
+        '<span class="dcs-tree__label">' + obj.name + '</span>' +
+        '<span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>';
+      return row;
+    };
     var rebuildOutliner = function () {
       if (!tree) return;
-      // Remove all rows we previously injected (marked by data-vp-row).
       Array.from(tree.querySelectorAll("[data-vp-row]")).forEach(function (n) { n.remove(); });
-      // Find the Collection row to insert after.
       var rows = Array.from(tree.querySelectorAll(".dcs-tree__row"));
-      var collectionRow = rows.find(function (r) {
-        var l = r.querySelector(".dcs-tree__label");
-        return l && l.textContent.trim() === "Collection";
-      });
+      var collectionRow = rows.find(function (r) { return structuralLabel(r) === "Collection"; });
       var anchor = collectionRow ? collectionRow.nextElementSibling : tree.firstChild;
-      VP.objects.forEach(function (obj) {
-        var row = document.createElement("div");
-        row.className = "dcs-tree__row";
-        row.setAttribute("style", "--depth:2");
-        row.setAttribute("data-vp-row", obj.id);
-        if (VP.selected && VP.selected.id === obj.id) row.setAttribute("aria-selected", "true");
-        var icon = ICON_FOR[obj.type] || "cube";
-        row.innerHTML =
-          '<span class="dcs-tree__chevron"></span>' +
-          '<span class="dcs-tree__icon"><i class="di di-' + icon + '"></i></span>' +
-          '<span class="dcs-tree__label">' + obj.name + '</span>' +
-          '<span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>';
-        tree.insertBefore(row, anchor);
-      });
+      var all = VP.objects;
+      var hasKids = function (obj) { return all.some(function (o) { return o.parentObj === obj; }); };
+      // Depth-first walk so children render directly under their parent,
+      // indented one level deeper (Collection sits at depth 1, so its
+      // top-level objects start at depth 2).
+      var addChildren = function (parentObj, depth) {
+        all.filter(function (o) { return (o.parentObj || null) === parentObj; }).forEach(function (obj) {
+          tree.insertBefore(makeRow(obj, depth, hasKids(obj)), anchor);
+          addChildren(obj, depth + 1);
+        });
+      };
+      addChildren(null, 2);
     };
     if (tree) {
       tree.addEventListener("click", function (e) {
+        if (e.target.closest("[data-dcs-tip='Hide']")) return;
         var row = e.target.closest("[data-vp-row]");
         if (!row) return;
         var id = row.getAttribute("data-vp-row");
         if (id) VP.select(id);
+      });
+      // Drag a row onto another to re-parent (drop INTO), or between rows
+      // to make it a sibling; drop onto/next to Collection or Scene to
+      // un-parent back to the scene root. The framework moves the DOM rows
+      // + emits dcs:tree-reorder; we own the actual scene-graph change and
+      // re-render the hierarchy from the resulting parent links.
+      tree.addEventListener("dcs:tree-reorder", function (e) {
+        var d = e.detail || {};
+        var draggedId = d.row && d.row.getAttribute("data-vp-row");
+        if (!draggedId) { e.preventDefault(); return; }  // structural rows aren't movable
+        e.preventDefault();
+        var targetId = d.target && d.target.getAttribute("data-vp-row");
+        var newParentId = null;
+        if (d.zone === "into") {
+          newParentId = targetId || null;               // into object → child; into Collection → root
+        } else if (targetId) {
+          var t = VP.objects.filter(function (o) { return o.id === targetId; })[0];
+          newParentId = t && t.parentObj ? t.parentObj.id : null;  // sibling: share target's parent
+        }
+        VP.reparent(draggedId, newParentId);
+        rebuildOutliner();
       });
     }
     rebuildOutliner();
@@ -677,13 +712,63 @@
       });
     });
 
+    /* ---- Floating tool rail → transform gizmo mode ----
+       Move / Rotate / Scale switch the live TransformControls gizmo;
+       Transform falls back to translate. The rail buttons are a radio
+       group, so we also reflect the active mode (incl. G/R/S key presses,
+       which arrive via VP's 'mode' event) by toggling aria-pressed. */
+    var toolRail = document.querySelector(".dn-toolrail");
+    var MODE_FOR_TIP = { "Move": "translate", "Rotate": "rotate", "Scale": "scale", "Transform": "translate" };
+    var TIP_FOR_MODE = { translate: "Move", rotate: "Rotate", scale: "Scale" };
+    var updateToolRail = function (mode) {
+      if (!toolRail) return;
+      var want = TIP_FOR_MODE[mode];
+      toolRail.querySelectorAll("[data-dcs-radio='tool']").forEach(function (b) {
+        var tip = b.getAttribute("data-dcs-tip");
+        if (MODE_FOR_TIP[tip]) b.setAttribute("aria-pressed", tip === want ? "true" : "false");
+      });
+    };
+    if (toolRail) {
+      toolRail.querySelectorAll("button").forEach(function (btn) {
+        var tip = btn.getAttribute("data-dcs-tip");
+        if (MODE_FOR_TIP[tip]) btn.addEventListener("click", function () { VP.setTransformMode(MODE_FOR_TIP[tip]); });
+        else if (tip === "Add Cube") btn.addEventListener("click", function () { var o = VP.add("Cube"); if (o) VP.select(o.id); });
+      });
+    }
+
+    /* ---- Navigation buttons (top-right cluster) ----
+       Zoom dollies in (Shift = out); Move View toggles left-drag panning;
+       Camera View frames the selection (or the whole scene). */
+    var dolly = function (factor) {
+      var cam = VP.camera, t = VP.controls.target;
+      cam.position.copy(t).add(cam.position.clone().sub(t).multiplyScalar(factor));
+      VP.controls.update();
+    };
+    var navbtns = document.querySelector(".dn-navbtns");
+    if (navbtns) {
+      var panOn = false;
+      navbtns.querySelectorAll("button").forEach(function (btn) {
+        var tip = btn.getAttribute("data-dcs-tip");
+        if (tip === "Zoom") btn.addEventListener("click", function (e) { dolly(e.shiftKey ? 1.25 : 0.8); });
+        else if (tip === "Move View") btn.addEventListener("click", function () {
+          panOn = !panOn;
+          VP.controls.mouseButtons.LEFT = panOn ? VP.THREE.MOUSE.PAN : VP.THREE.MOUSE.ROTATE;
+          btn.setAttribute("aria-pressed", panOn ? "true" : "false");
+        });
+        else if (tip === "Camera View") btn.addEventListener("click", function () { VP.frameSelected(); });
+      });
+    }
+
     /* ---- VP → UI ---- */
     VP.on('add',       function () { rebuildOutliner(); });
     VP.on('remove',    function () { rebuildOutliner(); });
     VP.on('rename',    function () { rebuildOutliner(); });
+    VP.on('reparent',  function () { rebuildOutliner(); });
     VP.on('select',    function () { rebuildOutliner(); updateInspectorFromSelected(); });
     VP.on('transform', function () { updateInspectorFromSelected(); });
+    VP.on('mode',      function (mode) { updateToolRail(mode); });
 
+    updateToolRail(VP.mode);
     updateInspectorFromSelected();
   }
 

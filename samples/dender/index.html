@@ -278,34 +278,9 @@
                   <span class="dcs-tree__label">Collection</span>
                   <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide in Viewport"></i></span>
                 </div>
-                <div class="dcs-tree__row" style="--depth:2" aria-selected="true">
-                  <span class="dcs-tree__chevron dcs-tree__chevron--open"><i class="di di-chevron-right"></i></span>
-                  <span class="dcs-tree__icon"><i class="di di-cube"></i></span>
-                  <span class="dcs-tree__label">Cube</span>
-                  <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>
-                </div>
-                <div class="dcs-tree__row" style="--depth:3">
-                  <span class="dcs-tree__chevron"></span>
-                  <span class="dcs-tree__icon" style="color:var(--dcs-good)"><i class="di di-mesh"></i></span>
-                  <span class="dcs-tree__label" style="color:var(--dcs-text-mute)">Cube</span>
-                </div>
-                <div class="dcs-tree__row" style="--depth:3">
-                  <span class="dcs-tree__chevron"></span>
-                  <span class="dcs-tree__icon"><i class="di di-droplet"></i></span>
-                  <span class="dcs-tree__label" style="color:var(--dcs-text-mute)">Material</span>
-                </div>
-                <div class="dcs-tree__row" style="--depth:2">
-                  <span class="dcs-tree__chevron"><i class="di di-chevron-right"></i></span>
-                  <span class="dcs-tree__icon" style="color:var(--dcs-warn)"><i class="di di-light"></i></span>
-                  <span class="dcs-tree__label">Light</span>
-                  <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>
-                </div>
-                <div class="dcs-tree__row" style="--depth:2">
-                  <span class="dcs-tree__chevron"><i class="di di-chevron-right"></i></span>
-                  <span class="dcs-tree__icon"><i class="di di-camera"></i></span>
-                  <span class="dcs-tree__label">Camera</span>
-                  <span class="dcs-tree__meta"><i class="di di-eye" data-dcs-tip="Hide"></i></span>
-                </div>
+                <!-- Object rows under Collection are injected from the live
+                     three.js scene by app.js (rebuildOutliner); only the
+                     structural Scene / Collection / World rows are static. -->
                 <div class="dcs-tree__row" style="--depth:0">
                   <span class="dcs-tree__chevron"><i class="di di-chevron-right"></i></span>
                   <span class="dcs-tree__icon"><i class="di di-globe"></i></span>
@@ -394,9 +369,9 @@
                           <div class="dcs-field">
                             <span class="dcs-field__label">Rotation</span>
                             <div class="dcs-vec">
-                              <div data-dcs-combo data-label="X" data-value="0" data-step="0.01" data-suffix="&deg;"></div>
-                              <div data-dcs-combo data-label="Y" data-value="0" data-step="0.01" data-suffix="&deg;"></div>
-                              <div data-dcs-combo data-label="Z" data-value="0" data-step="0.01" data-suffix="&deg;"></div>
+                              <div data-dcs-combo data-label="X" data-value="0" data-step="1" data-dec="1" data-suffix="&deg;"></div>
+                              <div data-dcs-combo data-label="Y" data-value="0" data-step="1" data-dec="1" data-suffix="&deg;"></div>
+                              <div data-dcs-combo data-label="Z" data-value="0" data-step="1" data-dec="1" data-suffix="&deg;"></div>
                             </div>
                           </div>
                           <div class="dcs-field">
