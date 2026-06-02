@@ -1,7 +1,11 @@
 /* ------------------------------------------------------------
    9 · CHECKBOX / RADIO / SWITCH — flat by default
    ------------------------------------------------------------ */
-.dcs-check {
+.dcs-check,
+.dcs-radio {
+  /* Radios use the same wrapper contract as checks in the shipped samples.
+     Keep the base layout on both classes so a standalone `.dcs-radio`
+     does not split the icon and label onto separate lines. */
   display: inline-flex; align-items: center; gap: var(--dcs-s-3);
   cursor: pointer;
   user-select: none;
@@ -16,7 +20,10 @@
   color: transparent;
   transition: background var(--dcs-t-fast), color var(--dcs-t-fast), border-color var(--dcs-t-fast);
 }
-.dcs-check[aria-checked="true"] .dcs-check__box {
+.dcs-check[aria-checked="true"] .dcs-check__box,
+.dcs-radio[aria-checked="true"] .dcs-check__box {
+  /* The radio sample markup does not also include `.dcs-check`; share the
+     selected fill/color so AffineUI and browser samples stay identical. */
   background: var(--dcs-accent);
   border-color: var(--dcs-accent-lo);
   color: var(--dcs-accent-text);
