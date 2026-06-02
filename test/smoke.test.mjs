@@ -89,6 +89,12 @@ check('accent-filled selections use contrast foreground token', () => {
   assert.match(c, /\.dcs-menu__item:hover,\s*\.dcs-menu__item--active\s*\{[^}]*color:\s*var\(--dcs-accent-text\)/s);
   assert.match(c, /\.dcs-check\[aria-checked=(?:"true"|true)\]\s+\.dcs-check__box\s*\{[^}]*color:\s*var\(--dcs-accent-text\)/s);
 });
+check('select dropdown menus can stretch wider than command menus', () => {
+  const c = css('decius.css');
+  assert.match(c, /\.dcs-menu\s*\{[^}]*max-width:\s*320px/s);
+  assert.match(c, /\.dcs-menu--select\s*\{[^}]*max-width:\s*none/s);
+  assert.match(c, /\.dcs-menu--select\s+\.dcs-menu__item\s*\{[^}]*width:\s*100%/s);
+});
 
 // ---- download archive (after full build) -------------------------------
 if (exists('dist/decius-css.zip')) {

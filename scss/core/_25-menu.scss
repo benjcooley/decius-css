@@ -20,6 +20,17 @@
   user-select: none;
   animation: dcs-menu-in var(--dcs-t-fast);
 }
+/* Select-style dropdowns are sized by their trigger, not by the generic
+   command-menu cap above. Keep option highlight rectangles stretched so
+   selected/hovered rows read as full-width choices. */
+.dcs-menu--select {
+  max-width: none;
+}
+.dcs-menu--select .dcs-menu__item {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
 @keyframes dcs-menu-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
