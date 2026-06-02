@@ -1,15 +1,17 @@
 /* ===========================================================================
-   panels.js — detached/floating surfaces: resize handles, Navigator, floating
-   toolbar wiring. Dragging of .dcs-panel--floating / .dcs-toolbar--floating
-   is handled by stock decius.js via [data-dcs-drag-handle]; this file only
-   adds the photo-specific resize grips and the Navigator panel logic.
+   panels.js — detached/floating surfaces: Navigator and floating toolbar
+   wiring. Dragging/resizing of .dcs-panel--floating / .dcs-toolbar--floating
+   is handled by stock decius.js; this file only keeps photo-specific panel
+   behavior such as Navigator repainting.
    =========================================================================== */
 (function (PS) {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
 
-  /* generic: resize a floating panel by dragging its right / bottom / corner edges */
+  /* fallback only: stock decius.js owns resize whenever its zones are present */
   function makeResizable(el) {
+    if ($(':scope > .dcs-panel__resize-zones', el)) return;
+    if ($(':scope > .ps-rz', el)) return;
     ['e', 's', 'se'].forEach(dir => {
       const h = document.createElement('div'); h.className = 'ps-rz ps-rz-' + dir; el.appendChild(h);
       h.addEventListener('pointerdown', e => {
@@ -72,6 +74,8 @@
     // draggable surfaces: stock decius.js auto-wires [data-dcs-drag-handle]
     // resizable panels (drag the borders)
     $$('.dcs-panel--floating').forEach(makeResizable);
+    const nav = $('#ps-navigator');
+    if (nav) nav.addEventListener('dcs:resize', () => PS.queueNav && PS.queueNav());
     // center the floating toolbar along the bottom
     const bar = $('#ps-floatbar');
     if (bar) { const sr = $('#ps-body').getBoundingClientRect(); bar.style.left = Math.round((sr.width - bar.offsetWidth) / 2) + 'px'; bar.style.transform = 'none'; }

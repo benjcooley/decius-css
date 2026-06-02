@@ -284,8 +284,10 @@ function syncTabToolbars(dockpane, tgtSel) {
   if (!dockpane || !tgtSel) return;
   // Per-tab toolbars live in both __toolbars (tabbar slot) and __shelf
   // (overflow row); show the matching ones, hide the rest.
-  $$('.dcs-dockpane__toolbar[data-dcs-tabtoolbar]', dockpane).forEach((tb) => {
-    tb.hidden = tb.getAttribute('data-dcs-tabtoolbar') !== tgtSel;
+  dockChromeToolbars(dockpane).forEach((tb) => {
+    if (tb.hasAttribute('data-dcs-tabtoolbar')) {
+      tb.hidden = tb.getAttribute('data-dcs-tabtoolbar') !== tgtSel;
+    }
   });
 }
 /* Close a single dockpane tab + its tabpanel; activate the next remaining
@@ -313,7 +315,7 @@ function initTabs(root) {
       if (tgtSel) {
         const panel = $(tgtSel);
         if (panel && panel.parentElement) {
-          $$('[data-dcs-tabpanel]', panel.parentElement).forEach((p) => { p.hidden = p !== panel; });
+          $$(':scope > [data-dcs-tabpanel]', panel.parentElement).forEach((p) => { p.hidden = p !== panel; });
           panel.hidden = false;
         }
         syncTabToolbars(bar.closest('.dcs-dockpane'), tgtSel);
@@ -357,7 +359,7 @@ function initDockpaneMenu(root) {
     // `.dcs-dockpane__tabs` strip — apps with simpler dockpane chrome
     // (e.g. floating tear-off panels with just a tab row, no separate
     // toolbar slot) still get the hamburger.
-    const tabbar = $('.dcs-dockpane__tabbar', dock) || $('.dcs-dockpane__tabs', dock);
+    const tabbar = dockTabbarEl(dock) || $(':scope > .dcs-dockpane__tabs', dock);
     if (!tabbar) return;
     if (dock.getAttribute('data-dcs-tab-menu') === 'false') return;
     if ($(':scope > .dcs-dockpane__menu', tabbar)) return;     // app already supplied one
@@ -1029,6 +1031,229 @@ const DRAG_TARGET = '.dcs-panel--floating, .dcs-toolbar--floating';
    safely listen at the root without dragging when the user clicks
    sliders, color squares, etc. inside the body. */
 const DRAG_IGNORE = 'button, a, input, select, textarea, label, .dcs-check, .dcs-radio, .dcs-switch, .dcs-slider, .dcs-fader, .dcs-knob, .dcs-combo, .dcs-dockpane__tab, .dcs-dockpane__tab-close, .dcs-tab, [data-dcs-toggle], [data-dcs-dismiss], .dcs-dockpane__body, .dcs-panel__body';
+// Floating-panel snap parenting is panel-only; floating toolbars stay independent.
+const FLOAT_DOCK_TARGET = '.dcs-panel--floating';
+const FLOAT_Z_TARGET = DRAG_TARGET;
+const FLOAT_DOCK_GAP = 2;
+const FLOAT_DOCK_SNAP = 14;
+const FLOAT_Z_BASE = 60;
+function floatingSurfaces() {
+  return $$(FLOAT_Z_TARGET).filter((surface) => surface.isConnected);
+}
+function floatZ(surface) {
+  const z = parseInt(surface.style.zIndex || getComputedStyle(surface).zIndex, 10);
+  return Number.isFinite(z) ? z : FLOAT_Z_BASE;
+}
+function syncFloatZOrder(active) {
+  const surfaces = floatingSurfaces();
+  if (!surfaces.length) return;
+  const ordered = surfaces
+    .slice()
+    .sort((a, b) => floatZ(a) - floatZ(b) || surfaces.indexOf(a) - surfaces.indexOf(b));
+  if (active && ordered.includes(active)) {
+    ordered.splice(ordered.indexOf(active), 1);
+    ordered.push(active);
+  }
+  ordered.forEach((surface, i) => {
+    const isTop = surface === ordered[ordered.length - 1];
+    surface.style.zIndex = String(FLOAT_Z_BASE + i);
+    surface.classList.toggle('dcs--float-active', isTop);
+    surface.classList.toggle('dcs-panel--float-active', isTop && surface.matches(FLOAT_DOCK_TARGET));
+  });
+}
+function floatZSurface(surface) {
+  return !!(surface && surface.matches && surface.matches(FLOAT_Z_TARGET));
+}
+function raiseFloatingSurface(surface) {
+  if (floatZSurface(surface)) syncFloatZOrder(surface);
+}
+function floatDockHost(panel) {
+  return panel && (panel.offsetParent || document.body);
+}
+function documentFloatHost() {
+  const dock = $('.dcs-dockpane[data-dcs-dock-kind="documents"], .dcs-dockpane--center');
+  if (!dock) return null;
+  const body = $(':scope > .dcs-dockpane__body', dock) || dock;
+  const activePanel = $(':scope > [data-dcs-tabpanel]:not([hidden])', body) || body;
+  if (activePanel.matches && activePanel.matches('[data-dcs-float-host]')) return activePanel;
+  return $('[data-dcs-float-host]', activePanel) || body;
+}
+function containFloatingPanel(panel) {
+  const host = documentFloatHost();
+  if (!floatDockPanel(panel) || !host || panel.parentElement === host || panel.contains(host)) return;
+  const r = panel.getBoundingClientRect();
+  const hr = host.getBoundingClientRect();
+  const w = r.width || panel.offsetWidth || 320;
+  const h = r.height || panel.offsetHeight || 220;
+  host.appendChild(panel);
+  panel.style.width = w + 'px';
+  panel.style.height = h + 'px';
+  panel.style.left = clamp(r.left - hr.left, 4, Math.max(4, hr.width - w - 4)) + 'px';
+  panel.style.top = clamp(r.top - hr.top, 4, Math.max(4, hr.height - h - 4)) + 'px';
+  panel.style.right = 'auto';
+  panel.style.bottom = 'auto';
+  raiseFloatingSurface(panel);
+}
+function containFloatingPanels(root) {
+  $$inc(FLOAT_DOCK_TARGET, root).forEach(containFloatingPanel);
+}
+function floatDockPanel(panel) {
+  return !!(panel && panel.matches && panel.matches(FLOAT_DOCK_TARGET));
+}
+function floatLocalRect(panel, hostRect) {
+  const r = panel.getBoundingClientRect();
+  return {
+    left: r.left - hostRect.left,
+    top: r.top - hostRect.top,
+    width: r.width,
+    height: r.height,
+  };
+}
+function floatWouldCycle(child, parent) {
+  let p = parent;
+  while (p) {
+    if (p === child) return true;
+    p = p.__dcsFloatDockParent;
+  }
+  return false;
+}
+function detachFloatDock(child) {
+  const parent = child && child.__dcsFloatDockParent;
+  if (parent && parent.__dcsFloatDockChildren) parent.__dcsFloatDockChildren.delete(child);
+  if (child) {
+    child.__dcsFloatDockParent = null;
+    child.__dcsFloatDockAlign = null;
+    child.classList.remove('dcs-panel--float-docked');
+  }
+}
+function detachFloatDockChildren(parent) {
+  if (!parent || !parent.__dcsFloatDockChildren) return;
+  Array.from(parent.__dcsFloatDockChildren).forEach((child) => detachFloatDock(child));
+}
+function attachFloatDock(child, parent, align) {
+  if (!floatDockPanel(child) || !floatDockPanel(parent) || child === parent || floatWouldCycle(child, parent)) return;
+  detachFloatDock(child);
+  child.__dcsFloatDockParent = parent;
+  child.__dcsFloatDockAlign = align || null;
+  (parent.__dcsFloatDockChildren || (parent.__dcsFloatDockChildren = new Set())).add(child);
+  child.classList.add('dcs-panel--float-docked');
+}
+function moveFloatTo(panel, left, top, moveChildren) {
+  const host = floatDockHost(panel);
+  const hr = host.getBoundingClientRect();
+  const before = floatLocalRect(panel, hr);
+  panel.style.left = left + 'px';
+  panel.style.top = top + 'px';
+  panel.style.right = 'auto';
+  panel.style.bottom = 'auto';
+  if (moveChildren) {
+    const after = floatLocalRect(panel, hr);
+    const dx = after.left - before.left, dy = after.top - before.top;
+    moveFloatDockChildren(panel, dx, dy);
+  }
+}
+function moveFloatDockChildren(parent, dx, dy) {
+  if (!parent || !parent.__dcsFloatDockChildren || (!dx && !dy)) return;
+  const host = floatDockHost(parent);
+  const hr = host.getBoundingClientRect();
+  const pr = parent.getBoundingClientRect();
+  parent.__dcsFloatDockChildren.forEach((child) => {
+    if (!child.isConnected) { parent.__dcsFloatDockChildren.delete(child); return; }
+    if (floatDockHost(child) !== host) { detachFloatDock(child); return; }
+    const cr = child.getBoundingClientRect();
+    let left = cr.left - hr.left + dx;
+    if (child.__dcsFloatDockAlign === 'left') left = pr.left - hr.left;
+    else if (child.__dcsFloatDockAlign === 'right') left = pr.right - hr.left - cr.width;
+    moveFloatTo(child, left, pr.bottom - hr.top + FLOAT_DOCK_GAP, true);
+  });
+}
+function findFloatDockSnap(panel, left, top, width, height, host) {
+  if (!floatDockPanel(panel)) return null;
+  const hr = host.getBoundingClientRect();
+  const rect = {
+    left: hr.left + left,
+    right: hr.left + left + width,
+    top: hr.top + top,
+    bottom: hr.top + top + height,
+  };
+  let best = null;
+  $$(FLOAT_DOCK_TARGET).forEach((parent) => {
+    if (parent === panel || !parent.isConnected || floatDockHost(parent) !== host || floatWouldCycle(panel, parent)) return;
+    const pr = parent.getBoundingClientRect();
+    const topDist = Math.abs(rect.top - (pr.bottom + FLOAT_DOCK_GAP));
+    if (topDist > FLOAT_DOCK_SNAP) return;
+    const leftDist = Math.abs(rect.left - pr.left);
+    const rightDist = Math.abs(rect.right - pr.right);
+    const overlap = Math.min(rect.right, pr.right) - Math.max(rect.left, pr.left);
+    if (overlap < 24 && Math.min(leftDist, rightDist) > FLOAT_DOCK_SNAP) return;
+    let snappedLeft = left, align = null;
+    if (leftDist <= FLOAT_DOCK_SNAP && leftDist <= rightDist) {
+      snappedLeft = pr.left - hr.left;
+      align = 'left';
+    } else if (rightDist <= FLOAT_DOCK_SNAP) {
+      snappedLeft = pr.right - hr.left - width;
+      align = 'right';
+    }
+    const score = topDist + Math.min(leftDist, rightDist, FLOAT_DOCK_SNAP);
+    if (!best || score < best.score) {
+      best = {
+        parent,
+        align,
+        left: snappedLeft,
+        top: pr.bottom - hr.top + FLOAT_DOCK_GAP,
+        score,
+      };
+    }
+  });
+  return best;
+}
+function syncFloatDockChildren(parent) {
+  if (!floatDockPanel(parent) || !parent.__dcsFloatDockChildren) return;
+  const host = floatDockHost(parent);
+  const hr = host.getBoundingClientRect();
+  const pr = parent.getBoundingClientRect();
+  parent.__dcsFloatDockChildren.forEach((child) => {
+    if (!child.isConnected) { parent.__dcsFloatDockChildren.delete(child); return; }
+    const cr = child.getBoundingClientRect();
+    let left = cr.left - hr.left;
+    if (child.__dcsFloatDockAlign === 'left') left = pr.left - hr.left;
+    else if (child.__dcsFloatDockAlign === 'right') left = pr.right - hr.left - cr.width;
+    const top = pr.bottom - hr.top + FLOAT_DOCK_GAP;
+    moveFloatTo(child, left, top, true);
+  });
+}
+function snapFloatResize(panel, dir, left, top, width, height, host) {
+  const parent = panel && panel.__dcsFloatDockParent;
+  if (!floatDockPanel(panel) || !parent || !parent.isConnected || floatDockHost(parent) !== host) {
+    return { left, top, width, height, snapped: false, align: panel && panel.__dcsFloatDockAlign };
+  }
+  const hr = host.getBoundingClientRect();
+  const pr = parent.getBoundingClientRect();
+  const desiredTop = pr.bottom - hr.top + FLOAT_DOCK_GAP;
+  const right = left + width;
+  let snapped = false;
+  let align = panel.__dcsFloatDockAlign;
+  if (Math.abs(top - desiredTop) <= FLOAT_DOCK_SNAP || dir.indexOf('n') < 0) {
+    top = desiredTop;
+    snapped = true;
+  }
+  if (dir.indexOf('w') >= 0 && Math.abs((hr.left + left) - pr.left) <= FLOAT_DOCK_SNAP) {
+    left = pr.left - hr.left;
+    width = Math.max(160, right - left);
+    align = 'left';
+    snapped = true;
+  } else if (dir.indexOf('w') >= 0 && align === 'left') {
+    align = null;
+  }
+  if (dir.indexOf('e') >= 0 && Math.abs((hr.left + left + width) - pr.right) <= FLOAT_DOCK_SNAP) {
+    width = Math.max(160, pr.right - hr.left - left);
+    align = 'right';
+    snapped = true;
+  } else if (dir.indexOf('e') >= 0 && align === 'right') {
+    align = null;
+  }
+  return { left, top, width, height, snapped, align };
+}
 function beginPanelDrag(e, target) {
   // Guard against re-entry on the same pointerdown: if both an
   // explicit handle AND the floater-level auto-handle fire (which
@@ -1036,12 +1261,16 @@ function beginPanelDrag(e, target) {
   // stopPropagation()s), the second call is a no-op so we don't
   // double-register move/up listeners or fight over style writes.
   if (target.__dcsDragPid === e.pointerId) return;
+  raiseFloatingSurface(target);
   target.__dcsDragPid = e.pointerId;
   const boundsSel = target.getAttribute('data-dcs-drag-bounds');
   const bounds = (boundsSel ? $(boundsSel) : null)
+              || (floatDockPanel(target) ? documentFloatHost() : null)
               || target.offsetParent || document.body;
+  const posHost = target.offsetParent || document.body;
   e.preventDefault();
   const br = bounds.getBoundingClientRect();
+  const hr = posHost.getBoundingClientRect();
   const tr = target.getBoundingClientRect();
   // Lock to left/top + freeze the current size BEFORE clearing
   // right/bottom — otherwise a surface anchored via right/bottom
@@ -1049,8 +1278,8 @@ function beginPanelDrag(e, target) {
   // anchors are dropped on the first drag.
   target.style.width = tr.width + 'px';
   target.style.height = tr.height + 'px';
-  target.style.left = (tr.left - br.left) + 'px';
-  target.style.top = (tr.top - br.top) + 'px';
+  target.style.left = (tr.left - hr.left) + 'px';
+  target.style.top = (tr.top - hr.top) + 'px';
   target.style.right = 'auto';
   target.style.bottom = 'auto';
   target.style.transform = 'none';
@@ -1058,6 +1287,8 @@ function beginPanelDrag(e, target) {
   const oy = e.clientY - tr.top;
   target.classList.add('dcs--dragging');
   const margin = 4;
+  let lastLeft = tr.left - hr.left;
+  let lastTop = tr.top - hr.top;
   // Pin all subsequent pointer events for this pointerId to `target` so
   // moving the pointer over the SVG scene / a sibling element doesn't
   // steal the drag. Belt-AND-braces: we register the move/up listeners
@@ -1072,12 +1303,13 @@ function beginPanelDrag(e, target) {
   const move = (ev) => {
     if (!dragLive || ev.pointerId !== pid) return;
     const w = target.offsetWidth, h = target.offsetHeight;
-    let left = ev.clientX - br.left - ox;
-    let top = ev.clientY - br.top - oy;
-    left = clamp(left, margin, Math.max(margin, br.width - w - margin));
-    top = clamp(top, margin, Math.max(margin, br.height - h - margin));
-    target.style.left = left + 'px';
-    target.style.top = top + 'px';
+    const viewportLeft = clamp(ev.clientX - ox, br.left + margin, Math.max(br.left + margin, br.right - w - margin));
+    const viewportTop = clamp(ev.clientY - oy, br.top + margin, Math.max(br.top + margin, br.bottom - h - margin));
+    const left = viewportLeft - hr.left;
+    const top = viewportTop - hr.top;
+    moveFloatTo(target, left, top, true);
+    lastLeft = left;
+    lastTop = top;
   };
   const up = (ev) => {
     if (!dragLive || ev.pointerId !== pid) return;
@@ -1089,6 +1321,16 @@ function beginPanelDrag(e, target) {
     window.removeEventListener('pointerup', up, true);
     window.removeEventListener('pointercancel', up, true);
     try { target.releasePointerCapture(pid); } catch (_) {}
+    if (floatDockPanel(target)) {
+      const w = target.offsetWidth, h = target.offsetHeight;
+      const snap = findFloatDockSnap(target, lastLeft, lastTop, w, h, posHost);
+      if (snap) {
+        moveFloatTo(target, snap.left, snap.top, true);
+        attachFloatDock(target, snap.parent, snap.align);
+      } else {
+        detachFloatDock(target);
+      }
+    }
     target.classList.remove('dcs--dragging');
     if (target.__dcsDragPid === pid) target.__dcsDragPid = null;
   };
@@ -1142,6 +1384,17 @@ function initDraggable(root) {
       beginPanelDrag(e, floater);
     });
   });
+}
+function initFloatingZOrder(root) {
+  $$inc(FLOAT_Z_TARGET, root).forEach((surface) => {
+    const key = WIRED + '_floatz';
+    if (!surface[key]) {
+      surface[key] = true;
+      surface.addEventListener('pointerdown', () => raiseFloatingSurface(surface), true);
+      surface.addEventListener('focusin', () => raiseFloatingSurface(surface), true);
+    }
+  });
+  syncFloatZOrder();
 }
 
 /* ============================================================ tear-off / re-dock
@@ -1223,12 +1476,13 @@ function tearoffAllowed(dock) {
   return dock.getAttribute('data-dcs-dock-tearoff') !== 'false';
 }
 function activateTabInDock(dock, tab) {
-  $$('.dcs-dockpane__tab', dock).forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+  dockTabs(dock).forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+  syncDockTabShape(dock);
   const sel = tab.getAttribute('data-dcs-target');
   if (sel) {
     const panel = $(sel);
     if (panel && panel.parentElement) {
-      $$('[data-dcs-tabpanel]', panel.parentElement).forEach((p) => { p.hidden = p !== panel; });
+      $$(':scope > [data-dcs-tabpanel]', panel.parentElement).forEach((p) => { p.hidden = p !== panel; });
       panel.hidden = false;
     }
     syncTabToolbars(dock, sel);
@@ -1263,7 +1517,7 @@ function unsplitFromLayout(node) {
 }
 function cleanupSourceDock(dock) {
   if (!dock) return;
-  const remainingTabs = $$('.dcs-dockpane__tab', dock);
+  const remainingTabs = dockTabs(dock);
   if (!remainingTabs.length) {
     // A dockpane with no tabs left has no reason to exist:
     //   - Inside a floater: drop the whole floating wrapper.
@@ -1278,11 +1532,136 @@ function cleanupSourceDock(dock) {
   if (!remainingTabs.some((t) => t.getAttribute('aria-selected') === 'true')) {
     activateTabInDock(dock, remainingTabs[0]);
   }
+  if (remainingTabs.length === 1 && isFloatingDock(dock)) {
+    convertDockToTitleOnly(dock);
+    return;
+  }
+  syncDockTabShape(dock);
+  reflowDockpane(dock);
+}
+function dockTabsEl(dock) {
+  return dock && $(':scope > .dcs-dockpane__tabbar > .dcs-dockpane__tabs, :scope > .dcs-dockpane__tabs', dock);
+}
+function dockRowTabs(dock) {
+  const tabs = dockTabsEl(dock);
+  return tabs ? $$(':scope > .dcs-dockpane__tab', tabs) : [];
+}
+function dockTitlebarEl(dock) {
+  return dock && $(':scope > .dcs-dockpane__titlebar', dock);
+}
+function dockTitleTab(dock) {
+  const titlebar = dockTitlebarEl(dock);
+  return titlebar && $(':scope > .dcs-dockpane__tab[data-dcs-title-tab]', titlebar);
+}
+function isFloatingDock(dock) {
+  return !!(dock && dockKind(dock) === 'panels' && dock.closest('.dcs-panel--floating'));
+}
+function dockTabs(dock) {
+  const titleTab = dockTitleTab(dock);
+  const tabs = dockRowTabs(dock);
+  return titleTab ? [titleTab, ...tabs] : tabs;
+}
+function syncDockTabShape(dock) {
+  if (!dock) return;
+  const count = dockTabs(dock).length;
+  dock.classList.toggle('dcs-dockpane--single-tab', count === 1);
+  dock.classList.toggle('dcs-dockpane--multi-tab', count > 1);
+  dock.classList.toggle('dcs-dockpane--title-only', !!dockTitleTab(dock));
+}
+function dockTabbarEl(dock) {
+  return dock && $(':scope > .dcs-dockpane__tabbar', dock);
+}
+function dockToolbarSlotEl(dock) {
+  const tabbar = dockTabbarEl(dock);
+  return tabbar && $(':scope > .dcs-dockpane__toolbars', tabbar);
+}
+function dockShelfEl(dock) {
+  return dock && $(':scope > .dcs-dockpane__shelf', dock);
+}
+function dockChromeToolbars(dock) {
+  const slots = [dockToolbarSlotEl(dock), dockShelfEl(dock)].filter(Boolean);
+  return slots.flatMap((slot) => $$(':scope > .dcs-dockpane__toolbar', slot));
+}
+function appendDockTab(tabs, tab) {
+  const children = Array.from(tabs.children);
+  const tabChildren = children.filter((child) => child.classList.contains('dcs-dockpane__tab'));
+  const before = tabChildren.length
+    ? tabChildren[tabChildren.length - 1].nextSibling
+    : children.find((child) => !child.classList.contains('dcs-dockpane__tab')) || null;
+  tabs.insertBefore(tab, before);
+}
+function prepareTabForTitlebar(tab) {
+  if (!tab.__dcsDockTabClass) tab.__dcsDockTabClass = tab.className;
+  tab.className = tab.__dcsDockTabClass + ' dcs-panel__title dcs-panel__title--dock-tab';
+  tab.setAttribute('data-dcs-title-tab', '');
+  tab.setAttribute('aria-selected', 'true');
+}
+function prepareTabForTabbar(tab) {
+  if (tab.__dcsDockTabClass) tab.className = tab.__dcsDockTabClass;
+  else {
+    tab.classList.remove('dcs-panel__title', 'dcs-panel__title--dock-tab');
+    tab.classList.add('dcs-dockpane__tab');
+  }
+  tab.removeAttribute('data-dcs-title-tab');
+}
+function titlebarForDock(dock) {
+  let titlebar = dockTitlebarEl(dock);
+  if (titlebar) return titlebar;
+  titlebar = el('div', 'dcs-panel__header dcs-dockpane__titlebar');
+  titlebar.setAttribute('data-dcs-drag-handle', '');
+  const tools = el('div', 'dcs-panel__tools');
+  titlebar.appendChild(tools);
+  const tabbar = dockTabbarEl(dock) || dockTabsEl(dock);
+  dock.insertBefore(titlebar, tabbar || dock.firstChild);
+  return titlebar;
+}
+function convertDockToTitleOnly(dock) {
+  if (!isFloatingDock(dock)) return false;
+  if (dockTitleTab(dock)) {
+    syncDockTabShape(dock);
+    reflowDockpane(dock);
+    return true;
+  }
+  const tabs = dockRowTabs(dock);
+  if (tabs.length !== 1) return false;
+  const tab = tabs[0];
+  const titlebar = titlebarForDock(dock);
+  const tools = $(':scope > .dcs-panel__tools', titlebar);
+  prepareTabForTitlebar(tab);
+  titlebar.insertBefore(tab, tools || null);
+  const tabbar = dockTabbarEl(dock) || dockTabsEl(dock);
+  if (tabbar) tabbar.hidden = true;
+  syncDockTabShape(dock);
+  initDraggable(titlebar);
+  initDockTearoff(titlebar);
+  reflowDockpane(dock);
+  return true;
+}
+function ensureTabbedDock(dock) {
+  const titleTab = dockTitleTab(dock);
+  if (!titleTab) {
+    const tabbar = dockTabbarEl(dock) || dockTabsEl(dock);
+    if (tabbar) tabbar.hidden = false;
+    syncDockTabShape(dock);
+    return;
+  }
+  const tabs = dockTabsEl(dock);
+  if (tabs) {
+    prepareTabForTabbar(titleTab);
+    appendDockTab(tabs, titleTab);
+  }
+  const titlebar = dockTitlebarEl(dock);
+  if (titlebar) titlebar.remove();
+  const tabbar = dockTabbarEl(dock) || dockTabsEl(dock);
+  if (tabbar) tabbar.hidden = false;
+  syncDockTabShape(dock);
 }
 function moveTabTo(tab, panel, targetDock) {
-  const tabs = $('.dcs-dockpane__tabs', targetDock);
-  const body = $('.dcs-dockpane__body', targetDock);
-  const toolbars = $('.dcs-dockpane__toolbars', targetDock);
+  const sourceDock = tab.closest('.dcs-dockpane');
+  if (targetDock) ensureTabbedDock(targetDock);
+  const tabs = dockTabsEl(targetDock);
+  const body = $(':scope > .dcs-dockpane__body', targetDock);
+  const toolbars = dockToolbarSlotEl(targetDock);
   if (!tabs || !body) return false;
   // The toolbar bound to a tab (`data-dcs-tabtoolbar="<target>"`) is
   // part of the panel — it has to ride along when the tab moves. Find
@@ -1290,17 +1669,12 @@ function moveTabTo(tab, panel, targetDock) {
   // moving the tab + tabpanel.
   const tgtSel = tab.getAttribute('data-dcs-target');
   if (tgtSel && toolbars) {
-    try {
-      const matchingToolbar = $(`.dcs-dockpane__toolbar[data-dcs-tabtoolbar="${CSS.escape(tgtSel)}"]`);
-      if (matchingToolbar) toolbars.appendChild(matchingToolbar);
-    } catch (_) {
-      // CSS.escape unavailable or selector edge — try literal fallback.
-      const safe = tgtSel.replace(/"/g, '\\"');
-      const matchingToolbar = $(`.dcs-dockpane__toolbar[data-dcs-tabtoolbar="${safe}"]`);
-      if (matchingToolbar) toolbars.appendChild(matchingToolbar);
-    }
+    const matchingToolbar = dockChromeToolbars(sourceDock).find((tb) => tb.getAttribute('data-dcs-tabtoolbar') === tgtSel);
+    if (matchingToolbar) toolbars.appendChild(matchingToolbar);
   }
-  tabs.appendChild(tab);
+  prepareTabForTabbar(tab);
+  appendDockTab(tabs, tab);
+  if (sourceDock && sourceDock !== targetDock) syncDockTabShape(sourceDock);
   body.appendChild(panel);
   activateTabInDock(targetDock, tab);
   // After a tab + its toolbar arrive in a target dock, the toolbar's
@@ -1337,6 +1711,48 @@ function edgeZone(x, y, rect) {
   ];
   dists.sort((a, b) => a.d - b.d);
   return dists[0].e;
+}
+function dockDropDecision(sourceDock, sourceKind, x, y, sourcePanel) {
+  const panel = floatingPanelAt(x, y);
+  if (panel && panel !== sourcePanel) {
+    const dock = $(':scope > .dcs-dockpane', panel) || standalonePanelToDock(panel);
+    if (dock && dock !== sourceDock && dockKind(dock) === sourceKind) return { kind: 'center', target: dock };
+  }
+  const hovered = dockAt(x, y);
+  if (hovered) {
+    const kindOK = hovered !== sourceDock && dockKind(hovered) === sourceKind;
+    if (!kindOK) return null;
+    if (sourcePanel) return { kind: 'center', target: hovered };
+    if (hovered.closest('.dcs-panel--floating')) return { kind: 'center', target: hovered };
+    const elPt = document.elementFromPoint(x, y);
+  if (elPt && elPt.closest('.dcs-dockpane__titlebar, .dcs-dockpane__tabbar, .dcs-dockpane__tabs, .dcs-dockpane__tab, .dcs-dockpane__toolbars, .dcs-dockpane__shelf')) {
+    return { kind: 'center', target: hovered };
+  }
+    const we = windowEdge(x, y);
+    if (we) {
+      const t = edgeOwnerDock(we);
+      if (t) return { kind: we, target: t, windowEdge: true };
+    }
+    const zone = edgeZone(x, y, hovered.getBoundingClientRect());
+    return { kind: zone, target: hovered };
+  }
+  if (!sourcePanel) {
+    const we = windowEdge(x, y);
+    if (we) {
+      const t = edgeOwnerDock(we);
+      if (t) return { kind: we, target: t, windowEdge: true };
+    }
+  }
+  return null;
+}
+function floatingPanelAt(x, y) {
+  const hit = document.elementFromPoint(x, y);
+  return hit && hit.closest(FLOAT_DOCK_TARGET);
+}
+function standaloneFloatingPanelAt(x, y) {
+  const panel = floatingPanelAt(x, y);
+  if (!panel || $(':scope > .dcs-dockpane', panel)) return null;
+  return panel;
 }
 function showEdgePreview(dock, edge) {
   let ov = dock.__edgePreview;
@@ -1454,6 +1870,62 @@ function splitDock(target, edge, newDock, opts) {
   }
   init(newDock.parentElement);     // re-wire splitter handler
 }
+let standaloneContentSeq = 1;
+function cssId(id) {
+  return '#' + (window.CSS && CSS.escape ? CSS.escape(id) : id.replace(/([^\w-])/g, '\\$1'));
+}
+function nextStandaloneContentId(panel) {
+  let base = panel.id ? panel.id + '-panel' : 'dcs-standalone-panel';
+  base = base.replace(/[^\w-]/g, '-');
+  let id;
+  do { id = base + '-' + standaloneContentSeq++; } while (document.getElementById(id));
+  return id;
+}
+function panelTitleHtml(panel) {
+  const title = $(':scope > .dcs-panel__header > .dcs-panel__title', panel);
+  const html = title && title.innerHTML.trim();
+  return html || (panel.getAttribute('aria-label') || panel.id || 'Panel');
+}
+function standalonePanelToDock(panel) {
+  const existing = $(':scope > .dcs-dockpane', panel);
+  if (existing) return existing;
+  if (!floatDockPanel(panel)) return null;
+  const tabPanel = el('div', 'dcs-dockpane__standalone-panel');
+  tabPanel.id = nextStandaloneContentId(panel);
+  tabPanel.setAttribute('data-dcs-tabpanel', '');
+  const tab = el('div', 'dcs-dockpane__tab', panelTitleHtml(panel));
+  tab.setAttribute('data-dcs-target', cssId(tabPanel.id));
+  tab.setAttribute('aria-selected', 'true');
+  Array.from(panel.children).forEach((child) => {
+    if (child.matches('.dcs-panel__header, .dcs-panel__resize-zones, .dcs-panel__resize')) return;
+    tabPanel.appendChild(child);
+  });
+  const header = $(':scope > .dcs-panel__header', panel);
+  if (header) header.remove();
+  const dock = el('div', 'dcs-dockpane');
+  dock.innerHTML =
+    '<div class="dcs-dockpane__tabbar" data-dcs-drag-handle>' +
+      '<div class="dcs-dockpane__tabs"></div>' +
+      '<div class="dcs-dockpane__toolbars"></div>' +
+    '</div>' +
+    '<div class="dcs-dockpane__shelf" hidden></div>' +
+    '<div class="dcs-dockpane__body"></div>';
+  appendDockTab(dockTabsEl(dock), tab);
+  $(':scope > .dcs-dockpane__body', dock).appendChild(tabPanel);
+  const resizeZones = $(':scope > .dcs-panel__resize-zones', panel) || $(':scope > .dcs-panel__resize', panel);
+  if (resizeZones) panel.insertBefore(dock, resizeZones);
+  else panel.appendChild(dock);
+  init(dock);
+  return dock;
+}
+function normalizeFloatingDockpanes(root) {
+  $$inc(FLOAT_DOCK_TARGET, root).forEach((panel) => {
+    if (panel.getAttribute('data-dcs-dock-normalize') === 'false') return;
+    if ($(':scope > .dcs-dockpane', panel)) return;
+    if (!$(':scope > .dcs-panel__header', panel)) return;
+    standalonePanelToDock(panel);
+  });
+}
 /* Pick the right host for a tear-off. Tear-offs hover OVER the document
    area, not inside whatever container the source happened to live in —
    so a tab torn off a side dock or off ANOTHER floater both land in the
@@ -1464,6 +1936,8 @@ function splitDock(target, edge, newDock, opts) {
         viewport pane), if the app uses the visual marker.
      3) Climb out of any floating wrappers to find a positioned host. */
 function floatHost(sourceDock) {
+  const docHost = documentFloatHost();
+  if (docHost) return docHost;
   const explicit = document.querySelector('[data-dcs-float-host]');
   if (explicit) return explicit;
   const center = document.querySelector('.dcs-dockpane--center');
@@ -1510,6 +1984,7 @@ function spawnFloatingPanel(tab, panel, x, y, w, h, kind, sourceDock) {
   moveTabTo(tab, panel, dock);
   host.appendChild(fp);
   init(fp);
+  raiseFloatingSurface(fp);
   return fp;
 }
 function initDockTearoff(root) {
@@ -1526,9 +2001,9 @@ function initDockTearoff(root) {
       // never tear off, never re-dock elsewhere, never edge-dock.
       // A single document is a no-op drag.
       if (dockKind(sourceDock) === 'documents') {
-        const docTabs = $$('.dcs-dockpane__tab', sourceDock);
+        const docTabs = dockTabs(sourceDock);
         if (docTabs.length <= 1) return;
-        const tabsContainer = $('.dcs-dockpane__tabs', sourceDock);
+        const tabsContainer = dockTabsEl(sourceDock);
         if (!tabsContainer) return;
         const startX = e.clientX, startY = e.clientY;
         let started = false;
@@ -1558,6 +2033,8 @@ function initDockTearoff(root) {
       let lastHi = null;
       let started = false;
       const sourceKind = dockKind(sourceDock);
+      const sourceFloater = sourceDock.closest('.dcs-panel--floating');
+      const onlySourceFloaterTab = sourceFloater && dockTabs(sourceDock).length === 1;
       let lastEdgeDock = null;        // dock currently showing edge preview
       /* Decide where the drop lands:
            { kind: 'center', target: hoveredDock }  — add as tab there
@@ -1573,21 +2050,7 @@ function initDockTearoff(root) {
          (2) and (3) require kind-match so document tabs don't try to
          land in a panels pool and vice versa. */
       function dropDecision(x, y) {
-        const we = windowEdge(x, y);
-        if (we) {
-          const t = edgeOwnerDock(we);
-          if (t) return { kind: we, target: t, windowEdge: true };
-        }
-        const hovered = dockAt(x, y);
-        if (!hovered) return null;
-        const kindOK = hovered !== sourceDock && dockKind(hovered) === sourceKind;
-        if (!kindOK) return null;
-        const elPt = document.elementFromPoint(x, y);
-        if (elPt && elPt.closest('.dcs-dockpane__tabbar, .dcs-dockpane__tabs, .dcs-dockpane__tab, .dcs-dockpane__toolbars, .dcs-dockpane__shelf')) {
-          return { kind: 'center', target: hovered };
-        }
-        const zone = edgeZone(x, y, hovered.getBoundingClientRect());
-        return { kind: zone, target: hovered };
+        return dockDropDecision(sourceDock, sourceKind, x, y, sourceFloater);
       }
       drag(e, (ev) => {
         if (!started) {
@@ -1645,20 +2108,12 @@ function initDockTearoff(root) {
           cleanupSourceDock(sourceDock);
           init(fresh);
         } else {
-          // Free space (or wrong-kind pane). If the SOURCE is already a
-          // floater holding only this one tab, the floater IS the panel —
-          // just relocate it instead of spawning a duplicate and tearing
-          // down the original (which would flicker). Otherwise tear off.
-          const sourceFloater = sourceDock.closest('.dcs-panel--floating');
-          const onlyTab = sourceFloater && $$('.dcs-dockpane__tab', sourceDock).length === 1;
-          if (onlyTab) {
-            const fhost = sourceFloater.offsetParent || document.body;
-            const fr = fhost.getBoundingClientRect();
-            sourceFloater.style.left = Math.max(8, ev.clientX - fr.left - 60) + 'px';
-            sourceFloater.style.top = Math.max(8, ev.clientY - fr.top - 12) + 'px';
-            sourceFloater.style.right = 'auto';
-            sourceFloater.style.bottom = 'auto';
-            emit(sourceFloater, 'dcs:move', { x: ev.clientX, y: ev.clientY });
+          // Free space (or wrong-kind pane). If the source floater only
+          // has this one title/tab, the title text remains a tab-docking
+          // source, not a panel-move handle. Moving the panel happens from
+          // the empty title strip via initDraggable().
+          if (onlySourceFloaterTab) {
+            emit(sourceFloater, 'dcs:tab-drag-cancel', { tab, panel, from: sourceDock });
           } else {
             const w = sourceDock.offsetWidth ? Math.min(420, sourceDock.offsetWidth) : 320;
             const h = sourceDock.offsetHeight ? Math.min(360, sourceDock.offsetHeight) : 240;
@@ -1708,6 +2163,8 @@ function initResizable(root) {
       e.preventDefault();
       e.stopPropagation();
       const dir = zone.dataset.dir;
+      const detachesParent = floatDockPanel(panel) && panel.__dcsFloatDockParent && dir.indexOf('n') >= 0;
+      const detachesChildren = floatDockPanel(panel) && panel.__dcsFloatDockChildren && dir.indexOf('s') >= 0;
       // Same snapshot-then-clear-anchors dance as the splitter and the
       // legacy SE handler: lock the panel to absolute left/top/width/
       // height from getBoundingClientRect BEFORE clearing right/bottom
@@ -1725,9 +2182,12 @@ function initResizable(root) {
       panel.style.right = 'auto';
       panel.style.bottom = 'auto';
       panel.style.transform = 'none';
+      if (detachesParent) detachFloatDock(panel);
+      if (detachesChildren) detachFloatDockChildren(panel);
       panel.classList.add('dcs--dragging');
       const minW = 160, minH = 80;
-      drag(e, (ev) => {
+      let resizeSnap = null;
+      const applyResize = (ev, shouldEmit) => {
         const dx = ev.clientX - startX, dy = ev.clientY - startY;
         let newW = startW, newH = startH, newL = startL, newT = startT;
         if (dir.indexOf('e') >= 0) newW = Math.max(minW, startW + dx);
@@ -1740,11 +2200,27 @@ function initResizable(root) {
           newH = Math.max(minH, startH - dy);
           newT = startT + (startH - newH);
         }
+        resizeSnap = snapFloatResize(panel, dir, newL, newT, newW, newH, host);
+        newL = resizeSnap.left; newT = resizeSnap.top;
+        newW = resizeSnap.width; newH = resizeSnap.height;
         panel.style.width = newW + 'px';
         panel.style.height = newH + 'px';
         panel.style.left = newL + 'px';
         panel.style.top = newT + 'px';
-      }, () => panel.classList.remove('dcs--dragging'));
+        if (floatDockPanel(panel) && panel.__dcsFloatDockChildren) syncFloatDockChildren(panel);
+        if (shouldEmit) emit(panel, 'dcs:resize', { panel });
+      };
+      drag(e, (ev) => {
+        applyResize(ev, true);
+      }, (ev) => {
+        applyResize(ev, false);
+        if (resizeSnap && panel.__dcsFloatDockParent) {
+          panel.__dcsFloatDockAlign = resizeSnap.align;
+        }
+        if (floatDockPanel(panel) && panel.__dcsFloatDockChildren) syncFloatDockChildren(panel);
+        panel.classList.remove('dcs--dragging');
+        emit(panel, 'dcs:resize-end', { panel });
+      });
     });
   });
 }
@@ -1757,23 +2233,27 @@ function initResizable(root) {
 function activeToolbar(dock) {
   // Use the matching toolbar (hidden=false from syncTabToolbars), else
   // the first one if none matches.
-  return $$('.dcs-dockpane__toolbar[data-dcs-tabtoolbar]', dock).find((t) => !t.hidden)
-      || $('.dcs-dockpane__toolbar', dock);
+  const toolbars = dockChromeToolbars(dock);
+  return toolbars.find((t) => !t.hidden) || toolbars[0];
 }
 function reflowDockpane(dock) {
-  const tabbar = $('.dcs-dockpane__tabbar', dock);
-  const tabs = $('.dcs-dockpane__tabs', tabbar);
-  const slot = $('.dcs-dockpane__toolbars', tabbar);
-  const shelf = $('.dcs-dockpane__shelf', dock);
-  if (!tabbar || !tabs || !slot) return;
+  if (isFloatingDock(dock) && !dockTitleTab(dock) && dockRowTabs(dock).length === 1) {
+    convertDockToTitleOnly(dock);
+  }
+  syncDockTabShape(dock);
+  const tabbar = dockTabbarEl(dock);
+  if (!tabbar) return;
+  const tabs = $(':scope > .dcs-dockpane__tabs', tabbar);
+  const slot = dockToolbarSlotEl(dock);
+  const shelf = dockShelfEl(dock);
+  if (!tabs || !slot) return;
   const tb = activeToolbar(dock);
   // Decide overflow: tabs natural width + slot's own minimum > tabbar width.
   const tabsW = tabs.scrollWidth;
   const slotMin = tb ? Math.min(160, tb.scrollWidth) : 0;
-  // Tear-offs (dockpanes inside a `.dcs-panel--floating`) always shelve
-  // the toolbar — a torn-off panel is typically too narrow to share a
-  // row, and the consistent shelf placement reads better than a flicker
-  // between shared and stacked layouts.
+  // Floating tear-outs always shelve their active toolbar below the
+  // tab/title row. Docked panes keep the active toolbar in the free
+  // tabbar area until it no longer fits.
   const isFloating = !!dock.closest('.dcs-panel--floating');
   const overflowed = isFloating || (tabsW + slotMin + 8 > tabbar.clientWidth);
   if (overflowed && shelf) {
@@ -1791,7 +2271,7 @@ function reflowDockpane(dock) {
 function initDockpane(root) {
   $$inc('.dcs-dockpane', root).forEach((dock) => {
     if (dock[WIRED]) return; dock[WIRED] = true;
-    if (!$('.dcs-dockpane__tabbar', dock)) return;   // plain dockpane, nothing to reflow
+    if (!dockTabbarEl(dock)) return;   // plain dockpane, nothing to reflow
     // Author-written HTML can have a per-tab toolbar pre-placed inside
     // `__toolbars`. Re-mount each one via appendChild so the framework
     // sees exactly the DOM state it would after a moveTabTo cycle —
@@ -1800,7 +2280,7 @@ function initDockpane(root) {
     // an Inspector-style author-shaped dockpane can render with an
     // empty toolbar slot until you tear off + re-dock, which forces a
     // moveTabTo and fixes it.
-    const slot = $('.dcs-dockpane__toolbars', dock);
+    const slot = dockToolbarSlotEl(dock);
     if (slot) $$(':scope > .dcs-dockpane__toolbar', slot).forEach((tb) => slot.appendChild(tb));
     // Re-sync hidden state against the currently-active tab so the
     // matching toolbar is visible right away (initTabs runs before
@@ -1826,6 +2306,9 @@ function initDockpane(root) {
 
 /* ============================================================ init / api */
 function init(root = document) {
+  containFloatingPanels(root);
+  normalizeFloatingDockpanes(root);
+  initFloatingZOrder(root);
   initCollapse(root); initDismiss(root); initModal(root); initMenu(root);
   initPopover(root); initTabs(root); initToggles(root); initSelect(root); initDnd(root);
   initSlider(root); initKnob(root); initCombo(root); initSplitter(root);
@@ -1835,7 +2318,7 @@ function init(root = document) {
 }
 
 const decius = {
-  version: '0.6.0',
+  version: '0.6.1',
   init,
   toast,
   modal: { open: openModal, close: (id) => { const m = typeof id === 'string' ? $(id[0] === '#' ? id : `#${id}`) : id; if (m) closeModal(m); } },

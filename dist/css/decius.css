@@ -1,4 +1,4 @@
-/*! decius-css v0.6.0 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.6.1 | MIT License | https://github.com/benjcooley/decius-css */
 @charset "UTF-8";
 /* ============================================================
    decius.css — DCC interface framework
@@ -4789,6 +4789,51 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
   display: none;
 }
 
+/* ---- one floating panel tab → title-only tearoff -----------
+   Floating panel-kind tearoffs never show a tabbar for a single tab.
+   JS moves the lone tab into this titlebar so the title text can still
+   be dragged to dock elsewhere, while the empty header area remains
+   the panel-move handle. Docked panels and document/editor dockpanes
+   keep their normal single-tab strip. */
+.dcs-dockpane--title-only > .dcs-dockpane__tabbar,
+.dcs-dockpane--title-only > .dcs-dockpane__tabs {
+  display: none;
+}
+
+.dcs-dockpane__titlebar {
+  flex-shrink: 0;
+}
+
+.dcs-dockpane__titlebar > .dcs-panel__title.dcs-panel__title--dock-tab {
+  flex: 0 1 auto;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: grab;
+}
+
+.dcs-panel--floating .dcs-dockpane__titlebar > .dcs-panel__title.dcs-panel__title--dock-tab {
+  pointer-events: auto;
+}
+
+.dcs-panel--floating.dcs--dragging .dcs-dockpane__titlebar > .dcs-panel__title.dcs-panel__title--dock-tab {
+  cursor: grabbing;
+}
+
+.dcs-dockpane__titlebar > .dcs-panel__title.dcs-panel__title--dock-tab::before,
+.dcs-dockpane__titlebar > .dcs-panel__title.dcs-panel__title--dock-tab::after {
+  display: none;
+}
+
 /* ---- center "Document" pane (image canvas / 3D viewport) ---
    The "main view" surface in a Photoshop-/Blender-style app: the
    multi-tabbed editor area where each tab is a document (image,
@@ -4888,36 +4933,21 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
   z-index: 100;
 }
 
-/* ---- single-tab tear-off → continuous title strip ----------
-   When a floating dockpane holds exactly one tab, the floater IS
-   that panel — there's nothing to dock to or from. Drop the tab
-   chrome entirely so the lone tab BLENDS with the tabbar and the
-   whole strip reads as one window title (text + icon on the left,
-   hamburger menu on the right). Drag still works (the tabbar is
-   the drag handle); JS suppresses tear-off (no point tearing the
-   only tab off itself). When a second tab joins the floater (e.g.
-   via re-dock), `:only-child` no longer matches and the standard
-   tab chrome comes back automatically. */
-.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child {
-  background: transparent;
-  color: var(--dcs-text);
-  font-weight: 500;
-  border-right: none;
-  padding: 0 var(--dcs-s-3);
-  cursor: grab;
+/* Author-written floating panels that are normalized into a one-tab
+   dockpane keep their original panel body inside this generated
+   tabpanel. Make it fill like a normal dock body. */
+.dcs-dockpane__standalone-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
 }
 
-.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child:hover {
-  background: transparent;
-}
-
-.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child::before,
-.dcs-panel--floating .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child::after {
-  display: none;
-}
-
-.dcs-panel--floating.dcs--dragging .dcs-dockpane__tabs > .dcs-dockpane__tab:only-child {
-  cursor: grabbing;
+.dcs-dockpane__standalone-panel > .dcs-panel__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* ---- per-pane hamburger menu --------------------------------

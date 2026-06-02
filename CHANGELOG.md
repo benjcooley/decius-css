@@ -4,6 +4,18 @@ All notable changes to decius.css are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.1] — 2026-06-02
+
+### Fixed
+- Fixed tearoff tabs that could not be moved or re-docked consistently after becoming floating panels.
+- Fixed re-docking between tearoffs so tabs insert before toolbar/free-space chrome and do not leave dead copies in the document view.
+- Fixed single-panel tearoff behavior: floating tearoffs collapse to a title-only panel when reduced to one tab, while docked panel groups keep their one-tab tabbar.
+- Fixed tearoff drop targeting so floating tearoffs only accept add-tab drops, never vertical or horizontal split drops.
+- Fixed floating tearoff containment so panels stay inside the document content area instead of covering document tabs, toolbars, or sidebar docks.
+- Fixed floating panel and toolbar z-order so the last selected movable surface is topmost and the rest are compactly ordered beneath it.
+- Fixed panel toolbar placement and active-tab toolbar switching across docked and floating panel states.
+- Fixed nested inspector-style tabpanels so panel-specific content is hidden with its owning tab instead of leaking into sibling tabs.
+
 ## [0.4.1] — 2026-05-23
 
 ### Fixed
@@ -36,5 +48,6 @@ First public release.
 - Documentation site (Vite + React) with live, themeable component demos.
 - CI (build + lint + smoke test) and GitHub Pages deploy.
 
+[0.6.1]: https://github.com/benjcooley/decius-css/releases/tag/v0.6.1
 [0.4.1]: https://github.com/benjcooley/decius-css/releases/tag/v0.4.1
 [0.4.0]: https://github.com/benjcooley/decius-css/releases/tag/v0.4.0

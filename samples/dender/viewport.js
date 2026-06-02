@@ -303,7 +303,13 @@
         body.position.z = 0.35;
         group.add(body, frustum);
         group.position.set(-3.4, 2.0, -3.2);
-        group.lookAt(0, 0.6, 0);
+        // The frustum opens down -Z (three.js camera convention). A plain
+        // Group's lookAt() aims +Z at the target (inverted vs cameras),
+        // which would point the lens AWAY — so build the orientation with
+        // Matrix4.lookAt(eye, target) directly so -Z faces the target.
+        group.quaternion.setFromRotationMatrix(
+          new THREE.Matrix4().lookAt(group.position, new THREE.Vector3(0, 0.6, 0), group.up)
+        );
         return { root: group, helper: frustum };
       },
       Empty() {
@@ -325,12 +331,27 @@
     /* ──────────────────────────────────────────────────────────
        5 · Selection bbox + TransformControls + raycaster
        ──────────────────────────────────────────────────────── */
-    const box3 = new THREE.Box3();
-    const selBoxHelper = new THREE.Box3Helper(box3, 0xe8943c);
-    selBoxHelper.material.depthTest = false;
-    selBoxHelper.renderOrder = 2;
-    selBoxHelper.visible = false;
-    scene.add(selBoxHelper);
+    // Oriented selection box. A THREE.Box3Helper draws a world-axis-aligned
+    // box, which can't follow an object's rotation/scale. Instead we use a
+    // unit-cube wireframe whose matrix we drive from the object's world
+    // matrix each frame, so the box hugs the object in its own frame.
+    const selBox = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)),
+      new THREE.LineBasicMaterial({ color: 0xe8943c, depthTest: false, transparent: true })
+    );
+    selBox.renderOrder = 2;
+    selBox.matrixAutoUpdate = false;   // we set selBox.matrix by hand
+    selBox.visible = false;
+    scene.add(selBox);
+
+    // Scratch objects reused each frame to avoid per-frame allocation.
+    const _selInv = new THREE.Matrix4();
+    const _selLocal = new THREE.Box3();
+    const _selTmp = new THREE.Box3();
+    const _selM = new THREE.Matrix4();
+    const _selCenter = new THREE.Vector3();
+    const _selSize = new THREE.Vector3();
+    const _selQ = new THREE.Quaternion();
 
     // OrbitControls — disabled while a gizmo drag is active.
     const controls = new OrbitControls(camera, canvas);
@@ -367,16 +388,38 @@
     });
 
     const updateSelectionBox = () => {
-      if (!selected) { selBoxHelper.visible = false; return; }
-      box3.setFromObject(selected.root);
-      if (box3.isEmpty()) { selBoxHelper.visible = false; return; }
-      // Box3Helper holds a reference to box3 and reads its min/max each
-      // frame internally, but its geometry only refreshes when we tell
-      // it to (the lines aren't regenerated on every render). updateMatrixWorld
-      // forces the helper to recompute its line geometry from the new box.
-      selBoxHelper.box = box3;
-      selBoxHelper.updateMatrixWorld(true);
-      selBoxHelper.visible = true;
+      if (!selected) { selBox.visible = false; return; }
+      const root = selected.root;
+      root.updateWorldMatrix(true, true);
+      // Gather every geometry's bounds in the ROOT's local frame (rootInv *
+      // nodeWorld) so the result is an object-space box, independent of the
+      // object's own rotation/scale.
+      _selInv.copy(root.matrixWorld).invert();
+      _selLocal.makeEmpty();
+      root.traverse((node) => {
+        const geom = node.geometry;
+        if (!geom) return;
+        if (!geom.boundingBox) geom.computeBoundingBox();
+        if (!geom.boundingBox || !isFinite(geom.boundingBox.min.x)) return;
+        _selM.multiplyMatrices(_selInv, node.matrixWorld);
+        _selTmp.copy(geom.boundingBox).applyMatrix4(_selM);
+        _selLocal.union(_selTmp);
+      });
+      if (_selLocal.isEmpty()) { selBox.visible = false; return; }
+      _selLocal.getCenter(_selCenter);
+      _selLocal.getSize(_selSize);
+      // Keep a sliver of size on flat axes (planes/empties) so the box
+      // doesn't collapse to an invisible line.
+      _selSize.x = Math.max(_selSize.x, 1e-3);
+      _selSize.y = Math.max(_selSize.y, 1e-3);
+      _selSize.z = Math.max(_selSize.z, 1e-3);
+      // Unit cube (-0.5..0.5) → scaled to the local box and centred on it,
+      // then carried into world space by the object's own world matrix so
+      // the wireframe rotates and scales with the object.
+      _selM.compose(_selCenter, _selQ.identity(), _selSize);
+      selBox.matrix.multiplyMatrices(root.matrixWorld, _selM);
+      selBox.matrixWorldNeedsUpdate = true;
+      selBox.visible = true;
     };
 
     // Raycaster click selection — runs only on pointerdown when the
@@ -521,7 +564,7 @@
         selected = null;
         multiSel.clear();
         tc.detach();
-        selBoxHelper.visible = false;
+        selBox.visible = false;
         emit('select', null);
       },
 
