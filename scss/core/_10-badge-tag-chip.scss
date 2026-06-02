@@ -13,7 +13,7 @@
   letter-spacing: .04em;
   text-transform: uppercase;
 }
-.dcs-badge--accent { background: var(--dcs-accent); color: #0a1220; }
+.dcs-badge--accent { background: var(--dcs-accent); color: var(--dcs-accent-text); }
 .dcs-badge--ok     { background: var(--dcs-ok);     color: #06321d; }
 .dcs-badge--warn   { background: var(--dcs-warn);   color: #3a230a; }
 .dcs-badge--danger { background: var(--dcs-danger); color: #380e0e; }

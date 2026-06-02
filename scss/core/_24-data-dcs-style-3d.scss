@@ -24,7 +24,7 @@
 /* Selected segment keeps the solid key colour (like flat) + a little depth. */
 [data-dcs-style="3d"] .dcs-btn-group .dcs-btn[aria-pressed="true"] {
   background: var(--dcs-accent);
-  color: #0a1220;
+  color: var(--dcs-accent-text);
   box-shadow: var(--dcs-shadow-1);
 }
 [data-dcs-style="3d"] .dcs-btn-group .dcs-btn[aria-pressed="true"]:hover { background: var(--dcs-accent-hi); }

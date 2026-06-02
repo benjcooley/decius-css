@@ -19,7 +19,7 @@
 .dcs-check[aria-checked="true"] .dcs-check__box {
   background: var(--dcs-accent);
   border-color: var(--dcs-accent-lo);
-  color: #0a1220;
+  color: var(--dcs-accent-text);
 }
 .dcs-check__box svg { width: 10px; height: 10px; }
 .dcs-check:hover .dcs-check__box { border-color: var(--dcs-accent); }
@@ -28,7 +28,7 @@
 .dcs-radio[aria-checked="true"] .dcs-check__box { color: transparent; position: relative; }
 .dcs-radio[aria-checked="true"] .dcs-check__box::after {
   content: ""; width: 6px; height: 6px; border-radius: 50%;
-  background: #0a1220;
+  background: var(--dcs-accent-text);
 }
 
 .dcs-switch {
@@ -49,4 +49,4 @@
   transition: transform var(--dcs-t), background var(--dcs-t-fast);
 }
 .dcs-switch[aria-checked="true"] { background: var(--dcs-accent); border-color: var(--dcs-accent-lo); }
-.dcs-switch[aria-checked="true"]::after { transform: translateX(12px); background: #0a1220; }
+.dcs-switch[aria-checked="true"]::after { transform: translateX(12px); background: var(--dcs-accent-text); }

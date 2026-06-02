@@ -50,15 +50,15 @@
 /* :hover is the transient mouse highlight; --active is the transient
    keyboard-focus highlight (arrow keys). Neither is a "checked" state —
    for persistent selection, use the `.dcs-menu__check` slot to render
-   a check icon. Dark text on accent reads better than white at decius
-   accent brightness, so we use --dcs-text-inv across the board. */
+   a check icon. Solid accent fills use --dcs-accent-text so each key
+   color can keep selected text readable. */
 .dcs-menu__item:hover,
 .dcs-menu__item--active {
   background: var(--dcs-accent);
-  color: var(--dcs-text-inv);
+  color: var(--dcs-accent-text);
 }
 .dcs-menu__item:hover .dcs-menu__shortcut,
-.dcs-menu__item--active .dcs-menu__shortcut { color: color-mix(in srgb, var(--dcs-text-inv) 70%, transparent); }
+.dcs-menu__item--active .dcs-menu__shortcut { color: color-mix(in srgb, var(--dcs-accent-text) 70%, transparent); }
 .dcs-menu__item--danger { color: var(--dcs-danger); }
 .dcs-menu__item--danger:hover { background: var(--dcs-danger); color: var(--dcs-text-inv); }
 
@@ -78,7 +78,7 @@
   background: var(--dcs-accent);
   transform: translateY(-50%);
 }
-.dcs-menu__item--checked:hover::before { background: var(--dcs-text-inv); }
+.dcs-menu__item--checked:hover::before { background: var(--dcs-accent-text); }
 .dcs-menu__item[aria-disabled="true"],
 .dcs-menu__item--disabled {
   color: var(--dcs-text-mute);
@@ -91,7 +91,7 @@
   flex: 0 0 auto; width: 14px; display: flex; align-items: center;
   color: var(--dcs-accent);
 }
-.dcs-menu__item:hover .dcs-menu__check { color: #fff; }
+.dcs-menu__item:hover .dcs-menu__check { color: var(--dcs-accent-text); }
 .dcs-menu__label-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .dcs-menu__shortcut {
   flex: 0 0 auto;

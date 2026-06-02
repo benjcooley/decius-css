@@ -40,6 +40,10 @@
   --dcs-text-mute:   #767c8a;
   --dcs-text-inv:    #14161c;
   --dcs-text-link:   var(--dcs-accent);
+  /* Foreground for solid accent fills (selected menus, pressed tools,
+     primary buttons). Keep this separate from --dcs-text-inv so accent
+     recipes can guarantee readable text when the key color changes. */
+  --dcs-accent-text:  #05070d;
 
   /* Accent — DCC blue */
   --dcs-accent:        #4d9fff;
@@ -173,12 +177,12 @@
 [data-dcs-radius="round"] { --dcs-r-1: 4px; --dcs-r-2: 6px; --dcs-r-3: 10px; --dcs-r-4: 14px; }
 
 /* Accent recipes (set by Tweaks panel) */
-[data-dcs-accent="cyan"]    { --dcs-accent: #00b8d4; --dcs-accent-hi:#22d4ee; --dcs-accent-lo:#0098b0; --dcs-accent-dim: rgba(0,184,212,.18); --dcs-accent-haze: rgba(0,184,212,.35); }
-[data-dcs-accent="teal"]    { --dcs-accent: #2f9c93; --dcs-accent-hi:#3fb8ad; --dcs-accent-lo:#247b73; --dcs-accent-dim: rgba(47,156,147,.18); --dcs-accent-haze: rgba(47,156,147,.35); }
-[data-dcs-accent="orange"]  { --dcs-accent: #ff8a3a; --dcs-accent-hi:#ffa566; --dcs-accent-lo:#e07024; --dcs-accent-dim: rgba(255,138,58,.18); --dcs-accent-haze: rgba(255,138,58,.35); }
-[data-dcs-accent="violet"]  { --dcs-accent: #8b6dff; --dcs-accent-hi:#a48cff; --dcs-accent-lo:#6f4eea; --dcs-accent-dim: rgba(139,109,255,.18); --dcs-accent-haze: rgba(139,109,255,.35); }
-[data-dcs-accent="purple"]  { --dcs-accent: #8466cf; --dcs-accent-hi:#9d83df; --dcs-accent-lo:#6a4eb3; --dcs-accent-dim: rgba(132,102,207,.18); --dcs-accent-haze: rgba(132,102,207,.35); }
-[data-dcs-accent="green"]   { --dcs-accent: #3dd68a; --dcs-accent-hi:#5be8a0; --dcs-accent-lo:#2bb872; --dcs-accent-dim: rgba(61,214,138,.18); --dcs-accent-haze: rgba(61,214,138,.35); }
+[data-dcs-accent="cyan"]    { --dcs-accent: #00b8d4; --dcs-accent-hi:#22d4ee; --dcs-accent-lo:#0098b0; --dcs-accent-dim: rgba(0,184,212,.18); --dcs-accent-haze: rgba(0,184,212,.35); --dcs-accent-text:#05070d; }
+[data-dcs-accent="teal"]    { --dcs-accent: #2f9c93; --dcs-accent-hi:#3fb8ad; --dcs-accent-lo:#247b73; --dcs-accent-dim: rgba(47,156,147,.18); --dcs-accent-haze: rgba(47,156,147,.35); --dcs-accent-text:#05070d; }
+[data-dcs-accent="orange"]  { --dcs-accent: #ff8a3a; --dcs-accent-hi:#ffa566; --dcs-accent-lo:#e07024; --dcs-accent-dim: rgba(255,138,58,.18); --dcs-accent-haze: rgba(255,138,58,.35); --dcs-accent-text:#05070d; }
+[data-dcs-accent="violet"]  { --dcs-accent: #8b6dff; --dcs-accent-hi:#a48cff; --dcs-accent-lo:#6f4eea; --dcs-accent-dim: rgba(139,109,255,.18); --dcs-accent-haze: rgba(139,109,255,.35); --dcs-accent-text:#05070d; }
+[data-dcs-accent="purple"]  { --dcs-accent: #8466cf; --dcs-accent-hi:#9d83df; --dcs-accent-lo:#6a4eb3; --dcs-accent-dim: rgba(132,102,207,.18); --dcs-accent-haze: rgba(132,102,207,.35); --dcs-accent-text:#05070d; }
+[data-dcs-accent="green"]   { --dcs-accent: #3dd68a; --dcs-accent-hi:#5be8a0; --dcs-accent-lo:#2bb872; --dcs-accent-dim: rgba(61,214,138,.18); --dcs-accent-haze: rgba(61,214,138,.35); --dcs-accent-text:#05070d; }
 
 /* Darkness modes */
 [data-dcs-dark="darker"] {

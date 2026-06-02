@@ -26,10 +26,10 @@
 .dcs-btn--primary {
   background: var(--dcs-accent);
   border-color: var(--dcs-accent-lo);
-  color: #0a1220;
+  color: var(--dcs-accent-text);
 }
 .dcs-btn--primary:hover { background: var(--dcs-accent-hi); }
-.dcs-btn--primary:active { background: var(--dcs-accent-lo); color: rgba(10,18,32,.85); }
+.dcs-btn--primary:active { background: var(--dcs-accent-lo); color: var(--dcs-accent-text); }
 
 .dcs-btn--ghost {
   background: transparent;
@@ -56,7 +56,7 @@
 .dcs-btn[aria-pressed="true"] {
   background: var(--dcs-accent);
   border-color: transparent;
-  color: #0a1220;
+  color: var(--dcs-accent-text);
 }
 .dcs-btn[aria-pressed="true"]:hover { background: var(--dcs-accent-hi); }
 
@@ -81,7 +81,7 @@
 .dcs-btn-group .dcs-btn:hover { background: var(--dcs-surface-2); color: var(--dcs-text); }
 .dcs-btn-group .dcs-btn[aria-pressed="true"] {
   background: var(--dcs-accent);
-  color: #0a1220;
+  color: var(--dcs-accent-text);
   font-weight: 500;
 }
 .dcs-btn-group .dcs-btn[aria-pressed="true"]:hover { background: var(--dcs-accent-hi); }

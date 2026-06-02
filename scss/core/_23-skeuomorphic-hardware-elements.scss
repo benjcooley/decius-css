@@ -585,7 +585,7 @@ $silk-ink: rgba(236, 230, 214, .62);   /* off-white silkscreen ink */
    contract so the user can see which dropdown is owning the screen. */
 .dcs-menubar__item[aria-expanded="true"] {
   background: var(--dcs-accent);
-  color: #0a1220;
+  color: var(--dcs-accent-text);
 }
 .dcs-menubar__item[aria-expanded="true"]:hover { background: var(--dcs-accent-hi); }
 .dcs-menubar__spacer { flex: 1; }
@@ -634,6 +634,6 @@ $silk-ink: rgba(236, 230, 214, .62);   /* off-white silkscreen ink */
 .dcs-viewport__floater .dcs-btn:hover { background: rgba(255,255,255,.08); border-color: transparent; }
 .dcs-viewport__floater .dcs-btn[aria-pressed="true"] {
   background: var(--dcs-accent);
-  color: #0a1220;
+  color: var(--dcs-accent-text);
   border-color: transparent;
 }

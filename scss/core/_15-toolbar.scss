@@ -32,7 +32,7 @@
 /* Selected tool — solid key colour (matches button-groups + floaters). */
 .dcs-toolbar .dcs-btn[aria-pressed="true"] {
   background: var(--dcs-accent);
-  color: #0a1220;
+  color: var(--dcs-accent-text);
   border-color: transparent;
 }
 .dcs-toolbar .dcs-btn[aria-pressed="true"]:hover { background: var(--dcs-accent-hi); }

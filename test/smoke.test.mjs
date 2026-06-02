@@ -82,6 +82,13 @@ check('css includes menu, popover, toast components', () => {
   assert.match(c, /\.dcs-popover/);
   assert.match(c, /\.dcs-toast/);
 });
+check('accent-filled selections use contrast foreground token', () => {
+  const c = css('decius.css');
+  assert.match(c, /--dcs-accent-text:\s*#05070d/);
+  assert.match(c, /\.dcs-btn--primary\s*\{[^}]*color:\s*var\(--dcs-accent-text\)/s);
+  assert.match(c, /\.dcs-menu__item:hover,\s*\.dcs-menu__item--active\s*\{[^}]*color:\s*var\(--dcs-accent-text\)/s);
+  assert.match(c, /\.dcs-check\[aria-checked=(?:"true"|true)\]\s+\.dcs-check__box\s*\{[^}]*color:\s*var\(--dcs-accent-text\)/s);
+});
 
 // ---- download archive (after full build) -------------------------------
 if (exists('dist/decius-css.zip')) {
