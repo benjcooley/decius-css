@@ -80,37 +80,75 @@ function place(node, anchor, placement = 'bottom', gap = 6) {
   // Position a fixed node relative to an anchor rect, kept inside the viewport.
   // Menus pass gap=0 so the surface reads as attached to its trigger
   // (menubar items, select buttons); popovers keep the default 6px breathing room.
+  //
+  // We choose a visible side before clamping. A pure clamp keeps the layer
+  // on-screen but can detach it from the trigger; DCC menus/popovers should
+  // actually flip upward/sideways when the preferred side cannot fit.
   node.style.visibility = 'hidden';
+  node.style.top = '';
+  node.style.bottom = '';
+  node.style.left = '';
+  node.style.right = '';
   node.hidden = false;
   const a = anchor.getBoundingClientRect();
   const r = node.getBoundingClientRect();
-  let top, left, pos = placement;
+  const edge = 8;
+  let side = placement && placement.startsWith('top') ? 'top'
+    : placement && placement.startsWith('left') ? 'left'
+    : placement && placement.startsWith('right') ? 'right'
+    : 'bottom';
+  const endAligned = placement && placement.includes('end');
+  const space = {
+    top: a.top - edge,
+    bottom: window.innerHeight - a.bottom - edge,
+    left: a.left - edge,
+    right: window.innerWidth - a.right - edge,
+  };
+
+  if (side === 'bottom' && space.bottom < r.height + gap && space.top > space.bottom) side = 'top';
+  else if (side === 'top' && space.top < r.height + gap && space.bottom > space.top) side = 'bottom';
+  else if (side === 'right' && space.right < r.width + gap && space.left > space.right) side = 'left';
+  else if (side === 'left' && space.left < r.width + gap && space.right > space.left) side = 'right';
+
+  const maxH = Math.max(1, (side === 'top' || side === 'bottom')
+    ? space[side]
+    : window.innerHeight - edge * 2);
+  node.style.maxHeight = `${Math.floor(maxH)}px`;
+  node.style.overflow = 'auto';
+  let top, left;
   // Vertical sides:
   //   <side>-start (default): popover's LEFT edge aligns to anchor's left
   //   <side>-end             : popover's RIGHT edge aligns to anchor's right
   // Right-edge alignment is what apps want when the trigger sits at the
   // FAR RIGHT of a topbar — otherwise the popover hangs off the screen
   // and gets clamped, reading as awkwardly offset from its source.
-  if (placement === 'top')       { top = a.top - r.height - gap; left = a.left; }
-  else if (placement === 'top-end')    { top = a.top - r.height - gap; left = a.right - r.width; }
-  else if (placement === 'bottom-end') { top = a.bottom + gap;       left = a.right - r.width; }
-  else if (placement === 'left')       { top = a.top; left = a.left - r.width - gap; }
-  else if (placement === 'right')      { top = a.top; left = a.right + gap; }
-  else { top = a.bottom + gap; left = a.left; pos = 'bottom'; }
-  // keep on-screen
-  left = clamp(left, 8, window.innerWidth - r.width - 8);
-  top = clamp(top, 8, window.innerHeight - r.height - 8);
+  if (side === 'top')       { top = a.top - Math.min(r.height, maxH); left = endAligned ? a.right - r.width : a.left; }
+  else if (side === 'left') { top = a.top; left = a.left - r.width - gap; }
+  else if (side === 'right') { top = a.top; left = a.right + gap; }
+  else { top = a.bottom + gap; left = endAligned ? a.right - r.width : a.left; }
+
+  // Final clamp is still needed for wide/tall layers and edge-aligned triggers.
+  left = clamp(left, edge, window.innerWidth - r.width - edge);
+  top = clamp(top, edge, window.innerHeight - Math.min(r.height, maxH) - edge);
   node.style.top = `${Math.round(top)}px`;
   node.style.left = `${Math.round(left)}px`;
-  node.setAttribute('data-dcs-pos', pos);
+  node.setAttribute('data-dcs-pos', side);
   node.style.visibility = '';
 }
 function placeAt(node, x, y) {
   node.style.visibility = 'hidden';
+  node.style.top = '';
+  node.style.bottom = '';
+  node.style.left = '';
+  node.style.right = '';
   node.hidden = false;
   const r = node.getBoundingClientRect();
-  node.style.left = `${Math.round(clamp(x, 8, window.innerWidth - r.width - 8))}px`;
-  node.style.top = `${Math.round(clamp(y, 8, window.innerHeight - r.height - 8))}px`;
+  const edge = 8;
+  const maxH = Math.max(1, window.innerHeight - edge * 2);
+  node.style.maxHeight = `${Math.floor(maxH)}px`;
+  node.style.overflow = 'auto';
+  node.style.left = `${Math.round(clamp(x, edge, window.innerWidth - r.width - edge))}px`;
+  node.style.top = `${Math.round(clamp(y, edge, window.innerHeight - Math.min(r.height, maxH) - edge))}px`;
   node.style.visibility = '';
 }
 
@@ -202,7 +240,7 @@ function initModal(root) {
 
 /* ============================================================ menu / dropdown */
 function openMenu(menu, anchorOrPos, anchorEl) {
-  closeAllMenus();
+  closeTransientLayers(menu);
   // Menus open flush against their trigger (gap=0) — submenu off a menubar
   // item, dropdown off a .dcs-select--btn, etc. Popovers keep the 6px gap.
   if (anchorOrPos && anchorOrPos.nodeType) place(menu, anchorOrPos, 'bottom', 0);
@@ -219,7 +257,9 @@ function closeMenu(menu) {
   menu.__close?.();
   emit(menu, 'dcs:close');
 }
-function closeAllMenus() { $$('.dcs-menu').forEach((m) => { if (!m.hidden) closeMenu(m); }); }
+function closeAllMenus(except) {
+  $$('.dcs-menu').forEach((m) => { if (m !== except && !m.hidden) closeMenu(m); });
+}
 function initMenu(root) {
   $$('.dcs-menu', root).forEach((m) => {
     if (m[WIRED]) return; m[WIRED] = true;
@@ -252,6 +292,26 @@ function initMenu(root) {
   });
 }
 
+/* Popups are mutually exclusive across menu and popover kinds. Without this,
+   opening a menu and then a popover leaves two independent fixed layers alive,
+   because the outside-click handler deliberately ignores clicks on toggles. */
+function closePopover(popover) {
+  popover.hidden = true;
+  if (popover.__anchor) {
+    popover.__anchor.setAttribute('aria-expanded', 'false');
+    popover.__anchor = null;
+  }
+  popover.__close?.();
+  emit(popover, 'dcs:close');
+}
+function closeAllPopovers(except) {
+  $$('.dcs-popover').forEach((p) => { if (p !== except && !p.hidden) closePopover(p); });
+}
+function closeTransientLayers(except) {
+  closeAllMenus(except);
+  closeAllPopovers(except);
+}
+
 /* ============================================================ popover */
 function initPopover(root) {
   $$('.dcs-popover', root).forEach((p) => { p.hidden = true; });
@@ -262,19 +322,13 @@ function initPopover(root) {
       e.stopPropagation();
       const p = targetOf(t);
       if (!p) return;
-      if (!p.hidden) { p.hidden = true; t.setAttribute('aria-expanded', 'false'); p.__close?.(); return; }
-      // Closing any other open popover also resets its trigger's state.
-      $$('.dcs-popover').forEach((o) => {
-        if (!o.hidden) { o.hidden = true; o.__close?.(); }
-      });
-      $$('[data-dcs-toggle="popover"][aria-expanded="true"]').forEach((other) => {
-        if (other !== t) other.setAttribute('aria-expanded', 'false');
-      });
+      if (!p.hidden) { closePopover(p); return; }
+      closeTransientLayers(p);
       place(p, t, t.getAttribute('data-dcs-placement') || 'bottom');
       t.setAttribute('aria-expanded', 'true');
-      p.__close = registerLayer(p, () => {
-        p.hidden = true; t.setAttribute('aria-expanded', 'false'); p.__close?.();
-      });
+      p.__anchor = t;
+      p.__close = registerLayer(p, () => closePopover(p));
+      emit(p, 'dcs:open');
     });
   });
 }
@@ -576,7 +630,8 @@ function initKnob(root) {
 }
 
 /* ============================================================ combo
-   Numeric value editor. Supports BOUNDED (data-min + data-max set, range
+   Numeric value editor. Supports BOUNDED (data-min + data-max set, or
+   data-fill-min + data-fill-max set for generated value fields; range
    drives the fill bar and drag-scrub sensitivity) and UNBOUNDED (neither
    attribute set — no clamping, drag is step-per-pixel, no fill rendering).
    Optional `data-dec` controls display precision (default 2). Trailing
@@ -586,11 +641,13 @@ function initCombo(root) {
   $$('[data-dcs-combo]', root).forEach((c) => {
     if (c[WIRED]) return; c[WIRED] = true;
     c.classList.add('dcs-combo');
-    const hasMin = c.hasAttribute('data-min');
-    const hasMax = c.hasAttribute('data-max');
+    const valueSlot = $('.dcs-combo__value', c);
+    const rangeHost = valueSlot || c;
+    const hasMin = c.hasAttribute('data-min') || rangeHost.hasAttribute('data-fill-min');
+    const hasMax = c.hasAttribute('data-max') || rangeHost.hasAttribute('data-fill-max');
     const unbounded = !hasMin && !hasMax;
-    const min = unbounded ? -Infinity : num(c, 'data-min', 0);
-    const max = unbounded ? Infinity  : num(c, 'data-max', 1);
+    const min = unbounded ? -Infinity : (c.hasAttribute('data-min') ? num(c, 'data-min', 0) : num(rangeHost, 'data-fill-min', 0));
+    const max = unbounded ? Infinity  : (c.hasAttribute('data-max') ? num(c, 'data-max', 1) : num(rangeHost, 'data-fill-max', 1));
     const step = num(c, 'data-step', 0.01);
     const decN = num(c, 'data-dec', 2);
     const label = c.getAttribute('data-label');
@@ -642,8 +699,8 @@ function initCombo(root) {
     c.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.dcs-combo__btn')) return;
       const startX = e.clientX, startVal = value;
-      // Bounded: full range scrubs across the combo's own width using
-      //   the absolute delta from the press position (original behavior).
+      // Bounded: the fill line follows the current pointer position across
+      //   the combo width, then the value is derived from that width.
       // Unbounded: each frame uses an incremental dx with a scaled step
       //   derived from the CURRENT value (≈ |value|/100, floored by
       //   data-step). The increment shrinks as you approach zero, so a
@@ -661,7 +718,8 @@ function initCombo(root) {
           const scaledStep = Math.max(step, Math.abs(value) / 100);
           set(value + dx * scaledStep * mult);
         } else {
-          set(startVal + ((ev.clientX - startX) / rect.width) * (max - min) * mult);
+          const t = clamp((ev.clientX - rect.left) / Math.max(1, rect.width), 0, 1);
+          set(min + t * (max - min));
         }
         lastX = ev.clientX;
       }, () => { if (!dragged) startEdit(); });
