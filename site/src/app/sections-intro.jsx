@@ -276,7 +276,7 @@ function SectionHero() {
       </a>
       <div className="dw-hero">
         <div>
-          <div className="dw-hero__eyebrow">decius.css · v0.6.1</div>
+          <div className="dw-hero__eyebrow">decius.css · v0.6.2</div>
           <h1>The CSS framework for things that aren't websites.</h1>
           <p className="lede">
             A complete component system for digital content creation tools, synths, video editors, and

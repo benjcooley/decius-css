@@ -1,4 +1,4 @@
-/*! decius-css v0.6.1 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.6.2 | MIT License | https://github.com/benjcooley/decius-css */
 @charset "UTF-8";
 /* ============================================================
    decius.css — DCC interface framework
@@ -5031,5 +5031,21 @@ details.dcs-foldout[open] > summary .dcs-foldout__chevron {
 
 .dcs-dockpane__edge-preview[data-edge=center] {
   inset: 0;
+}
+
+.dcs-dockpane__edge-preview[data-window-edge=true][data-edge=left] {
+  width: min(320px, 20%);
+}
+
+.dcs-dockpane__edge-preview[data-window-edge=true][data-edge=right] {
+  width: min(320px, 20%);
+}
+
+.dcs-dockpane__edge-preview[data-window-edge=true][data-edge=top] {
+  height: min(220px, 20%);
+}
+
+.dcs-dockpane__edge-preview[data-window-edge=true][data-edge=bottom] {
+  height: min(220px, 20%);
 }
 /*# sourceMappingURL=decius.css.map */

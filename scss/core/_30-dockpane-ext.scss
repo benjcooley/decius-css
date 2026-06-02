@@ -283,3 +283,7 @@
 .dcs-dockpane__edge-preview[data-edge="top"]    { left: 0; top: 0; width: 100%; height: 50%; }
 .dcs-dockpane__edge-preview[data-edge="bottom"] { left: 0; bottom: 0; width: 100%; height: 50%; top: auto; }
 .dcs-dockpane__edge-preview[data-edge="center"] { inset: 0; }
+.dcs-dockpane__edge-preview[data-window-edge="true"][data-edge="left"]  { width: min(320px, 20%); }
+.dcs-dockpane__edge-preview[data-window-edge="true"][data-edge="right"] { width: min(320px, 20%); }
+.dcs-dockpane__edge-preview[data-window-edge="true"][data-edge="top"]   { height: min(220px, 20%); }
+.dcs-dockpane__edge-preview[data-window-edge="true"][data-edge="bottom"] { height: min(220px, 20%); }

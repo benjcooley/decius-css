@@ -1,4 +1,4 @@
-/*! decius-css v0.6.1 | MIT License | https://github.com/benjcooley/decius-css */
+/*! decius-css v0.6.2 | MIT License | https://github.com/benjcooley/decius-css */
 
 // js/src/decius.js
 var $ = (sel, root = document) => root.querySelector(sel);
@@ -1550,6 +1550,11 @@ function edgeZone(x, y, rect) {
   return dists[0].e;
 }
 function dockDropDecision(sourceDock, sourceKind, x, y, sourcePanel) {
+  const we = windowEdge(x, y);
+  if (we) {
+    const t = edgeOwnerDock(we);
+    if (t) return { kind: we, target: t, windowEdge: true };
+  }
   const panel = floatingPanelAt(x, y);
   if (panel && panel !== sourcePanel) {
     const dock = $(":scope > .dcs-dockpane", panel) || standalonePanelToDock(panel);
@@ -1559,26 +1564,13 @@ function dockDropDecision(sourceDock, sourceKind, x, y, sourcePanel) {
   if (hovered) {
     const kindOK = hovered !== sourceDock && dockKind(hovered) === sourceKind;
     if (!kindOK) return null;
-    if (sourcePanel) return { kind: "center", target: hovered };
     if (hovered.closest(".dcs-panel--floating")) return { kind: "center", target: hovered };
     const elPt = document.elementFromPoint(x, y);
     if (elPt && elPt.closest(".dcs-dockpane__titlebar, .dcs-dockpane__tabbar, .dcs-dockpane__tabs, .dcs-dockpane__tab, .dcs-dockpane__toolbars, .dcs-dockpane__shelf")) {
       return { kind: "center", target: hovered };
     }
-    const we = windowEdge(x, y);
-    if (we) {
-      const t = edgeOwnerDock(we);
-      if (t) return { kind: we, target: t, windowEdge: true };
-    }
     const zone = edgeZone(x, y, hovered.getBoundingClientRect());
     return { kind: zone, target: hovered };
-  }
-  if (!sourcePanel) {
-    const we = windowEdge(x, y);
-    if (we) {
-      const t = edgeOwnerDock(we);
-      if (t) return { kind: we, target: t, windowEdge: true };
-    }
   }
   return null;
 }
@@ -1586,7 +1578,7 @@ function floatingPanelAt(x, y) {
   const hit = document.elementFromPoint(x, y);
   return hit && hit.closest(FLOAT_DOCK_TARGET);
 }
-function showEdgePreview(dock, edge) {
+function showEdgePreview(dock, edge, windowEdgeDrop) {
   let ov = dock.__edgePreview;
   if (!ov) {
     ov = el("div", "dcs-dockpane__edge-preview");
@@ -1596,6 +1588,8 @@ function showEdgePreview(dock, edge) {
     dock.__edgePreview = ov;
   }
   ov.setAttribute("data-edge", edge);
+  if (windowEdgeDrop) ov.setAttribute("data-window-edge", "true");
+  else ov.removeAttribute("data-window-edge");
 }
 function clearEdgePreview(dock) {
   if (!dock || !dock.__edgePreview) return;
@@ -1625,6 +1619,7 @@ function clearCenterPreview(dock) {
 }
 var DOCK_NEW_PX_H = 320;
 var DOCK_NEW_PX_V = 220;
+var DOCK_WINDOW_EDGE_PCT = 0.2;
 function splitDock(target, edge, newDock, opts) {
   const horizontal = edge === "left" || edge === "right";
   const desiredCls = horizontal ? "dcs-dock" : "dcs-dock dcs-dock--v";
@@ -1637,7 +1632,7 @@ function splitDock(target, edge, newDock, opts) {
   const isWindowEdge = !!(opts && opts.windowEdge);
   const tSize = target[dim] || 0;
   const defaultNewPx = horizontal ? DOCK_NEW_PX_H : DOCK_NEW_PX_V;
-  const cap = Math.max(120, tSize * 0.4);
+  const cap = Math.max(96, tSize * DOCK_WINDOW_EDGE_PCT);
   const newPx = isWindowEdge ? Math.min(defaultNewPx, cap) : Math.max(20, (tSize - 1) / 2);
   const targetPx = isWindowEdge ? Math.max(120, tSize - newPx - 1) : newPx;
   if (parentIsDock && parentDir === needDir) {
@@ -1838,7 +1833,7 @@ function initDockTearoff(root) {
           showCenterPreview(intent.target);
           lastHi = intent.target;
         } else {
-          showEdgePreview(intent.target, intent.kind);
+          showEdgePreview(intent.target, intent.kind, intent.windowEdge);
           lastEdgeDock = intent.target;
         }
       }, (ev) => {
@@ -2033,7 +2028,7 @@ function init(root = document) {
   return decius;
 }
 var decius = {
-  version: "0.6.1",
+  version: "0.6.2",
   init,
   toast,
   modal: { open: openModal, close: (id) => {

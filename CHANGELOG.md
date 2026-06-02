@@ -4,6 +4,13 @@ All notable changes to decius.css are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.2] — 2026-06-02
+
+### Fixed
+- Restored edge splitting for docked panel groups when dragging panel tabs or tearoffs onto a docked pane edge.
+- Kept floating tearoff targets tab-only while allowing tearoffs to dock to the app/window left, right, top, and bottom edges.
+- Reduced window-edge dock previews and initial pane sizing to a smaller sidebar/shelf estimate instead of a half-screen split.
+
 ## [0.6.1] — 2026-06-02
 
 ### Fixed
@@ -48,6 +55,7 @@ First public release.
 - Documentation site (Vite + React) with live, themeable component demos.
 - CI (build + lint + smoke test) and GitHub Pages deploy.
 
+[0.6.2]: https://github.com/benjcooley/decius-css/releases/tag/v0.6.2
 [0.6.1]: https://github.com/benjcooley/decius-css/releases/tag/v0.6.1
 [0.4.1]: https://github.com/benjcooley/decius-css/releases/tag/v0.4.1
 [0.4.0]: https://github.com/benjcooley/decius-css/releases/tag/v0.4.0
