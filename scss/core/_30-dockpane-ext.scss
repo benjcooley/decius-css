@@ -105,6 +105,13 @@
 .dcs-dockpane__titlebar {
   flex-shrink: 0;
 }
+.dcs-panel--floating .dcs-dockpane__titlebar {
+  cursor: grab;
+  user-select: none;
+}
+.dcs-panel--floating.dcs--dragging .dcs-dockpane__titlebar {
+  cursor: grabbing;
+}
 .dcs-dockpane__titlebar > .dcs-panel__title.dcs-panel__title--dock-tab {
   flex: 0 1 auto;
   appearance: none;
