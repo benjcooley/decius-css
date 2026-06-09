@@ -18,8 +18,8 @@
   min-width: 160px;
   background: var(--dcs-bg);
   border: 1px solid var(--dcs-line);
-  border-radius: var(--dcs-r-4);
-  box-shadow: var(--dcs-shadow-pop);
+  border-radius: var(--dcs-r-2);
+  box-shadow: 3px 5px 8px -6px rgba(0, 0, 0, .65);
   overflow: hidden;
   z-index: 60;
 }
@@ -56,8 +56,8 @@
   height: auto;
   width: auto;
   border: 1px solid var(--dcs-line-soft);
-  border-radius: var(--dcs-r-4);
-  box-shadow: var(--dcs-shadow-pop);
+  border-radius: var(--dcs-r-2);
+  box-shadow: 3px 5px 8px -6px rgba(0, 0, 0, .65);
   background: var(--dcs-surface-1);
   padding: var(--dcs-s-2);
   gap: var(--dcs-s-1);
@@ -67,7 +67,13 @@
 
 /* ---- shared elevation while dragging ------------------------ */
 .dcs--dragging {
-  box-shadow: var(--dcs-shadow-3), 0 0 0 1px var(--dcs-accent-haze) !important;
+  box-shadow:
+    3px 5px 8px -6px rgba(0, 0, 0, .7),
+    0 0 0 1px var(--dcs-accent-haze) !important;
+}
+html.dcs--drag-cursor,
+html.dcs--drag-cursor * {
+  cursor: grabbing !important;
 }
 
 /* ---- floating-panel resize: any edge or corner --------------
